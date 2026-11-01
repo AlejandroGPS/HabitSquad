@@ -7,10 +7,12 @@ import {
   register,
   requestPasswordReset,
 } from './api.js'
+import { panelEjemplo } from './datosEjemplo.js'
 import { hasSession } from './session.js'
 import { loginScreen, registroScreen } from './views/acceso.js'
 import { crearEscuadronScreen } from './views/crearEscuadron.js'
 import { menuScreen } from './views/menu.js'
+import { panelEscuadronScreen } from './views/panelEscuadron.js'
 import { recuperarContrasenaScreen } from './views/recuperarContrasena.js'
 import { screen } from './views/screen.js'
 import { unirseEscuadronScreen } from './views/unirseEscuadron.js'
@@ -92,41 +94,25 @@ function joinSquadErrorMessage(error) {
   return 'No se ha podido unir al escuadrón. Inténtalo de nuevo.'
 }
 
-function homeScreen(onLogout) {
-  const element = screen({
-    title: 'HabitSquad',
-    description: 'Cumple tu hábito. Que no caiga la racha.',
-    links: [
-      { href: '/escuadrones/nuevo', label: 'Crear un escuadrón' },
-      { href: '/escuadrones/unirse', label: 'Unirme a un escuadrón' },
-    ],
-  })
-
-  const logoutButton = document.createElement('button')
-  logoutButton.type = 'button'
-  logoutButton.className = 'self-start font-medium text-indigo-700 underline disabled:opacity-60'
-  logoutButton.textContent = 'Cerrar sesión'
-  logoutButton.addEventListener('click', async () => {
-    logoutButton.disabled = true
-    try {
-      await onLogout()
-    } finally {
-      logoutButton.disabled = false
-    }
-  })
-  element.querySelector('nav').append(logoutButton)
-  return element
-}
-
 export const routes = [
   {
     path: '/',
     title: 'HabitSquad',
     private: true,
     view: ({ navigate } = {}) =>
-      homeScreen(async () => {
-        await logout()
-        navigate('/login')
+      // TODO: cargar el escuadrón real (T70) y conectar subir prueba, elegir hábito, ver foto y votar.
+      panelEscuadronScreen({
+        ...panelEjemplo,
+        acciones: {
+          subirPrueba() {},
+          elegirHabito() {},
+          verFoto() {},
+          votar() {},
+          cerrarSesion: async () => {
+            await logout()
+            navigate('/login')
+          },
+        },
       }),
   },
   {
