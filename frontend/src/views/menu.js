@@ -14,6 +14,8 @@ export function menuScreen() {
   const nav = document.createElement('nav')
   nav.className = 'flex flex-col gap-3'
   for (const [href, label] of [
+    ['/habito', 'Mi hábito diario'],
+    ['/escuadrones/votar', 'Revisar pruebas'],
     ['/escuadrones/nuevo', 'Crear un escuadrón'],
     ['/escuadrones/unirse', 'Unirme a un escuadrón'],
   ]) {

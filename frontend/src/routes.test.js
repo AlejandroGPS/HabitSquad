@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, login, logout, register } from './api.js'
 import { guard, notFound, routes } from './routes.js'
-import { hasSession, saveSession } from './session.js'
+import { clearSession, hasSession, saveSession } from './session.js'
 
 vi.mock('./api.js', async (importOriginal) => {
   const actual = await importOriginal()
@@ -35,7 +35,8 @@ describe('routes', () => {
     '%s pinta una pantalla con su título',
     (_path, route) => {
       const element = route.view()
-      expect(element.querySelector('h1').textContent).toBe(route.title)
+      const heading = route.path === '/escuadrones/votar' ? 'Prueba de Laura' : route.title
+      expect(element.querySelector('h1').textContent).toBe(heading)
     },
   )
 
@@ -53,6 +54,14 @@ describe('routes', () => {
     const element = notFound.view()
     expect(element.querySelector('h1').textContent).toBe(notFound.title)
     expect(element.querySelector('a[data-link]').getAttribute('href')).toBe('/')
+  })
+
+  it('permite abrir la demo de votación con datos mock sin iniciar sesión', () => {
+    clearSession()
+    const voteRoute = routes.find((route) => route.path === '/escuadrones/votar')
+
+    expect(guard(voteRoute)).toBeNull()
+    expect(voteRoute.view().querySelector('h1').textContent).toBe('Prueba de Laura')
   })
 })
 

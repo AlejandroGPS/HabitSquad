@@ -10,10 +10,12 @@ import {
 import { hasSession } from './session.js'
 import { loginScreen, registroScreen } from './views/acceso.js'
 import { crearEscuadronScreen } from './views/crearEscuadron.js'
+import { habitoDiarioScreen } from './views/habitoDiario.js'
 import { menuScreen } from './views/menu.js'
 import { recuperarContrasenaScreen } from './views/recuperarContrasena.js'
 import { screen } from './views/screen.js'
 import { unirseEscuadronScreen } from './views/unirseEscuadron.js'
+import { votarPruebaScreen } from './views/votarPrueba.js'
 
 const backHome = [{ href: '/', label: 'Volver al inicio' }]
 
@@ -97,6 +99,8 @@ function homeScreen(onLogout) {
     title: 'HabitSquad',
     description: 'Cumple tu hábito. Que no caiga la racha.',
     links: [
+      { href: '/habito', label: 'Mi hábito diario' },
+      { href: '/escuadrones/votar', label: 'Revisar pruebas' },
       { href: '/escuadrones/nuevo', label: 'Crear un escuadrón' },
       { href: '/escuadrones/unirse', label: 'Unirme a un escuadrón' },
     ],
@@ -116,6 +120,23 @@ function homeScreen(onLogout) {
   })
   element.querySelector('nav').append(logoutButton)
   return element
+}
+
+function destinationAfterLogin() {
+  const next = new URLSearchParams(window.location.search).get('next')
+  if (!next?.startsWith('/') || next.startsWith('//')) return '/'
+
+  let destination
+  try {
+    destination = new URL(next, window.location.origin)
+  } catch {
+    return '/'
+  }
+  if (destination.origin !== window.location.origin) return '/'
+
+  const route = routes.find((entry) => entry.path === destination.pathname)
+  if (!route?.private) return '/'
+  return `${destination.pathname}${destination.search}${destination.hash}`
 }
 
 export const routes = [
@@ -145,7 +166,7 @@ export const routes = [
           } catch (error) {
             throw new Error(loginErrorMessage(error), { cause: error })
           }
-          navigate('/')
+          navigate(destinationAfterLogin())
         },
       }),
   },
@@ -187,6 +208,18 @@ export const routes = [
     view: () => menuScreen(),
   },
   {
+    path: '/habito',
+    title: 'Mi hábito diario',
+    private: true,
+    view: () => habitoDiarioScreen(),
+  },
+  {
+    path: '/escuadrones/votar',
+    title: 'Votar prueba',
+    // Demo con datos mock: la autorización se incorporará al conectar la API de votos.
+    view: () => votarPruebaScreen(),
+  },
+  {
     path: '/escuadrones/nuevo',
     title: 'Crea tu escuadrón',
     private: true,
@@ -219,7 +252,11 @@ export const routes = [
 ]
 
 export function guard(route) {
-  if (route.private && !hasSession()) return '/login'
+  if (route.private && !hasSession()) {
+    const requestedPath = `${window.location.pathname}${window.location.search}${window.location.hash}`
+    if (requestedPath === '/') return '/login'
+    return `/login?next=${encodeURIComponent(requestedPath)}`
+  }
   if (route.guestOnly && hasSession()) return '/'
   return null
 }
