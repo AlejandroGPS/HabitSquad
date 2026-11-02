@@ -150,3 +150,107 @@ def test_put_updates_existing_habito(authenticated_client, membership, squad):
     assert habit.pk == response.data["id"]
     assert habit.opcion == "estudiar"
     assert HabitoDiario.objects.filter(membresia=membership).count() == 1
+
+
+@pytest.mark.django_db
+def test_put_accepts_custom_text_for_other_option(
+    authenticated_client,
+    membership,
+    squad,
+):
+    response = authenticated_client.put(
+        habit_url(squad),
+        {
+            "opcion": "otro",
+            "texto_personalizado": "  Leer 20 páginas  ",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    habit = HabitoDiario.objects.get(membresia=membership)
+    assert habit.texto_personalizado == "Leer 20 páginas"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("texto", ["", "   "])
+def test_put_rejects_other_option_without_custom_text(
+    authenticated_client,
+    membership,
+    squad,
+    texto,
+):
+    response = authenticated_client.put(
+        habit_url(squad),
+        {
+            "opcion": "otro",
+            "texto_personalizado": texto,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "texto_personalizado" in response.data
+    assert not HabitoDiario.objects.filter(membresia=membership).exists()
+
+
+@pytest.mark.django_db
+def test_put_rejects_unknown_option(authenticated_client, membership, squad):
+    response = authenticated_client.put(
+        habit_url(squad),
+        {
+            "opcion": "descansar",
+            "texto_personalizado": "",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "opcion" in response.data
+    assert not HabitoDiario.objects.filter(membresia=membership).exists()
+
+
+@pytest.mark.django_db
+def test_put_rejects_custom_text_longer_than_255_characters(
+    authenticated_client,
+    membership,
+    squad,
+):
+    response = authenticated_client.put(
+        habit_url(squad),
+        {
+            "opcion": "otro",
+            "texto_personalizado": "a" * 256,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "texto_personalizado" in response.data
+    assert not HabitoDiario.objects.filter(membresia=membership).exists()
+
+
+@pytest.mark.django_db
+def test_put_does_not_replace_existing_habito_when_validation_fails(
+    authenticated_client,
+    membership,
+    squad,
+):
+    habit = HabitoDiario.objects.create(
+        membresia=membership,
+        opcion=HabitoDiario.Opcion.LEER,
+    )
+
+    response = authenticated_client.put(
+        habit_url(squad),
+        {
+            "opcion": "otro",
+            "texto_personalizado": " ",
+        },
+        format="json",
+    )
+
+    habit.refresh_from_db()
+    assert response.status_code == 400
+    assert habit.opcion == HabitoDiario.Opcion.LEER
+    assert habit.texto_personalizado == ""
