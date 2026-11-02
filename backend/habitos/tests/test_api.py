@@ -254,3 +254,52 @@ def test_put_does_not_replace_existing_habito_when_validation_fails(
     assert response.status_code == 400
     assert habit.opcion == HabitoDiario.Opcion.LEER
     assert habit.texto_personalizado == ""
+
+
+def test_habito_endpoints_are_documented_in_openapi_schema(api_client):
+    response = api_client.get(reverse("schema"))
+
+    assert response.status_code == 200
+    paths = response.data["paths"]
+    path = "/api/escuadrones/{escuadron_id}/habito/"
+    assert path in paths
+
+    get_operation = paths[path]["get"]
+    put_operation = paths[path]["put"]
+    assert get_operation["operationId"] == "consultarHabitoDiario"
+    assert get_operation["summary"] == "Consultar hábito diario"
+    assert get_operation["tags"] == ["Hábitos"]
+    assert set(get_operation["responses"]) == {"200", "401", "403", "404"}
+
+    assert put_operation["operationId"] == "asignarHabitoDiario"
+    assert put_operation["summary"] == "Asignar hábito diario"
+    assert put_operation["tags"] == ["Hábitos"]
+    assert set(put_operation["responses"]) == {"200", "400", "401", "403", "404"}
+
+    request_schema = put_operation["requestBody"]["content"]["application/json"][
+        "schema"
+    ]
+    component_name = request_schema["$ref"].rsplit("/", maxsplit=1)[-1]
+    habit_schema = response.data["components"]["schemas"][component_name]
+    assert set(habit_schema["properties"]) == {
+        "id",
+        "opcion",
+        "texto_personalizado",
+        "creado_en",
+        "actualizado_en",
+    }
+    option_schema = habit_schema["properties"]["opcion"]
+    option_component_name = option_schema["$ref"].rsplit("/", maxsplit=1)[-1]
+    assert response.data["components"]["schemas"][option_component_name]["enum"] == [
+        "gimnasio",
+        "leer",
+        "estudiar",
+        "otro",
+    ]
+    assert habit_schema["properties"]["texto_personalizado"]["maxLength"] == 255
+    assert "Opción predefinida" in {
+        example["summary"]
+        for example in put_operation["requestBody"]["content"]["application/json"][
+            "examples"
+        ].values()
+    }

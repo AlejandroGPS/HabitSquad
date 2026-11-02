@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -34,8 +34,14 @@ class HabitoDiarioDetailView(APIView):
             ) from error
 
     @extend_schema(
+        operation_id="consultarHabitoDiario",
+        tags=["Hábitos"],
+        summary="Consultar hábito diario",
         responses={
-            200: HabitoDiarioSerializer,
+            200: OpenApiResponse(
+                response=HabitoDiarioSerializer,
+                description="Hábito diario configurado por el usuario.",
+            ),
             401: OpenApiResponse(
                 description="Falta el access token, es inválido o ha expirado."
             ),
@@ -46,7 +52,10 @@ class HabitoDiarioDetailView(APIView):
                 description="El escuadrón no existe o todavía no tiene hábito."
             ),
         },
-        description="Consulta el hábito diario del usuario en un escuadrón.",
+        description=(
+            "Consulta el hábito diario del usuario autenticado dentro de un "
+            "escuadrón al que pertenece."
+        ),
     )
     def get(self, request, escuadron_id):
         membership = self.get_membership(request, escuadron_id)
@@ -56,10 +65,21 @@ class HabitoDiarioDetailView(APIView):
         return Response(HabitoDiarioSerializer(habit).data)
 
     @extend_schema(
+        operation_id="asignarHabitoDiario",
+        tags=["Hábitos"],
+        summary="Asignar hábito diario",
         request=HabitoDiarioSerializer,
         responses={
-            200: HabitoDiarioSerializer,
-            400: OpenApiResponse(description="Los datos enviados no son válidos."),
+            200: OpenApiResponse(
+                response=HabitoDiarioSerializer,
+                description="Hábito diario creado o actualizado.",
+            ),
+            400: OpenApiResponse(
+                description=(
+                    "La opción no es válida, falta texto para «Otro» o el texto "
+                    "supera los 255 caracteres."
+                )
+            ),
             401: OpenApiResponse(
                 description="Falta el access token, es inválido o ha expirado."
             ),
@@ -68,7 +88,34 @@ class HabitoDiarioDetailView(APIView):
             ),
             404: OpenApiResponse(description="El escuadrón no existe."),
         },
-        description="Crea o actualiza el hábito diario del usuario.",
+        description=(
+            "Crea o actualiza el único hábito diario del usuario en un "
+            "escuadrón. Las opciones predefinidas son gimnasio, leer y "
+            "estudiar; «Otro» requiere texto personalizado."
+        ),
+        examples=[
+            OpenApiExample(
+                "Opción predefinida",
+                value={"opcion": "leer", "texto_personalizado": ""},
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Hábito personalizado",
+                value={
+                    "opcion": "otro",
+                    "texto_personalizado": "Leer 20 páginas",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Otro sin texto",
+                value={
+                    "opcion": "otro",
+                    "texto_personalizado": "",
+                },
+                request_only=True,
+            ),
+        ],
     )
     def put(self, request, escuadron_id):
         membership = self.get_membership(request, escuadron_id)
