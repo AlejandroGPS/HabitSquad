@@ -12,6 +12,7 @@ import { loginScreen, registroScreen } from './views/acceso.js'
 import { crearEscuadronScreen } from './views/crearEscuadron.js'
 import { habitoDiarioScreen } from './views/habitoDiario.js'
 import { menuScreen } from './views/menu.js'
+import { panelEscuadronScreen } from './views/panelEscuadron.js'
 import { recuperarContrasenaScreen } from './views/recuperarContrasena.js'
 import { screen } from './views/screen.js'
 import { unirseEscuadronScreen } from './views/unirseEscuadron.js'
@@ -95,31 +96,7 @@ function joinSquadErrorMessage(error) {
 }
 
 function homeScreen(onLogout) {
-  const element = screen({
-    title: 'HabitSquad',
-    description: 'Cumple tu hábito. Que no caiga la racha.',
-    links: [
-      { href: '/habito', label: 'Mi hábito diario' },
-      { href: '/escuadrones/votar', label: 'Revisar pruebas' },
-      { href: '/escuadrones/nuevo', label: 'Crear un escuadrón' },
-      { href: '/escuadrones/unirse', label: 'Unirme a un escuadrón' },
-    ],
-  })
-
-  const logoutButton = document.createElement('button')
-  logoutButton.type = 'button'
-  logoutButton.className = 'self-start font-medium text-indigo-700 underline disabled:opacity-60'
-  logoutButton.textContent = 'Cerrar sesión'
-  logoutButton.addEventListener('click', async () => {
-    logoutButton.disabled = true
-    try {
-      await onLogout()
-    } finally {
-      logoutButton.disabled = false
-    }
-  })
-  element.querySelector('nav').append(logoutButton)
-  return element
+  return menuScreen({ title: 'HabitSquad', onLogout })
 }
 
 function destinationAfterLogin() {
@@ -205,7 +182,17 @@ export const routes = [
   {
     path: '/menu',
     title: 'Menú principal',
-    view: () => menuScreen(),
+    private: true,
+    view: ({ navigate } = {}) => menuScreen({ onLogout: async () => {
+      await logout()
+      navigate('/login')
+    } }),
+  },
+  {
+    path: '/escuadrones/panel',
+    title: 'Panel del escuadrón',
+    private: true,
+    view: () => panelEscuadronScreen(),
   },
   {
     path: '/habito',

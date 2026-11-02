@@ -43,7 +43,7 @@ describe('routes', () => {
   it('las pantallas enlazan con el enrutador mediante data-link', () => {
     const home = routes.find((route) => route.path === '/').view()
     const hrefs = [...home.querySelectorAll('a[data-link]')].map((a) =>
-      a.getAttribute('href'),
+      new URL(a.href).pathname,
     )
     const paths = routes.map((route) => route.path)
     expect(hrefs.length).toBeGreaterThan(0)
