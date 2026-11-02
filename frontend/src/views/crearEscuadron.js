@@ -110,7 +110,7 @@ export function escuadronCreadoScreen(squad) {
     copyButton,
     copyStatus,
     membersBox,
-    link('/', 'Ir al panel', `mt-5 ${primaryButtonClass}`),
+    link(`/escuadrones/panel?id=${squad.id}`, 'Ir al panel', `mt-5 ${primaryButtonClass}`),
   )
   return main
 }

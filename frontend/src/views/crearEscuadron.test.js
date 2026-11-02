@@ -131,7 +131,7 @@ describe('crearEscuadronScreen', () => {
       const panelLink = [...document.body.querySelectorAll('a[data-link]')].find(
         (link) => link.textContent === 'Ir al panel',
       )
-      expect(panelLink.getAttribute('href')).toBe('/')
+      expect(panelLink.getAttribute('href')).toBe('/escuadrones/panel?id=1')
     })
     expect(element.isConnected).toBe(false)
   })

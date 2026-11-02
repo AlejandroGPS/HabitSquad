@@ -1,474 +1,213 @@
+import { ApiError, getDailyHabit, getSquad, saveDailyHabit } from '../api.js'
+import { appLayout } from '../components/appLayout.js'
+import { element } from '../components/dom.js'
+import { icon } from '../components/icons.js'
 import mascotUrl from '../assets/mascota.webp'
-import { appMark } from '../components/brand.js'
-import { flameIcon } from '../components/icons.js'
-import {
-  clearFieldError,
-  formAlert,
-  primaryButtonClass,
-  setFieldError,
-} from '../components/forms.js'
 
 const HABIT_MAX_LENGTH = 60
-const HABIT_STORAGE_KEY = 'habitsquad.dailyHabit.pendingSync'
-
+const PREDEFINED = { gimnasio: 'Ir al gimnasio', leer: 'Leer', estudiar: 'Estudiar' }
 const SUGGESTIONS = [
-  { value: 'Leer 20 minutos', icon: '▣', color: 'text-accent bg-accent-soft' },
-  { value: 'Ir al gimnasio', icon: '↗', color: 'text-streak bg-streak/10' },
-  { value: 'Meditar 10 minutos', icon: '◉', color: 'text-success bg-success/10' },
-  { value: 'Caminar 8.000 pasos', icon: '⌁', color: 'text-sky bg-sky/10' },
-  { value: 'Sin móvil en la cama', icon: '☾', color: 'text-accent bg-accent-soft' },
-  { value: 'Estudiar 1 hora', icon: '✎', color: 'text-streak bg-streak/10' },
+  ['Leer 20 minutos', 'book', 'bg-[#efeaff] text-[#5b32ea]'],
+  ['Ir al gimnasio', 'dumbbell', 'bg-[#fff1e6] text-[#c93400]'],
+  ['Meditar 10 minutos', 'leaf', 'bg-[#e8f5ec] text-[#248a3d]'],
+  ['Caminar 8.000 pasos', 'route', 'bg-[#e6f3ff] text-[#0878c9]'],
+  ['Sin móvil en la cama', 'moon', 'bg-[#efeaff] text-[#5b32ea]'],
+  ['Estudiar 1 hora', 'pencil', 'bg-[#fff1e6] text-[#c93400]'],
 ]
 
-const NAV_ITEMS = [
-  { label: 'Escuadrón', icon: 'squad', href: '/' },
-  { label: 'Racha', icon: 'streak' },
-  { label: 'Alertas', icon: 'alerts', badge: '3' },
-  { label: 'Mi hábito', icon: 'habit', href: '/habito', active: true },
-]
-
-const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
-
-function element(tag, className = '', text = '') {
-  const node = document.createElement(tag)
-  node.className = className
-  if (text) node.textContent = text
-  return node
+export function habitPayload(text) {
+  const value = text.trim()
+  const option = Object.keys(PREDEFINED).find((key) => PREDEFINED[key] === value)
+  return { opcion: option ?? 'otro', texto_personalizado: option ? '' : value }
 }
 
-function icon(name, className = 'h-5 w-5 shrink-0') {
-  if (name === 'streak') return flameIcon(className)
-
-  const svg = document.createElementNS(SVG_NAMESPACE, 'svg')
-  svg.setAttribute('viewBox', '0 0 24 24')
-  svg.setAttribute('fill', 'none')
-  svg.setAttribute('stroke', 'currentColor')
-  svg.setAttribute('stroke-width', '1.8')
-  svg.setAttribute('stroke-linecap', 'round')
-  svg.setAttribute('stroke-linejoin', 'round')
-  svg.setAttribute('aria-hidden', 'true')
-
-  const paths = {
-    squad: [
-      ['path', { d: 'M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2' }],
-      ['circle', { cx: '10', cy: '7', r: '4' }],
-      ['path', { d: 'M20 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' }],
-    ],
-    alerts: [
-      ['path', { d: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9' }],
-      ['path', { d: 'M10 21h4' }],
-    ],
-    habit: [
-      ['rect', { x: '4', y: '4', width: '16', height: '16', rx: '2' }],
-      ['path', { d: 'M9 9h6M9 13h6M9 17h3' }],
-    ],
-    back: [['path', { d: 'm15 18-6-6 6-6' }]],
-    camera: [
-      ['path', { d: 'M14 5h-4l-2 2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z' }],
-      ['circle', { cx: '12', cy: '13', r: '3' }],
-    ],
-    bell: [
-      ['path', { d: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9' }],
-      ['path', { d: 'M10 21h4' }],
-    ],
-  }
-  for (const [tag, attributes] of paths[name] ?? []) {
-    const shape = document.createElementNS(SVG_NAMESPACE, tag)
-    for (const [attribute, value] of Object.entries(attributes)) {
-      shape.setAttribute(attribute, value)
+function errorMessage(error) {
+  if (error instanceof ApiError) {
+    if (error.status === 400) {
+      const errors = error.data ?? {}
+      const value = errors.texto_personalizado ?? errors.opcion ?? errors.detail
+      if (Array.isArray(value)) return value.join(' ')
+      if (typeof value === 'string') return value
+      return 'Revisa la opción y el texto del hábito.'
     }
-    svg.append(shape)
+    if (error.status === 401) return 'Tu sesión ha caducado. Vuelve a iniciar sesión.'
+    if (error.status === 403) return 'No tienes permiso para modificar el hábito de este escuadrón.'
+    if (error.status === 404) return 'El escuadrón ya no existe. Vuelve a cargar tus escuadrones.'
   }
-  svg.classList.add(...className.split(/\s+/).filter(Boolean))
-  return svg
+  return 'No se ha podido conectar. Comprueba tu conexión e inténtalo de nuevo.'
 }
 
-function menuItem({ label, icon: iconName, href, active = false, badge }) {
-  const item = href ? element('a') : element('span')
-  item.className = [
-    'relative flex min-h-10 min-w-0 items-center gap-2.5 rounded-xl px-2.5 text-[0.8125rem] font-extrabold transition-colors',
-    active ? 'bg-accent-soft text-accent' : 'text-ink-muted',
-    href && !active ? 'hover:bg-white/70 hover:text-ink' : '',
-  ].join(' ')
-  if (href) {
-    item.href = href
-    item.dataset.link = ''
-  }
-  if (active) item.setAttribute('aria-current', 'page')
-  item.append(icon(iconName, 'h-[1.125rem] w-[1.125rem] shrink-0'))
-  item.append(element('span', 'min-w-0 flex-1 truncate', label))
-  if (badge) {
-    const count = element(
-      'span',
-      'grid h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[0.6875rem] font-black text-white',
-      badge,
-    )
-    count.setAttribute('aria-label', `${badge} avisos sin leer`)
-    item.append(count)
-  }
-  return item
-}
-
-function sidebar() {
-  const aside = element(
-    'aside',
-    'glass sticky top-3 hidden h-[calc(100dvh-1.5rem)] w-[12rem] shrink-0 flex-col rounded-[1.75rem] p-3 xl:w-[13rem] lg:flex',
-  )
-  aside.setAttribute('aria-label', 'Menú principal')
-
-  const brand = element('a', 'flex min-h-12 items-center gap-2 rounded-xl px-1.5')
-  brand.href = '/'
-  brand.dataset.link = ''
-  brand.setAttribute('aria-label', 'HabitSquad, ir al escuadrón')
-  brand.append(
-    appMark('h-8 w-8'),
-    element('span', 'text-[1rem] font-black tracking-tight text-ink', 'HabitSquad'),
-  )
-
-  const nav = element('nav', 'mt-5 flex flex-col gap-1')
-  nav.setAttribute('aria-label', 'Secciones')
-  for (const item of NAV_ITEMS) nav.append(menuItem(item))
-
-  const squad = element(
-    'a',
-    'mt-auto flex min-w-0 items-center gap-2 rounded-2xl bg-white/65 p-2',
-  )
-  squad.href = '/'
-  squad.dataset.link = ''
-  squad.append(
-    element(
-      'span',
-      'grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-accent text-[0.75rem] font-black text-white',
-      'LI',
-    ),
-    element('span', 'min-w-0 flex-1', ''),
-  )
-  squad.lastElementChild.append(
-    element('span', 'block truncate text-[0.6875rem] font-extrabold text-ink', 'Los Inquebrantables'),
-    element('span', 'block text-[0.625rem] font-semibold text-ink-muted', '3 de 5 miembros'),
-  )
-  aside.append(brand, nav, squad)
-  return aside
-}
-
-function mobileNavigation() {
-  const nav = element(
-    'nav',
-    'glass fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 grid grid-cols-4 rounded-2xl p-1.5 lg:hidden',
-  )
-  nav.setAttribute('aria-label', 'Navegación principal')
-  for (const item of NAV_ITEMS) {
-    const link = element(
-      item.href ? 'a' : 'span',
-      `flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-2 text-[0.625rem] font-extrabold ${item.active ? 'bg-accent-soft text-accent' : 'text-ink-muted'}`,
-    )
-    if (item.href) {
-      link.href = item.href
-      link.dataset.link = ''
-    }
-    if (item.active) link.setAttribute('aria-current', 'page')
-    link.append(icon(item.icon, 'h-4 w-4'))
-    link.append(element('span', 'truncate', item.label))
-    nav.append(link)
-  }
-  return nav
-}
-
-function mascot() {
-  const image = element(
-    'img',
-    'h-16 w-auto shrink-0 drop-shadow-[0_10px_14px_rgb(40_20_100/0.24)] sm:h-[4.5rem]',
-  )
-  image.src = mascotUrl
-  image.alt = ''
-  image.width = 312
-  image.height = 360
-  image.decoding = 'async'
-  image.draggable = false
-  return image
-}
-
-function pageHeader() {
-  const header = element(
-    'header',
-    'mb-5 flex min-w-0 items-center gap-3 sm:mb-6',
-  )
-  const back = element(
-    'a',
-    'glass grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink transition hover:-translate-x-0.5 focus-visible:outline-2 focus-visible:outline-accent',
-  )
-  back.href = '/'
-  back.dataset.link = ''
-  back.setAttribute('aria-label', 'Volver al escuadrón')
-  back.append(icon('back', 'h-5 w-5'))
-
-  const titleGroup = element('div', 'min-w-0 flex-1')
-  titleGroup.append(
-    element('p', 'truncate text-[0.6875rem] font-bold text-ink-muted', 'Los Inquebrantables'),
-    element('h1', 'truncate text-[1.25rem] leading-tight font-black tracking-tight text-ink sm:text-[1.5rem]', 'Mi hábito diario'),
-  )
-
-  const stats = element('div', 'ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2')
-  const streak = element(
-    'div',
-    'glass flex h-9 items-center gap-1.5 rounded-full px-3 text-[0.8125rem] font-black text-ink',
-  )
-  streak.append(flameIcon('h-4 w-4 text-streak'), element('span', '', '12'))
-
-  const alerts = element(
-    'span',
-    'glass relative grid h-9 w-9 place-items-center rounded-full text-ink-muted',
-  )
-  alerts.append(icon('bell'))
-  alerts.append(element('span', 'absolute end-1 top-1 h-2 w-2 rounded-full bg-streak ring-2 ring-white'))
-  alerts.setAttribute('aria-label', 'Avisos: 3 pendientes')
-
-  const avatar = element(
-    'span',
-    'grid h-9 w-9 place-items-center rounded-full bg-accent text-[0.8125rem] font-black text-white shadow-[0_4px_0_rgb(63_31_179/0.2)]',
-    'A',
-  )
-  avatar.setAttribute('aria-label', 'Perfil de Ana')
-  stats.append(streak, alerts, avatar)
-  header.append(back, titleGroup, stats)
-  return header
-}
-
-export function validateDailyHabit(value) {
-  const habit = String(value ?? '').trim()
-  if (!habit) {
-    return { ok: false, error: 'Elige una idea o escribe tu propio hábito.' }
-  }
-  if (habit.length > HABIT_MAX_LENGTH) {
-    return {
-      ok: false,
-      error: `El hábito puede tener como máximo ${HABIT_MAX_LENGTH} caracteres.`,
-    }
-  }
-  return { ok: true, habit }
-}
-
-function savedHabit() {
-  try {
-    return localStorage.getItem(HABIT_STORAGE_KEY) ?? ''
-  } catch {
-    return ''
-  }
-}
-
-export function habitoDiarioScreen() {
-  const main = element(
-    'main',
-    [
-      'relative isolate min-h-dvh w-full overflow-x-clip font-rounded text-ink antialiased',
-      'ps-[env(safe-area-inset-left)] pe-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)]',
-    ].join(' '),
-  )
-  const backdrop = element('div', 'access-backdrop fixed inset-0 -z-10')
-  backdrop.setAttribute('aria-hidden', 'true')
-
-  const app = element('div', 'relative z-10 flex min-h-dvh items-stretch gap-3 p-3 sm:gap-4 sm:p-4')
-  const side = sidebar()
-  const workspace = element('div', 'flex min-w-0 flex-1 flex-col')
-  const panel = element('div', 'mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col')
-  panel.append(pageHeader())
-
-  const encouragement = element(
-    'section',
-    'flex min-w-0 items-center gap-3 rounded-3xl bg-gradient-to-br from-accent to-accent-hover px-4 py-3.5 text-white shadow-[0_8px_0_rgb(63_31_179/0.15),0_20px_35px_-24px_rgb(60_30_140/0.55)] sm:gap-4 sm:px-5 sm:py-4',
-  )
-  encouragement.setAttribute('aria-label', 'Una regla para tu racha')
-  encouragement.append(
-    mascot(),
-    element('div', 'min-w-0', ''),
-  )
-  encouragement.lastElementChild.append(
-    element('p', 'text-[0.875rem] font-extrabold sm:text-[1rem]', 'Uno solo, y que sea tuyo.'),
-    element(
-      'p',
-      'mt-0.5 text-[0.75rem] leading-snug font-semibold text-white/90 sm:text-[0.8125rem]',
-      'Si un día no lo cumples, la racha del escuadrón vuelve a cero.',
-    ),
-  )
-
-  const form = element('form', 'mt-4 flex min-w-0 flex-col gap-4 sm:mt-5 sm:gap-5')
+export function habitoDiarioScreen({ navigate, api = { getSquad, getDailyHabit, saveDailyHabit } } = {}) {
+  const squadId = new URLSearchParams(window.location.search).get('escuadron')
+  const validSquadId = Boolean(squadId && /^[1-9]\d*$/.test(squadId))
+  const squadName = element('span', '', 'Mi hábito diario')
+  const body = element('div', 'habit-detail mt-4 px-4 lg:mt-6 lg:px-0')
+  const form = element('form', 'space-y-4')
   form.noValidate = true
-  const topGrid = element('div', 'grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[1.05fr_1fr]')
-  const habitField = element('div', 'min-w-0 rounded-3xl border-2 border-white bg-white/75 p-4 shadow-[0_7px_0_rgb(60_30_140/0.07),0_14px_24px_-18px_rgb(60_30_140/0.35)] sm:p-5')
-  const label = element('label', 'text-[0.75rem] font-extrabold text-ink-muted', '¿Qué harás cada día?')
-  label.htmlFor = 'habito-diario'
-  const input = element(
-    'input',
-    [
-      'mt-1.5 h-11 w-full min-w-0 rounded-xl border-2 border-transparent bg-[#f2f2f7] px-3',
-      'text-[0.9375rem] font-bold text-ink outline-none transition-[border-color,box-shadow] duration-200',
-      'placeholder:font-semibold placeholder:text-ink-muted/70 focus:border-accent-line focus:ring-4 focus:ring-accent/15',
-      'aria-invalid:border-red-400 aria-invalid:focus:ring-red-500/15',
-    ].join(' '),
-  )
-  input.id = 'habito-diario'
-  input.name = 'habito'
-  input.type = 'text'
-  input.placeholder = 'Ej. Leer 20 minutos'
-  input.maxLength = HABIT_MAX_LENGTH
-  input.autocomplete = 'off'
-  input.spellcheck = false
-  input.setAttribute('aria-invalid', 'false')
-
-  const counter = element('span', 'self-end text-[0.625rem] font-bold text-ink-muted', `0/${HABIT_MAX_LENGTH}`)
-  counter.id = 'habito-diario-contador'
-  counter.setAttribute('aria-live', 'polite')
-  counter.setAttribute('aria-label', `0 de ${HABIT_MAX_LENGTH} caracteres`)
-  const error = formAlert()
-  error.id = 'habito-diario-error'
-  error.classList.add('hidden')
-  const inputStack = element('div', 'flex min-w-0 flex-col gap-1')
-  inputStack.append(input, counter, error)
-  input.setAttribute('aria-describedby', counter.id)
-  habitField.append(label, inputStack)
-
-  const suggestionsGroup = element('fieldset', 'min-w-0')
-  const legend = element('legend', 'text-[0.75rem] font-bold text-ink-muted', 'Ideas para empezar')
-  const suggestions = element('div', 'mt-2 grid min-w-0 grid-cols-2 gap-2 xl:grid-cols-3')
-  suggestionsGroup.append(legend, suggestions)
-  const radios = []
-  for (const [index, suggestion] of SUGGESTIONS.entries()) {
-    const choice = element(
-      'label',
-      [
-        'flex min-h-[3.25rem] min-w-0 cursor-pointer items-center gap-2 rounded-2xl border-2 border-transparent',
-        'bg-white/90 px-2.5 py-2 shadow-[0_5px_0_rgb(60_30_140/0.06),0_10px_20px_-17px_rgb(60_30_140/0.4)]',
-        'transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:bg-white sm:gap-2.5 sm:px-3',
-        'has-checked:border-accent has-checked:bg-accent-soft/50',
-        'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent',
-      ].join(' '),
-    )
-    const radio = element('input', 'sr-only')
+  const intro = element('section', 'flex min-w-0 items-center gap-4 rounded-[1.75rem] bg-gradient-to-br from-[#6a45f0] to-[#4c28cc] p-5 text-white shadow-sm')
+  const mascot = element('img', 'h-24 w-20 shrink-0 object-contain')
+  mascot.src = mascotUrl
+  mascot.alt = ''
+  intro.append(mascot, element('div', '', element('h2', 'text-base font-black', 'Uno solo, y que sea tuyo.'), element('p', 'mt-1 text-sm font-bold', 'Si un día no lo cumples, la racha del escuadrón vuelve a cero.')))
+  const customLabel = element('label', 'block text-sm font-extrabold text-[#6e6e73]', '¿Qué harás cada día?')
+  const custom = element('input', 'mt-2 h-12 w-full min-w-0 rounded-xl border-2 border-transparent bg-[#f2f2f7] px-3 font-semibold text-[#1d1d1f] outline-none focus:border-accent aria-invalid:border-red-600 disabled:opacity-60')
+  custom.id = 'habito-texto'
+  custom.name = 'habito'
+  custom.maxLength = HABIT_MAX_LENGTH
+  custom.placeholder = 'Ej. Leer 20 minutos'
+  custom.autocomplete = 'off'
+  customLabel.htmlFor = custom.id
+  const counter = element('p', 'mt-2 text-right text-xs font-bold text-[#6e6e73]', '0/60')
+  counter.id = 'habito-contador'
+  custom.setAttribute('aria-describedby', counter.id)
+  const customArea = element('div', 'min-w-0 rounded-[1.75rem] bg-white p-5 shadow-sm', customLabel, custom, counter)
+  const choices = element('fieldset', 'min-w-0')
+  choices.append(element('legend', 'mb-2 text-sm font-bold text-[#6e6e73]', 'Ideas para empezar'))
+  const suggestions = element('div', 'grid grid-cols-2 gap-3 lg:grid-cols-3')
+  const radios = SUGGESTIONS.map(([value, glyph, color]) => {
+    const radio = element('input', 'sr-only peer')
     radio.type = 'radio'
     radio.name = 'idea-habito'
-    radio.id = `idea-habito-${index + 1}`
-    radio.value = suggestion.value
-    radio.setAttribute('aria-label', suggestion.value)
-
-    const badge = element(
-      'span',
-      `grid h-8 w-8 shrink-0 place-items-center rounded-xl text-[0.9375rem] font-black sm:h-9 sm:w-9 ${suggestion.color}`,
-      suggestion.icon,
-    )
-    badge.setAttribute('aria-hidden', 'true')
-    const text = element('span', 'min-w-0 flex-1 text-[0.6875rem] leading-tight font-extrabold text-ink sm:text-[0.75rem]', suggestion.value)
-    const check = element('span', 'ms-auto hidden shrink-0 font-black text-accent', '✓')
+    radio.value = value
+    radio.setAttribute('aria-label', value)
+    const check = element('span', 'hidden text-accent peer-checked:block', '✓')
     check.setAttribute('aria-hidden', 'true')
-
-    radio.addEventListener('change', () => {
-      if (!radio.checked) return
-      input.value = suggestion.value
-      updateCounter()
-      clearFieldError(input, error)
-      input.setAttribute('aria-describedby', counter.id)
-      status.textContent = ''
-      status.classList.add('hidden')
-    })
-    choice.append(radio, badge, text, check)
+    const choice = element('label', 'flex min-h-16 min-w-0 cursor-pointer items-center gap-2 rounded-[1.25rem] border-[3px] border-transparent bg-white p-2.5 shadow-sm has-checked:border-accent has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent', radio,
+      element('span', `grid h-9 w-9 shrink-0 place-items-center rounded-xl ${color}`, icon(glyph)),
+      element('span', 'min-w-0 flex-1 text-xs font-extrabold text-[#1d1d1f]', value), check)
     suggestions.append(choice)
-    radios.push(radio)
-  }
-
-  const bottomGrid = element('div', 'grid min-w-0 grid-cols-1 gap-3 md:grid-cols-[1.05fr_1fr]')
-  const proof = element(
-    'section',
-    'flex min-w-0 items-center gap-3 rounded-3xl border-2 border-white bg-white/85 p-3 shadow-[0_5px_0_rgb(60_30_140/0.06),0_10px_20px_-17px_rgb(60_30_140/0.4)] sm:p-4',
-  )
-  proof.setAttribute('aria-label', 'Cómo demuestras tu hábito')
-  const cameraBadge = element('span', 'grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky/10 text-sky')
-  cameraBadge.append(icon('camera', 'h-4 w-4'))
-  const proofText = element('div', 'min-w-0')
-  proofText.append(
-    element('p', 'text-[0.6875rem] font-extrabold text-ink-muted', 'Cómo lo demuestras'),
-    element('p', 'mt-0.5 text-[0.75rem] font-extrabold text-ink', 'Con una foto antes de las 23:59.'),
-    element('p', 'text-[0.625rem] leading-snug font-semibold text-ink-muted', 'Tu escuadrón la vota y cuenta para la racha.'),
-  )
-  proof.append(cameraBadge, proofText)
-
-  const saveColumn = element('div', 'flex min-w-0 flex-col justify-end gap-2')
-  const offlineNote = element(
-    'p',
-    'text-center text-[0.6875rem] leading-snug font-semibold text-ink-muted md:text-start',
-    'Por ahora se guarda en este dispositivo. La sincronización con el escuadrón queda pendiente.',
-  )
-  const saveButton = element('button', `${primaryButtonClass} mt-0 h-11 rounded-full border-b-0 text-[0.8125rem]`, 'Guardar hábito')
-  saveButton.type = 'submit'
-  const status = element(
-    'p',
-    'hidden rounded-2xl border-2 border-green-200 bg-green-50 px-3 py-2 text-[0.75rem] leading-snug font-bold text-green-800',
-  )
+    return radio
+  })
+  choices.append(suggestions)
+  const status = element('p', 'text-sm font-semibold text-[#6e6e73]')
   status.setAttribute('role', 'status')
   status.setAttribute('aria-live', 'polite')
-  saveColumn.append(offlineNote, saveButton, status)
-  bottomGrid.append(proof, saveColumn)
+  const error = element('p', 'text-sm font-bold text-red-700')
+  error.id = 'habito-error'
+  error.setAttribute('role', 'alert')
+  const retry = element('button', 'min-h-11 font-bold text-accent underline', 'Reintentar')
+  retry.type = 'button'
+  retry.hidden = true
+  const save = element('button', 'flex min-h-[3.25rem] w-full items-center justify-center rounded-full bg-accent px-6 text-[1.0625rem] font-extrabold text-white disabled:opacity-50', 'Guardar hábito')
+  save.type = 'submit'
+  const back = element('a', 'glass grid h-11 w-11 shrink-0 place-items-center rounded-full text-ink')
+  back.href = '/'
+  back.dataset.link = ''
+  back.setAttribute('aria-label', 'Volver al panel')
+  back.append(icon('back'))
+  const chooseSquad = element('a', 'inline-flex min-h-11 items-center font-bold text-accent', 'Ir a Mis escuadrones')
+  chooseSquad.href = '/'
+  chooseSquad.dataset.link = ''
+  chooseSquad.hidden = true
+  const notices = element('div', 'mb-4 space-y-2', status, error, retry, chooseSquad)
+  const proof = element('section', 'flex items-start justify-between gap-3 rounded-[1.75rem] bg-white p-5 shadow-sm',
+    element('div', '', element('h2', 'text-sm font-bold text-[#6e6e73]', 'Cómo lo demuestras'), element('p', 'mt-1 font-extrabold text-[#1d1d1f]', 'Con una foto antes de las 23:59.'), element('p', 'text-xs font-semibold text-[#6e6e73]', 'Tu escuadrón la vota y cuenta para la racha.')),
+    element('span', 'grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#e6f3ff] text-[#0878c9]', icon('camera')))
+  form.append(element('div', 'grid gap-4 lg:grid-cols-2', intro, customArea), choices,
+    element('div', 'grid items-end gap-4 lg:grid-cols-2', proof, save))
+  body.append(notices, form)
 
-  topGrid.append(encouragement, habitField)
-  form.append(suggestionsGroup, bottomGrid)
-  panel.append(topGrid, form)
-  workspace.append(panel, mobileNavigation())
-  app.append(side, workspace)
-  main.append(backdrop, app)
-
-  const existingHabit = savedHabit()
-  if (existingHabit) {
-    input.value = existingHabit
-    const selected = radios.find((radio) => radio.value === existingHabit)
-    if (selected) selected.checked = true
+  let loading = true
+  let saving = false
+  let ready = false
+  let edited = false
+  let requestVersion = 0
+  function sync() {
+    // Preparar un hábito no requiere red; solo guardarlo requiere un escuadrón validado.
+    choices.disabled = saving
+    custom.disabled = saving
+    counter.textContent = `${custom.value.length}/${HABIT_MAX_LENGTH}`
+    save.disabled = loading || saving || !ready
+    save.textContent = saving ? 'Guardando…' : 'Guardar hábito'
+    form.setAttribute('aria-busy', String(loading || saving))
+    radios.forEach((radio) => { radio.checked = radio.value === custom.value })
   }
-
-  function updateCounter() {
-    const length = [...input.value].length
-    counter.textContent = `${length}/${HABIT_MAX_LENGTH}`
-    counter.setAttribute('aria-label', `${length} de ${HABIT_MAX_LENGTH} caracteres`)
-    radios.forEach((radio) => {
-      if (radio.value !== input.value) radio.checked = false
-      radio.parentElement.lastElementChild.classList.toggle('hidden', !radio.checked)
-    })
+  function populate(habit) {
+    custom.value = habit?.opcion === 'otro' ? habit.texto_personalizado : PREDEFINED[habit?.opcion] ?? ''
+    custom.removeAttribute('aria-invalid')
   }
-
-  input.addEventListener('input', () => {
-    updateCounter()
-    clearFieldError(input, error)
-    input.setAttribute('aria-describedby', counter.id)
-    status.textContent = ''
-    status.classList.add('hidden')
-  })
-
-  updateCounter()
-
-  form.addEventListener('submit', (event) => {
-    event.preventDefault()
-    status.textContent = ''
-    status.classList.add('hidden')
-
-    const result = validateDailyHabit(input.value)
-    if (!result.ok) {
-      setFieldError(input, error, result.error)
-      input.setAttribute('aria-describedby', `${counter.id} ${error.id}`)
-      input.focus()
+  async function loadHabit() {
+    if (!validSquadId) {
+      loading = false
+      status.textContent = 'Elige primero un escuadrón en Mis escuadrones para guardar tu hábito.'
+      chooseSquad.hidden = false
+      sync()
       return
     }
-    clearFieldError(input, error)
-    input.setAttribute('aria-describedby', counter.id)
-
-    // TODO(frontend-only): when requested, replace this local pending-sync
-    // value with the backend habit API. This screen intentionally makes no API calls.
+    const version = ++requestVersion
+    loading = true
+    ready = false
+    retry.hidden = true
+    chooseSquad.hidden = true
+    error.textContent = ''
+    status.textContent = 'Cargando hábito…'
+    back.href = `/escuadrones/panel?id=${squadId}`
+    sync()
     try {
-      localStorage.setItem(HABIT_STORAGE_KEY, result.habit)
-    } catch {
-      status.textContent = 'No se ha podido guardar en este dispositivo. Inténtalo de nuevo.'
-      status.classList.remove('hidden')
+      const squad = await api.getSquad(squadId)
+      if (version !== requestVersion) return
+      squadName.textContent = squad.nombre
+      const habit = await api.getDailyHabit(squadId)
+      if (version !== requestVersion) return
+      // Una respuesta lenta no debe borrar lo que el usuario acaba de escribir.
+      if (!edited) populate(habit)
+      ready = true
+      status.textContent = edited ? 'Tu hábito está listo para guardar.' : habit ? 'Hábito cargado.' : 'Todavía no has elegido un hábito en este escuadrón.'
+    } catch (cause) {
+      if (version !== requestVersion) return
+      status.textContent = ''
+      error.textContent = errorMessage(cause)
+      retry.hidden = false
+      chooseSquad.hidden = !(cause instanceof ApiError && [403, 404].includes(cause.status))
+    } finally {
+      if (version === requestVersion) { loading = false; sync() }
+    }
+  }
+  choices.addEventListener('change', () => {
+    edited = true
+    custom.value = radios.find((radio) => radio.checked)?.value ?? custom.value
+    if (ready) { error.textContent = ''; status.textContent = '' }
+    custom.removeAttribute('aria-invalid'); sync()
+  })
+  custom.addEventListener('input', () => {
+    edited = true
+    if (ready) { error.textContent = ''; status.textContent = '' }
+    custom.removeAttribute('aria-invalid'); sync()
+  })
+  retry.addEventListener('click', loadHabit)
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault()
+    if (loading || saving || !ready) return
+    const text = custom.value.trim()
+    error.textContent = ''
+    status.textContent = ''
+    if (!text || text.length > HABIT_MAX_LENGTH) {
+      error.textContent = 'Elige una idea o escribe un hábito de entre 1 y 60 caracteres.'
+      custom.setAttribute('aria-invalid', 'true')
+      custom.focus()
       return
     }
-
-    status.textContent = 'Hábito guardado en este dispositivo. La conexión con tu escuadrón queda pendiente.'
-    status.classList.remove('hidden')
+    saving = true
+    sync()
+    try {
+      const habit = await api.saveDailyHabit(squadId, habitPayload(text))
+      populate(habit)
+      status.textContent = 'Hábito guardado en tu escuadrón.'
+      navigate?.(`/escuadrones/panel?id=${squadId}`)
+    } catch (cause) {
+      error.textContent = errorMessage(cause)
+    } finally {
+      saving = false
+      sync()
+    }
   })
-
-  return main
+  sync()
+  void loadHabit()
+  const page = appLayout({ active: 'habito', kicker: squadName, title: 'Tu hábito diario', leading: back, body, detail: true })
+  if (validSquadId) {
+    for (const link of page.querySelectorAll('a[href="/habito"]')) {
+      link.href = `/habito?escuadron=${squadId}`
+    }
+  }
+  return page
 }

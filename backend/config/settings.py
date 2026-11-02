@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "autenticacion.apps.AutenticacionConfig",
     "usuarios.apps.UsuariosConfig",
     "escuadrones.apps.EscuadronesConfig",
+    "habitos.apps.HabitosConfig",
 ]
 
 MIDDLEWARE = [

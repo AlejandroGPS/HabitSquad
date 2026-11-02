@@ -3,8 +3,8 @@
 Este documento recoge la arquitectura y las tecnologías acordadas por el
 equipo para HabitSquad. Describe el objetivo global del producto; no implica
 que todas las funcionalidades estén dentro de la asignación actual. El trabajo
-actual se centra en la infraestructura base y en los PBI #01 (registro) y
-#02 (autenticación).
+actual incluye la infraestructura base, los PBI #01 y #02 de autenticación,
+y el PBI #05 de definición del hábito diario por escuadrón.
 
 ## Componentes y tecnologías
 
@@ -49,3 +49,8 @@ La documentación se mantendrá en Markdown en el README y en `docs/`. La
 documentación de los endpoints se generará como OpenAPI a partir del código.
 Las versiones concretas de runtimes y dependencias se fijarán y describirán en
 `docs/DEPENDENCIAS.md` cuando se acuerde el contrato de versiones.
+
+Los hábitos diarios se almacenan por `Membresia`: cada usuario puede definir
+un hábito diferente en cada escuadrón. La asignación, consulta propia y
+consulta de hábitos del panel están descritas en
+[`docs/HABITOS.md`](HABITOS.md).

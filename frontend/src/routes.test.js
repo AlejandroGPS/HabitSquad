@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, login, logout, register } from './api.js'
 import { guard, notFound, routes } from './routes.js'
-import { clearSession, hasSession, saveSession } from './session.js'
+import { hasSession, saveSession } from './session.js'
 
 vi.mock('./api.js', async (importOriginal) => {
   const actual = await importOriginal()
@@ -33,17 +33,17 @@ function submit(element) {
 describe('routes', () => {
   it.each(routes.map((route) => [route.path, route]))(
     '%s pinta una pantalla con su título',
-    (_path, route) => {
+    (path, route) => {
       const element = route.view()
-      const heading = route.path === '/escuadrones/votar' ? 'Prueba de Laura' : route.title
-      expect(element.querySelector('h1').textContent).toBe(heading)
+      const heading = element.querySelector('h1').textContent
+      expect(heading).toBe(route.title)
     },
   )
 
   it('las pantallas enlazan con el enrutador mediante data-link', () => {
     const home = routes.find((route) => route.path === '/').view()
     const hrefs = [...home.querySelectorAll('a[data-link]')].map((a) =>
-      new URL(a.href).pathname,
+      a.getAttribute('href'),
     )
     const paths = routes.map((route) => route.path)
     expect(hrefs.length).toBeGreaterThan(0)
@@ -54,14 +54,6 @@ describe('routes', () => {
     const element = notFound.view()
     expect(element.querySelector('h1').textContent).toBe(notFound.title)
     expect(element.querySelector('a[data-link]').getAttribute('href')).toBe('/')
-  })
-
-  it('permite abrir la demo de votación con datos mock sin iniciar sesión', () => {
-    clearSession()
-    const voteRoute = routes.find((route) => route.path === '/escuadrones/votar')
-
-    expect(guard(voteRoute)).toBeNull()
-    expect(voteRoute.view().querySelector('h1').textContent).toBe('Prueba de Laura')
   })
 })
 

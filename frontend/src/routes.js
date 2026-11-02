@@ -10,13 +10,12 @@ import {
 import { hasSession } from './session.js'
 import { loginScreen, registroScreen } from './views/acceso.js'
 import { crearEscuadronScreen } from './views/crearEscuadron.js'
-import { habitoDiarioScreen } from './views/habitoDiario.js'
 import { menuScreen } from './views/menu.js'
-import { panelEscuadronScreen } from './views/panelEscuadron.js'
+import { habitoDiarioScreen } from './views/habitoDiario.js'
+import { panelSeleccionadoScreen } from './views/panelSeleccionado.js'
 import { recuperarContrasenaScreen } from './views/recuperarContrasena.js'
 import { screen } from './views/screen.js'
 import { unirseEscuadronScreen } from './views/unirseEscuadron.js'
-import { votarPruebaScreen } from './views/votarPrueba.js'
 
 const backHome = [{ href: '/', label: 'Volver al inicio' }]
 
@@ -95,37 +94,21 @@ function joinSquadErrorMessage(error) {
   return 'No se ha podido unir al escuadrón. Inténtalo de nuevo.'
 }
 
-function homeScreen(onLogout) {
-  return menuScreen({ title: 'HabitSquad', onLogout })
-}
-
-function destinationAfterLogin() {
-  const next = new URLSearchParams(window.location.search).get('next')
-  if (!next?.startsWith('/') || next.startsWith('//')) return '/'
-
-  let destination
-  try {
-    destination = new URL(next, window.location.origin)
-  } catch {
-    return '/'
-  }
-  if (destination.origin !== window.location.origin) return '/'
-
-  const route = routes.find((entry) => entry.path === destination.pathname)
-  if (!route?.private) return '/'
-  return `${destination.pathname}${destination.search}${destination.hash}`
-}
-
 export const routes = [
   {
     path: '/',
     title: 'HabitSquad',
     private: true,
-    view: ({ navigate } = {}) =>
-      homeScreen(async () => {
-        await logout()
-        navigate('/login')
-      }),
+    view: ({ navigate } = {}) => menuScreen({ title: 'HabitSquad', onLogout: async () => {
+      await logout()
+      navigate('/login')
+    } }),
+  },
+  {
+    path: '/escuadrones/panel',
+    title: 'Panel del escuadrón',
+    private: true,
+    view: ({ navigate } = {}) => panelSeleccionadoScreen({ navigate }),
   },
   {
     path: '/login',
@@ -143,7 +126,7 @@ export const routes = [
           } catch (error) {
             throw new Error(loginErrorMessage(error), { cause: error })
           }
-          navigate(destinationAfterLogin())
+          navigate('/')
         },
       }),
   },
@@ -180,6 +163,12 @@ export const routes = [
       }),
   },
   {
+    path: '/habito',
+    title: 'Tu hábito diario',
+    private: true,
+    view: ({ navigate } = {}) => habitoDiarioScreen({ navigate }),
+  },
+  {
     path: '/menu',
     title: 'Menú principal',
     private: true,
@@ -187,24 +176,6 @@ export const routes = [
       await logout()
       navigate('/login')
     } }),
-  },
-  {
-    path: '/escuadrones/panel',
-    title: 'Panel del escuadrón',
-    private: true,
-    view: () => panelEscuadronScreen(),
-  },
-  {
-    path: '/habito',
-    title: 'Mi hábito diario',
-    private: true,
-    view: () => habitoDiarioScreen(),
-  },
-  {
-    path: '/escuadrones/votar',
-    title: 'Votar prueba',
-    // Demo con datos mock: la autorización se incorporará al conectar la API de votos.
-    view: () => votarPruebaScreen(),
   },
   {
     path: '/escuadrones/nuevo',
@@ -239,11 +210,7 @@ export const routes = [
 ]
 
 export function guard(route) {
-  if (route.private && !hasSession()) {
-    const requestedPath = `${window.location.pathname}${window.location.search}${window.location.hash}`
-    if (requestedPath === '/') return '/login'
-    return `/login?next=${encodeURIComponent(requestedPath)}`
-  }
+  if (route.private && !hasSession()) return '/login'
   if (route.guestOnly && hasSession()) return '/'
   return null
 }

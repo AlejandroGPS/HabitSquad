@@ -114,6 +114,40 @@ export async function createSquad(nombre) {
   return readJson(response)
 }
 
+export async function listSquads() {
+  const response = await authFetch('/api/escuadrones/')
+  if (!response.ok) throw new ApiError(response.status, await readJson(response))
+  return readJson(response)
+}
+
+export async function getSquad(squadId) {
+  const response = await authFetch(`/api/escuadrones/${squadId}/`)
+  if (!response.ok) throw new ApiError(response.status, await readJson(response))
+  return readJson(response)
+}
+
+export async function getDailyHabit(squadId) {
+  const response = await authFetch(`/api/escuadrones/${squadId}/habito/`)
+  // El selector ya ha comprobado que el escuadrón existe y pertenece al usuario.
+  if (response.status === 404) {
+    const data = await readJson(response)
+    if (data == null) return null
+    throw new ApiError(404, data)
+  }
+  if (!response.ok) throw new ApiError(response.status, await readJson(response))
+  return readJson(response)
+}
+
+export async function saveDailyHabit(squadId, habit) {
+  const response = await authFetch(`/api/escuadrones/${squadId}/habito/`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(habit),
+  })
+  if (!response.ok) throw new ApiError(response.status, await readJson(response))
+  return readJson(response)
+}
+
 export async function logout() {
   const session = getSession()
   clearSession()

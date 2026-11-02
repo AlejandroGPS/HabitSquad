@@ -79,6 +79,11 @@ export function unirseEscuadronScreen({ onSubmit } = {}) {
     'hidden rounded-2xl border-2 border-green-200 bg-green-50 px-4 py-3 text-[0.875rem] leading-snug font-bold text-green-800'
   successMessage.setAttribute('role', 'status')
   successMessage.setAttribute('aria-live', 'polite')
+  const panelLink = document.createElement('a')
+  panelLink.className = 'min-h-11 font-bold text-accent underline'
+  panelLink.textContent = 'Ir al panel'
+  panelLink.dataset.link = ''
+  panelLink.hidden = true
 
   function showError(message) {
     const text = String(message ?? '').trim()
@@ -95,6 +100,7 @@ export function unirseEscuadronScreen({ onSubmit } = {}) {
   }
 
   function clearError() {
+    panelLink.hidden = true
     errorMessage.textContent = ''
     errorMessage.classList.add('hidden')
     successMessage.textContent = ''
@@ -111,6 +117,10 @@ export function unirseEscuadronScreen({ onSubmit } = {}) {
     clearError()
     successMessage.textContent = `Te has unido a «${squad.nombre}».`
     successMessage.classList.remove('hidden')
+    if (squad.id) {
+      panelLink.href = `/escuadrones/panel?id=${squad.id}`
+      panelLink.hidden = false
+    }
   }
 
   function writeFrom(start, chars) {
@@ -168,7 +178,7 @@ export function unirseEscuadronScreen({ onSubmit } = {}) {
 
   const submit = submitButton('Unirme al escuadrón')
 
-  form.append(label, errorMessage, successMessage, submit)
+  form.append(label, errorMessage, successMessage, panelLink, submit)
 
   form.addEventListener('submit', (event) => {
     event.preventDefault()
