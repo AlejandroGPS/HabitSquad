@@ -27,7 +27,7 @@ Desde `backend/` con el entorno virtual activado:
 ```bash
 python manage.py migrate
 python manage.py check
-pytest --cov=usuarios --cov=autenticacion --cov=escuadrones --cov-report=term-missing --cov-fail-under=100
+pytest --cov=usuarios --cov=autenticacion --cov=escuadrones --cov=habitos --cov-report=term-missing --cov-fail-under=100
 ruff check .
 ruff format --check .
 python manage.py runserver
@@ -77,6 +77,21 @@ La respuesta incluye `id`, `nombre`, `codigo_invitacion`, `creador_id` y
 El contrato de entrada y respuesta está documentado en
 [docs/CREAR_ESCUADRON.md](../docs/CREAR_ESCUADRON.md).
 
+## API de hábitos diarios
+
+Cada usuario tiene un único hábito por escuadrón. El hábito se asocia a
+`Membresia`, por lo que puede ser diferente en cada grupo.
+
+- `PUT /api/escuadrones/{escuadron_id}/habito/`: crea o actualiza el hábito
+  propio.
+- `GET /api/escuadrones/{escuadron_id}/habito/`: consulta el hábito propio.
+- `GET /api/escuadrones/{escuadron_id}/`: consulta el escuadrón y el hábito de
+  cada miembro.
+
+Todos requieren JWT y pertenencia al escuadrón. La opción `otro` requiere un
+texto personalizado no vacío de hasta 255 caracteres. El contrato completo
+está en [docs/HABITOS.md](../docs/HABITOS.md).
+
 ## Usuario
 
 La app `usuarios` contiene el modelo `CustomUser`, su configuración de
@@ -114,7 +129,16 @@ escuadrones/
 │   ├── api/
 │   ├── services/
 │   └── tests/
+├── detalle/                    # Consulta del escuadrón y hábitos de miembros
+│   ├── api/
+│   └── tests/
 └── tests/                      # Pruebas del modelo
+
+habitos/
+├── models/                     # Hábito diario por membresía
+├── api/                        # Serializers, vistas y rutas
+├── services/                   # Asignación y consulta
+└── tests/                      # Pruebas del modelo, API y OpenAPI
 ```
 
 El flujo de registro es `registro/api/urls.py` → `registro/api/views.py` →
@@ -122,6 +146,8 @@ El flujo de registro es `registro/api/urls.py` → `registro/api/views.py` →
 `usuarios.models`. Login usa SimpleJWT para autenticar y emitir tokens; refresh
 usa SimpleJWT para rotarlos y almacenarlos en blacklist. La creación de
 escuadrón es `escuadrones/crear/api/` → `crear/services/creation.py` →
-`escuadrones.models`. Cada funcionalidad mantiene sus pruebas en su propio
-`tests/`. Solo se añaden modelos bajo `usuarios/models/` si hacen falta nuevas
-entidades de usuario; no se duplica el usuario por cada operación.
+`escuadrones.models`. Los hábitos se asignan mediante
+`habitos/api/` → `habitos/services/` → `HabitoDiario`, usando `Membresia` como
+relación usuario-escuadrón. Cada funcionalidad mantiene sus pruebas en su
+propio `tests/`. Solo se añaden modelos bajo `usuarios/models/` si hacen falta
+nuevas entidades de usuario; no se duplica el usuario por cada operación.
