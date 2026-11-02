@@ -33,9 +33,10 @@ function submit(element) {
 describe('routes', () => {
   it.each(routes.map((route) => [route.path, route]))(
     '%s pinta una pantalla con su título',
-    (_path, route) => {
+    (path, route) => {
       const element = route.view()
-      expect(element.querySelector('h1').textContent).toBe(route.title)
+      const heading = element.querySelector('h1').textContent
+      expect(heading).toBe(path === '/' ? 'Los Inquebrantables' : route.title)
     },
   )
 
@@ -212,6 +213,7 @@ describe('sesión', () => {
     logout.mockResolvedValue(undefined)
     const { element, navigate } = mount('/')
 
+    element.querySelector('[aria-label="Tu cuenta"]').click()
     const logoutButton = [...element.querySelectorAll('button')].find(
       (button) => button.textContent === 'Cerrar sesión',
     )
