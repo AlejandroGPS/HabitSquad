@@ -1,0 +1,8 @@
+export { empezarSection, crearTarjeta, unirseTarjeta } from './empezar.js'
+export { encabezadoSeccion } from './encabezado.js'
+export { escuadronSection } from './escuadronEjemplo.js'
+export { heroSection } from './hero.js'
+export { landingFooter } from './landingFooter.js'
+export { landingNav } from './landingNav.js'
+export { pasosSection, PASOS } from './pasos.js'
+export { SECCIONES } from './textos.js'

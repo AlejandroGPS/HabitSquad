@@ -96,6 +96,385 @@
     border-left: 2px solid rgb(255 255 255 / 0.85);
     background: inherit;
   }
+
+  /* Sin soporte o con movimiento reducido, el contenido se ve desde el principio. */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .reveal {
+        animation: reveal ease-out both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 70%;
+      }
+    }
+  }
+
+  @keyframes reveal {
+    from {
+      opacity: 0;
+      translate: 0 2rem;
+    }
+  }
+
+  /* Barra de la portada: arriba se funde con el fondo y al bajar pasa a cápsula de cristal.
+     --progreso (0 a 1) es lo que se ha recorrido de la página. */
+  .nav-portada {
+    max-width: 72rem;
+    border: 2px solid transparent;
+    background-color: rgb(255 255 255 / 0);
+    transition:
+      max-width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+      background-color 0.35s,
+      border-color 0.35s,
+      box-shadow 0.35s,
+      -webkit-backdrop-filter 0.35s,
+      backdrop-filter 0.35s;
+  }
+
+  [data-scrolled] > .nav-portada {
+    max-width: 62rem;
+    border-color: rgb(255 255 255 / 0.85);
+    background-color: rgb(255 255 255 / 0.6);
+    box-shadow:
+      0 6px 0 rgb(91 50 234 / 0.12),
+      0 30px 60px -30px rgb(60 30 140 / 0.4),
+      inset 0 1px 0 rgb(255 255 255 / 0.9);
+    -webkit-backdrop-filter: blur(28px) saturate(170%);
+    backdrop-filter: blur(28px) saturate(170%);
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    [data-scrolled] > .nav-portada {
+      background-color: #fbf9ff;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+
+  /* Mecha lateral: hace de barra de desplazamiento de la portada. Se llena de abajo arriba y
+     la llama sube con ella. Va fuera de la cápsula porque su backdrop-filter haría que
+     position: fixed se calculara respecto a ella. El elemento es la zona de toque; la línea
+     visible es su ::before. En móvil empieza bajo la barra para no pisar «Crear cuenta».
+     El dibujo de la llama ocupa un 70 % de su caja: --llama 1.25rem deja ~0.875rem visibles. */
+  :root[data-mecha] {
+    scrollbar-width: none;
+  }
+
+  :root[data-mecha]::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mecha {
+    --grosor: 2px;
+    --llama: 1.0625rem;
+    position: fixed;
+    top: calc(max(0.75rem, env(safe-area-inset-top)) + 4.75rem);
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    right: env(safe-area-inset-right);
+    width: 1rem;
+    pointer-events: none;
+    touch-action: none;
+    user-select: none;
+  }
+
+  /* Selector «Iniciar sesión / Registrarme»: la pastilla se desliza a la opción activa. */
+  .cambio-pastilla {
+    translate: calc(var(--opcion, 0) * 100%) 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .cambio-pastilla {
+      transition: translate 0.45s cubic-bezier(0.3, 1.35, 0.5, 1);
+    }
+
+    .cambio-cuenta > a {
+      transition: color 0.3s;
+    }
+  }
+
+  .mecha[data-vacia] {
+    display: none;
+  }
+
+  @media (width >= 64rem) {
+    .mecha {
+      --llama: 1.25rem;
+      top: 1.25rem;
+      right: max(0.25rem, env(safe-area-inset-right));
+    }
+  }
+
+  @media (pointer: fine) {
+    .mecha {
+      pointer-events: auto;
+      cursor: grab;
+    }
+
+    .mecha:hover,
+    .mecha[data-arrastrando] {
+      --grosor: 4px;
+    }
+
+    .mecha[data-arrastrando] {
+      cursor: grabbing;
+    }
+  }
+
+  .mecha::before,
+  .mecha-relleno {
+    position: absolute;
+    inset-block: 0;
+    left: 50%;
+    width: var(--grosor);
+    translate: -50% 0;
+    border-radius: 9999px;
+    transition: width 0.2s;
+  }
+
+  .mecha::before {
+    content: '';
+    background: rgb(60 30 140 / 0.08);
+  }
+
+  .mecha-relleno {
+    background: linear-gradient(0deg, #ff9a4d, #ff7a1a);
+    transform-origin: bottom;
+    scale: 1 var(--progreso, 0);
+  }
+
+  .mecha-llama {
+    position: absolute;
+    left: 50%;
+    bottom: calc(var(--progreso, 0) * 100%);
+    width: var(--llama);
+    height: var(--llama);
+    translate: -50% 25%;
+    scale: calc(0.9 + var(--progreso, 0) * 0.15);
+    transform-origin: 50% 100%;
+    color: var(--color-streak);
+    filter: drop-shadow(0 0 2px rgb(255 122 26 / 0.35));
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .mecha-llama svg {
+      transform-origin: 50% 90%;
+      animation: llama-parpadeo 1.4s ease-in-out infinite alternate;
+    }
+  }
+
+  @keyframes llama-parpadeo {
+    to {
+      transform: scale(0.96, 1.05);
+    }
+  }
+
+  /* Pasos de la portada. Cada pieza ya está pintada en su estado final y su animación
+     solo define el punto de partida; así, sin animaciones, se ve todo tal cual. */
+  @media (prefers-reduced-motion: no-preference) {
+    .pasos[data-animar] .paso:not([data-activo]) > :not(.paso-conector) {
+      opacity: 0;
+    }
+
+    .pasos[data-animar] .paso[data-activo] [data-anim] {
+      animation: var(--anim);
+    }
+
+    .pasos[data-animar] .paso-conector > span {
+      transition: scale 0.7s cubic-bezier(0.65, 0, 0.35, 1);
+    }
+
+    .pasos[data-animar] .paso:not([data-conectado]) .paso-conector > span {
+      scale: 1 0;
+    }
+
+    @media (width >= 64rem) {
+      .pasos[data-animar] .paso:not([data-conectado]) .paso-conector > span {
+        scale: 0 1;
+      }
+    }
+  }
+
+  @keyframes paso-aparecer {
+    from {
+      opacity: 0;
+      scale: 0.9;
+    }
+  }
+
+  @keyframes paso-subir {
+    from {
+      opacity: 0;
+      translate: 0 1rem;
+    }
+  }
+
+  @keyframes paso-entrar {
+    from {
+      opacity: 0;
+      translate: 2rem 0;
+    }
+  }
+
+  @keyframes paso-pop {
+    0% {
+      scale: 0;
+    }
+    60% {
+      scale: 1.2;
+    }
+  }
+
+  @keyframes paso-elegir {
+    from {
+      background-color: #fff;
+      color: var(--color-ink);
+    }
+  }
+
+  @keyframes paso-apagar {
+    from {
+      opacity: 1;
+    }
+  }
+
+  @keyframes paso-flotar {
+    50% {
+      translate: 0 -5px;
+    }
+  }
+
+  @keyframes paso-unirse {
+    from {
+      opacity: 0;
+      translate: var(--desde);
+      scale: 0.4;
+    }
+  }
+
+  @keyframes paso-latido {
+    from {
+      opacity: 0.6;
+      scale: 1;
+    }
+    to {
+      opacity: 0;
+      scale: 1.8;
+    }
+  }
+
+  @keyframes paso-tecla {
+    from {
+      opacity: 0;
+      translate: 0 0.5rem;
+    }
+  }
+
+  @keyframes paso-flash {
+    0% {
+      opacity: 0;
+    }
+    20% {
+      opacity: 0.9;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes paso-caer {
+    from {
+      opacity: 0;
+      translate: 0 -3rem;
+      rotate: 14deg;
+    }
+  }
+
+  @keyframes paso-contar {
+    from {
+      translate: 0 0;
+    }
+  }
+
+  /* Muro de fotos de la portada. Cada foto está en su estado final; las animaciones solo
+     definen el inicio y se lanzan cuando el muro entra en pantalla. */
+  .muro-polaroid {
+    rotate: var(--giro, 0deg);
+  }
+
+  .muro[data-animar]:not([data-visible]) [data-anim] {
+    opacity: 0;
+  }
+
+  .muro[data-visible] [data-anim] {
+    animation: var(--anim);
+  }
+
+  @media (prefers-reduced-motion: no-preference) and (pointer: fine) {
+    .muro-polaroid {
+      transition:
+        rotate 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+        translate 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+        box-shadow 0.35s;
+    }
+
+    li:hover > .muro-polaroid {
+      rotate: 0deg;
+      translate: 0 -0.5rem;
+      box-shadow:
+        0 36px 50px -28px rgb(40 20 90 / 0.6),
+        0 2px 6px rgb(40 20 90 / 0.08);
+    }
+
+    li:hover {
+      z-index: 1;
+    }
+  }
+
+  @keyframes muro-caer {
+    from {
+      opacity: 0;
+      translate: 0 -3rem;
+      rotate: 10deg;
+      scale: 1.06;
+    }
+  }
+
+  @keyframes muro-revelar {
+    from {
+      filter: brightness(1.7) saturate(0) blur(3px);
+      opacity: 0.35;
+    }
+  }
+
+  @keyframes muro-sello {
+    from {
+      opacity: 0;
+      scale: 2;
+    }
+  }
+
+  @keyframes muro-tramo {
+    from {
+      scale: 0 1;
+    }
+  }
+
+  @keyframes muro-toque {
+    from {
+      opacity: 0;
+      scale: 0.6;
+      translate: 0 0.5rem;
+    }
+  }
+
+  @keyframes muro-latido {
+    0%,
+    100% {
+      scale: 1;
+    }
+    50% {
+      scale: 1.08;
+    }
+  }
 }
 
 /* Pantallas de selección y panel: tokens locales para conservar las otras vistas. */

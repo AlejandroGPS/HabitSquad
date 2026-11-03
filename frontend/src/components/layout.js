@@ -1,5 +1,5 @@
-import mascotUrl from '../assets/mascota.webp'
 import { flameIcon } from './icons.js'
+import { mascota } from './mascota.js'
 import { accessNavbar } from './navbar.js'
 
 const SQUAD = [
@@ -24,7 +24,7 @@ function badge(className, ...children) {
   return node
 }
 
-function squadBadges() {
+export function squadBadges() {
   const team = element('div', 'flex -space-x-2')
   for (const { initial, color } of SQUAD) {
     team.append(
@@ -57,24 +57,14 @@ function squadBadges() {
     badge(
       'bottom-[16%] left-[13%] rotate-2 [animation-delay:-4s]',
       team,
-      element('span', 'text-[0.9375rem] font-extrabold text-ink', '2 de 3 hoy'),
+      element('span', 'text-[0.9375rem] font-extrabold text-ink', '1 de 3 hoy'),
     ),
   )
   return badges
 }
 
 function mascot() {
-  const image = element(
-    'img',
-    'h-20 w-auto shrink-0 drop-shadow-[0_14px_16px_rgb(60_30_140/0.22)] select-none motion-safe:animate-bob sm:h-24',
-  )
-  image.src = mascotUrl
-  image.alt = ''
-  image.width = 312
-  image.height = 360
-  image.decoding = 'async'
-  image.draggable = false
-  return image
+  return mascota('h-20 w-auto drop-shadow-[0_14px_16px_rgb(60_30_140/0.22)] motion-safe:animate-bob sm:h-24')
 }
 
 export function accessLayout({
