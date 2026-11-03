@@ -36,14 +36,14 @@ describe('routes', () => {
     (path, route) => {
       const element = route.view()
       const heading = element.querySelector('h1').textContent
-      expect(heading).toBe(route.title)
+      expect(heading).toBe(path === '/' ? 'Cumple tu hábito. Que no caiga la racha.' : route.title)
     },
   )
 
   it('las pantallas enlazan con el enrutador mediante data-link', () => {
     const home = routes.find((route) => route.path === '/').view()
-    const hrefs = [...home.querySelectorAll('a[data-link]')].map((a) =>
-      a.getAttribute('href'),
+    const hrefs = [...home.querySelectorAll('a[data-link]')].map(
+      (a) => new URL(a.getAttribute('href'), window.location.origin).pathname,
     )
     const paths = routes.map((route) => route.path)
     expect(hrefs.length).toBeGreaterThan(0)
@@ -66,8 +66,23 @@ describe('sesión', () => {
   })
 
   it('sin sesión las rutas privadas llevan a /login', () => {
-    const privateRoute = routes.find((route) => route.path === '/')
+    const privateRoute = routes.find((route) => route.path === '/escuadrones/nuevo')
     expect(guard(privateRoute)).toBe('/login')
+  })
+
+  it('sin sesión el inicio muestra la página de presentación', () => {
+    const home = routes.find((route) => route.path === '/')
+
+    expect(guard(home)).toBeNull()
+    expect(home.view().querySelector('h1').textContent).toBe('Cumple tu hábito. Que no caiga la racha.')
+  })
+
+  it('con sesión el inicio muestra la pantalla de la app', () => {
+    saveSession({ access: 'access-token', refresh: 'refresh-token' })
+    const home = routes.find((route) => route.path === '/')
+
+    expect(guard(home)).toBeNull()
+    expect(home.view().querySelector('h1').textContent).toBe('HabitSquad')
   })
 
   it('con sesión, /login y /registro llevan al inicio', () => {
@@ -83,7 +98,7 @@ describe('sesión', () => {
   it('con sesión las rutas privadas no redirigen', () => {
     saveSession({ access: 'access-token', refresh: 'refresh-token' })
 
-    const privateRoute = routes.find((route) => route.path === '/')
+    const privateRoute = routes.find((route) => route.path === '/escuadrones/nuevo')
     expect(guard(privateRoute)).toBeNull()
   })
 
