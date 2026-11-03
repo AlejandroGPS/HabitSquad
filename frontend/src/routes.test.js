@@ -36,7 +36,7 @@ describe('routes', () => {
     (path, route) => {
       const element = route.view()
       const heading = element.querySelector('h1').textContent
-      expect(heading).toBe(path === '/' ? 'Los Inquebrantables' : route.title)
+      expect(heading).toBe(route.title)
     },
   )
 
@@ -213,7 +213,6 @@ describe('sesión', () => {
     logout.mockResolvedValue(undefined)
     const { element, navigate } = mount('/')
 
-    element.querySelector('[aria-label="Tu cuenta"]').click()
     const logoutButton = [...element.querySelectorAll('button')].find(
       (button) => button.textContent === 'Cerrar sesión',
     )

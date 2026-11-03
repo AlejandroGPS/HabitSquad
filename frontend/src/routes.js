@@ -7,12 +7,12 @@ import {
   register,
   requestPasswordReset,
 } from './api.js'
-import { panelEjemplo } from './datosEjemplo.js'
 import { hasSession } from './session.js'
 import { loginScreen, registroScreen } from './views/acceso.js'
 import { crearEscuadronScreen } from './views/crearEscuadron.js'
 import { menuScreen } from './views/menu.js'
-import { panelEscuadronScreen } from './views/panelEscuadron.js'
+import { habitoDiarioScreen } from './views/habitoDiario.js'
+import { panelSeleccionadoScreen } from './views/panelSeleccionado.js'
 import { recuperarContrasenaScreen } from './views/recuperarContrasena.js'
 import { screen } from './views/screen.js'
 import { unirseEscuadronScreen } from './views/unirseEscuadron.js'
@@ -99,21 +99,16 @@ export const routes = [
     path: '/',
     title: 'HabitSquad',
     private: true,
-    view: ({ navigate } = {}) =>
-      // TODO: cargar el escuadrón real (T70) y conectar subir prueba, elegir hábito, ver foto y votar.
-      panelEscuadronScreen({
-        ...panelEjemplo,
-        acciones: {
-          subirPrueba() {},
-          elegirHabito() {},
-          verFoto() {},
-          votar() {},
-          cerrarSesion: async () => {
-            await logout()
-            navigate('/login')
-          },
-        },
-      }),
+    view: ({ navigate } = {}) => menuScreen({ title: 'HabitSquad', onLogout: async () => {
+      await logout()
+      navigate('/login')
+    } }),
+  },
+  {
+    path: '/escuadrones/panel',
+    title: 'Panel del escuadrón',
+    private: true,
+    view: ({ navigate } = {}) => panelSeleccionadoScreen({ navigate }),
   },
   {
     path: '/login',
@@ -168,9 +163,19 @@ export const routes = [
       }),
   },
   {
+    path: '/habito',
+    title: 'Tu hábito diario',
+    private: true,
+    view: ({ navigate } = {}) => habitoDiarioScreen({ navigate }),
+  },
+  {
     path: '/menu',
     title: 'Menú principal',
-    view: () => menuScreen(),
+    private: true,
+    view: ({ navigate } = {}) => menuScreen({ onLogout: async () => {
+      await logout()
+      navigate('/login')
+    } }),
   },
   {
     path: '/escuadrones/nuevo',

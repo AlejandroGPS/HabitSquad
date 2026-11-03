@@ -19,6 +19,7 @@ export function habitoCard({
         element('p', 'mt-0.5 text-[1.25rem] font-black', habito),
         element('p', 'text-[0.8125rem] font-bold', `Sube una foto antes de las ${cierre}`),
         button(PRIMARY, onSubirPrueba, icon('camera'), 'Subir foto de prueba'),
+        button('mt-2 min-h-11 font-bold text-white underline disabled:opacity-60', onElegirHabito, 'Cambiar hábito'),
       ]
     : [
         element('p', 'mt-0.5 text-[1.25rem] font-black', 'Aún no has elegido tu hábito'),

@@ -6,7 +6,7 @@ export const APP_NAV = [
   { id: 'escuadron', label: 'Escuadrón', icon: 'users', href: '/' },
   { id: 'racha', label: 'Racha', icon: 'flame' },
   { id: 'alertas', label: 'Alertas', icon: 'bell' },
-  { id: 'habito', label: 'Mi hábito', icon: 'book', webOnly: true },
+  { id: 'habito', label: 'Mi hábito', icon: 'book', href: '/habito', webOnly: true },
 ]
 
 // Las secciones sin pantalla todavía se muestran desactivadas en vez de llevar a una página vacía.
@@ -69,11 +69,11 @@ function tabBar(active) {
   return nav
 }
 
-export function appLayout({ active, kicker, title, leading, trailing, sidebarFooter, body }) {
+export function appLayout({ active, kicker, title, leading, trailing, sidebarFooter, body, detail = false }) {
   const header = element(
     'header',
     'flex items-center gap-3 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-1 lg:px-0 lg:pt-8',
-    leading && element('span', 'lg:hidden', leading),
+    leading && element('span', detail ? '' : 'lg:hidden', leading),
     element(
       'div',
       'min-w-0',
@@ -89,7 +89,7 @@ export function appLayout({ active, kicker, title, leading, trailing, sidebarFoo
     header,
     body,
     element('div', 'min-h-4 flex-1'),
-    tabBar(active),
+    !detail && tabBar(active),
   )
 
   const backdrop = element('div', 'app-backdrop pointer-events-none fixed inset-0 -z-10')
