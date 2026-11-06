@@ -1,10 +1,21 @@
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from rest_framework import status
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from escuadrones.models import Escuadron
+from habitos.models import RegistroDiario
+from habitos.prueba.services import FotoInvalidaError, guardar_prueba_foto
+from habitos.services.assignment import (
+    MembershipNotFoundError,
+    get_habito_diario,
+    get_membership,
+)
 
 from .serializers import (
     ErrorDetallePruebaFotoSerializer,
@@ -13,16 +24,25 @@ from .serializers import (
     PruebaFotoUploadSerializer,
 )
 
-_STUB_DETAIL = {
-    "detail": (
-        "Endpoint documentado en el contrato de API; la implementación está pendiente."
-    ),
-}
 
-
-class PruebaFotoUploadView(APIView):
+class _PruebaFotoMembershipMixin:
     authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAuthenticated,)
+
+    def get_membership(self, request, escuadron_id):
+        get_object_or_404(Escuadron, pk=escuadron_id)
+        try:
+            return get_membership(
+                escuadron_id=escuadron_id,
+                usuario=request.user,
+            )
+        except MembershipNotFoundError as error:
+            raise PermissionDenied(
+                "El usuario no pertenece a este escuadrón."
+            ) from error
+
+
+class PruebaFotoUploadView(_PruebaFotoMembershipMixin, APIView):
     parser_classes = (MultiPartParser, FormParser)
 
     @extend_schema(
@@ -112,14 +132,40 @@ class PruebaFotoUploadView(APIView):
         ],
     )
     def post(self, request, escuadron_id):
-        del request, escuadron_id
-        return Response(_STUB_DETAIL, status=status.HTTP_501_NOT_IMPLEMENTED)
+        membership = self.get_membership(request, escuadron_id)
+        habit = get_habito_diario(membership)
+        if habit is None:
+            return Response(
+                {
+                    "detail": (
+                        "Debes asignar tu hábito diario en este escuadrón "
+                        "antes de subir una foto."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = PruebaFotoUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        foto = serializer.validated_data["foto"]
+
+        try:
+            registro, created = guardar_prueba_foto(habito=habit, foto=foto)
+        except FotoInvalidaError as error:
+            return Response(
+                {"foto": [str(error)]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        registro = RegistroDiario.objects.select_related(
+            "habito__membresia",
+        ).get(pk=registro.pk)
+        payload = PruebaFotoSerializer.from_registro(registro)
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(payload, status=status_code)
 
 
-class PruebaFotoDetailView(APIView):
-    authentication_classes = (JWTAuthentication,)
-    permission_classes = (IsAuthenticated,)
-
+class PruebaFotoDetailView(_PruebaFotoMembershipMixin, APIView):
     @extend_schema(
         operation_id="visualizarPruebaFoto",
         tags=["Pruebas"],
@@ -178,5 +224,15 @@ class PruebaFotoDetailView(APIView):
         ],
     )
     def get(self, request, escuadron_id, registro_id):
-        del request, escuadron_id, registro_id
-        return Response(_STUB_DETAIL, status=status.HTTP_501_NOT_IMPLEMENTED)
+        self.get_membership(request, escuadron_id)
+        registro = (
+            RegistroDiario.objects.select_related("habito__membresia")
+            .filter(
+                pk=registro_id,
+                habito__membresia__escuadron_id=escuadron_id,
+            )
+            .first()
+        )
+        if registro is None:
+            raise NotFound("No se ha encontrado esa prueba de foto.")
+        return Response(PruebaFotoSerializer.from_registro(registro))

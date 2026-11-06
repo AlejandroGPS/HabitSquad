@@ -1,6 +1,9 @@
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
+from habitos.models import RegistroDiario
+from habitos.prueba.services import build_signed_foto_url
+
 ESTADO_PRUEBA_CHOICES = (
     ("pendiente", "Pendiente"),
     ("cumplido", "Cumplido"),
@@ -9,7 +12,8 @@ ESTADO_PRUEBA_CHOICES = (
 
 
 class PruebaFotoUploadSerializer(serializers.Serializer):
-    foto = serializers.ImageField(
+    # FileField: el tipo y tamaño se comprueban en el servicio de subida
+    foto = serializers.FileField(
         help_text=("Imagen de prueba en JPEG, PNG o WebP. Tamaño máximo 5 MB."),
     )
 
@@ -34,6 +38,17 @@ class PruebaFotoSerializer(serializers.Serializer):
             "URL firmada o temporal de la imagen. No es una URL pública permanente."
         ),
     )
+
+    @classmethod
+    def from_registro(cls, registro: RegistroDiario) -> dict:
+        return {
+            "id": registro.id,
+            "habito_id": registro.habito_id,
+            "usuario_id": registro.habito.membresia.usuario_id,
+            "fecha": registro.fecha,
+            "estado": registro.estado,
+            "foto_url": build_signed_foto_url(registro.cloudinary_public_id),
+        }
 
 
 @extend_schema_serializer(component_name="ErrorValidacionPruebaFoto")
