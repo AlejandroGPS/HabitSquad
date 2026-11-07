@@ -21,7 +21,7 @@ function alphanumeric(value) {
   return value.toUpperCase().replace(/[^A-Z0-9]/g, '')
 }
 
-export function unirseEscuadronScreen({ onSubmit } = {}) {
+export function unirseEscuadronScreen({ onSubmit, codigo = '' } = {}) {
   const { main, content } = accessLayout({
     title: 'Únete a un escuadrón',
     description: 'Escribe el código de invitación de 6 caracteres.',
@@ -63,6 +63,10 @@ export function unirseEscuadronScreen({ onSubmit } = {}) {
     input.addEventListener('focus', () => input.select())
     inputs.push(input)
     boxes.append(input)
+  }
+
+  for (const [index, char] of [...alphanumeric(codigo)].slice(0, CODE_LENGTH).entries()) {
+    inputs[index].value = char
   }
 
   label.append(caption, boxes)

@@ -13,6 +13,7 @@ import { crearEscuadronScreen } from './views/crearEscuadron.js'
 import { menuScreen } from './views/menu.js'
 import { habitoDiarioScreen } from './views/habitoDiario.js'
 import { panelSeleccionadoScreen } from './views/panelSeleccionado.js'
+import { presentacionScreen } from './views/presentacion.js'
 import { recuperarContrasenaScreen } from './views/recuperarContrasena.js'
 import { screen } from './views/screen.js'
 import { unirseEscuadronScreen } from './views/unirseEscuadron.js'
@@ -94,15 +95,23 @@ function joinSquadErrorMessage(error) {
   return 'No se ha podido unir al escuadrón. Inténtalo de nuevo.'
 }
 
+// Solo rutas internas: evita que ?siguiente= mande al usuario a otra web tras iniciar sesión.
+export function destinoTrasAcceso() {
+  const destino = new URLSearchParams(window.location.search).get('siguiente') ?? ''
+  return /^\/(?![/\\])/.test(destino) ? destino : '/'
+}
+
 export const routes = [
   {
     path: '/',
     title: 'HabitSquad',
-    private: true,
-    view: ({ navigate } = {}) => menuScreen({ title: 'HabitSquad', onLogout: async () => {
-      await logout()
-      navigate('/login')
-    } }),
+    view: ({ navigate } = {}) =>
+      hasSession()
+        ? menuScreen({ title: 'HabitSquad', onLogout: async () => {
+          await logout()
+          navigate('/login')
+        } })
+        : presentacionScreen({ navigate }),
   },
   {
     path: '/escuadrones/panel',
@@ -126,7 +135,7 @@ export const routes = [
           } catch (error) {
             throw new Error(loginErrorMessage(error), { cause: error })
           }
-          navigate('/')
+          navigate(destinoTrasAcceso())
         },
       }),
   },
@@ -143,7 +152,7 @@ export const routes = [
           } catch (error) {
             throw new Error(registerErrorMessage(error), { cause: error })
           }
-          navigate('/')
+          navigate(destinoTrasAcceso())
         },
       }),
   },
@@ -198,6 +207,7 @@ export const routes = [
     private: true,
     view: () =>
       unirseEscuadronScreen({
+        codigo: new URLSearchParams(window.location.search).get('codigo') ?? '',
         onSubmit: async (codigo) => {
           try {
             return await joinSquad(codigo)
@@ -210,7 +220,10 @@ export const routes = [
 ]
 
 export function guard(route) {
-  if (route.private && !hasSession()) return '/login'
+  if (route.private && !hasSession()) {
+    const destino = `${window.location.pathname}${window.location.search}`
+    return destino === '/' ? '/login' : `/login?siguiente=${encodeURIComponent(destino)}`
+  }
   if (route.guestOnly && hasSession()) return '/'
   return null
 }
