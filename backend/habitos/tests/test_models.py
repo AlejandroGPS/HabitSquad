@@ -173,3 +173,19 @@ def test_registro_diario_is_unique_per_habit_and_date(membership):
             fecha=date(2026, 11, 7),
             estado=RegistroDiario.Estado.PENDIENTE,
         )
+
+
+@pytest.mark.django_db
+def test_registro_diario_string_representation(membership):
+    habit = HabitoDiario.objects.create(
+        membresia=membership,
+        opcion=HabitoDiario.Opcion.LEER,
+    )
+    registro = RegistroDiario.objects.create(
+        habito=habit,
+        cloudinary_public_id="pruebas/uno",
+        fecha=date(2026, 11, 7),
+        estado=RegistroDiario.Estado.PENDIENTE,
+    )
+
+    assert str(registro) == f"{habit.pk} · 2026-11-07 · pendiente"

@@ -75,6 +75,17 @@ def test_validate_foto_rejects_file_too_large():
         validate_foto(foto)
 
 
+def test_validate_foto_rejects_missing_size():
+    class FotoSinTamano:
+        content_type = "image/jpeg"
+
+    with pytest.raises(
+        FotoInvalidaError,
+        match="No se ha podido comprobar el tamaño de la imagen",
+    ):
+        validate_foto(FotoSinTamano())
+
+
 @pytest.mark.django_db
 def test_guardar_prueba_foto_creates_pending_registro(habit):
     with patch(
@@ -115,6 +126,23 @@ def test_guardar_prueba_foto_updates_same_day_registro(habit):
     assert segundo.cloudinary_public_id == "pruebas/mock_foto_2"
     assert segundo.estado == RegistroDiario.Estado.PENDIENTE
     assert RegistroDiario.objects.filter(habito=habit).count() == 1
+
+
+@pytest.mark.django_db
+def test_guardar_prueba_foto_raises_when_cloudinary_omits_public_id(habit):
+    with (
+        patch(
+            "habitos.prueba.services.upload.cloudinary.uploader.upload",
+            return_value={},
+        ),
+        pytest.raises(
+            RuntimeError,
+            match="Cloudinary no devolvió la referencia de la imagen",
+        ),
+    ):
+        guardar_prueba_foto(habito=habit, foto=_foto())
+
+    assert not RegistroDiario.objects.filter(habito=habit).exists()
 
 
 def test_build_signed_foto_url_requests_private_signed_url():
