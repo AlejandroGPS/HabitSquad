@@ -82,6 +82,11 @@ defecto en desarrollo; producción debe configurar un backend SMTP mediante
 variables de entorno. El contrato completo está en
 [docs/RECUPERACION_CONTRASENA.md](../docs/RECUPERACION_CONTRASENA.md).
 
+El registro crea inicialmente las cuentas como pendientes de verificación y
+envía un enlace mediante `POST /api/auth/email-verification/`. El frontend
+confirma el enlace con `POST /api/auth/email-verification/confirm/`. Las
+cuentas no verificadas no pueden iniciar sesión.
+
 ## API de escuadrones
 
 El endpoint autenticado `POST /api/escuadrones/` recibe `nombre` y crea un
@@ -130,10 +135,10 @@ autenticacion/
 │   ├── api/
 │   └── tests/
 ├── registro/
-    ├── api/                    # Endpoints, rutas y serializadores HTTP
-    ├── services/               # Operaciones de aplicación y escritura de datos
-    └── tests/                  # Pruebas de API y servicios
-└── recuperacion/               # Solicitud y confirmación de recuperación
+│   ├── api/                    # Endpoints, rutas y serializadores HTTP
+│   ├── services/               # Operaciones de aplicación y escritura de datos
+│   └── tests/                  # Pruebas de API y servicios
+└── recuperacion/               # Recuperación y verificación de email
     ├── api/
     ├── services/
     └── tests/

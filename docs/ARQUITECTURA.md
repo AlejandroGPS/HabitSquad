@@ -56,5 +56,6 @@ un hábito diferente en cada escuadrón. La asignación, consulta propia y
 consulta de hábitos del panel están descritas en
 [`docs/HABITOS.md`](HABITOS.md).
 
-La recuperación de contraseña, sus endpoints y su configuración de correo
-están descritas en [`docs/RECUPERACION_CONTRASENA.md`](RECUPERACION_CONTRASENA.md).
+La recuperación de contraseña, la verificación de email, sus endpoints y su
+configuración de correo están descritas en
+[`docs/RECUPERACION_CONTRASENA.md`](RECUPERACION_CONTRASENA.md).
