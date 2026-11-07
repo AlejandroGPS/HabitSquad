@@ -29,7 +29,8 @@ La pantalla **Registrarme** está en `/registro`. El usuario escribe su correo y
 una contraseña. La aplicación comprueba el formato en el navegador y envía
 `POST /api/auth/register/`.
 
-Ese alta no devuelve tokens. Si responde `201`, la propia aplicación llama a
+Ese alta no devuelve tokens. El usuario debe verificar primero su correo
+mediante el enlace recibido. Después, la propia aplicación llama a
 `POST /api/auth/token/` con el mismo correo y la misma contraseña. Guarda
 `access` en `localStorage` con la clave `habitsquad.access` y `refresh` con
 `habitsquad.refresh`, y abre la pantalla principal (`/`). La ruta `/menu` se

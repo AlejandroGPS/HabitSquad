@@ -101,6 +101,30 @@ def test_login_rejects_inactive_user_with_generic_error(api_client, user):
 
 
 @pytest.mark.django_db
+def test_login_rejects_user_with_unverified_email_with_generic_error(api_client):
+    user = CustomUser.objects.create_user(
+        email="pending@example.com",
+        password="S0mething!Secure-497",
+        email_verified=False,
+    )
+
+    response = api_client.post(
+        reverse("autenticacion:token"),
+        {
+            "email": user.email,
+            "password": "S0mething!Secure-497",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 401
+    assert set(response.data) == {"detail"}
+    assert response.data["detail"] == (
+        "No active account found with the given credentials"
+    )
+
+
+@pytest.mark.django_db
 def test_login_is_limited_to_five_attempts_per_hour_and_ip(api_client):
     url = reverse("autenticacion:token")
 
@@ -134,8 +158,7 @@ def test_login_is_documented_in_openapi_schema(api_client):
     operation = response.data["paths"]["/api/auth/token/"]["post"]
     assert operation["description"] == (
         "Autentica con email y contraseña y devuelve access y refresh. "
-        "Después de registrarse, el cliente llama a este endpoint "
-        "con las mismas credenciales para establecer la sesión."
+        "El email debe estar verificado antes de establecer la sesión."
     )
     assert set(operation["responses"]) == {"200", "401", "429"}
     schema = response.data

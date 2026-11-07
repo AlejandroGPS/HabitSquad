@@ -50,8 +50,9 @@ El endpoint limita las solicitudes anónimas a cinco por hora y dirección IP.
 
 El endpoint `POST /api/auth/token/` recibe `email` y `password` y devuelve
 `access` y `refresh`. El token de acceso dura cinco minutos y el de renovación,
-un día. Los intentos de inicio de sesión también están limitados a cinco por
-hora y dirección IP.
+un día. Solo pueden iniciar sesión las cuentas con el email verificado. Los
+intentos de inicio de sesión también están limitados a cinco por hora y
+dirección IP.
 
 El endpoint `POST /api/auth/token/refresh/` recibe un token `refresh` y devuelve
 un nuevo `access` y un nuevo `refresh`. Al rotarlo, el token anterior se añade
