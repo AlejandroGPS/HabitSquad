@@ -14,10 +14,9 @@ de paquetes debe reflejarse aquí.
 
 ## Backend
 
-El alcance inicial de [backend/requirements.txt](../backend/requirements.txt)
-cubre la infraestructura y los PBI #01 y #02. Incluye versiones exactas de las
-dependencias directas y transitivas para reproducir la resolución comprobada
-con Python 3.12.3 el 10-10-2026.
+El manifiesto [backend/requirements.txt](../backend/requirements.txt) incluye
+versiones exactas de las dependencias directas y transitivas para reproducir
+la resolución comprobada con Python 3.12.x.
 
 ### Dependencias principales
 
@@ -27,6 +26,8 @@ con Python 3.12.3 el 10-10-2026.
 | djangorestframework | 3.18.3 | API REST. |
 | djangorestframework-simplejwt | 5.5.1 | Autenticación JWT. |
 | drf-spectacular | 0.30.0 | Generación de documentación OpenAPI. |
+| cloudinary | 1.47.0 | Cliente de Cloudinary para subir y firmar fotos. |
+| django-cloudinary-storage | 0.3.0 | Integración de Cloudinary como almacenamiento de ficheros en Django. |
 | pytest | 9.1.1 | Ejecución de pruebas. |
 | pytest-django | 4.14.0 | Integración de pytest con Django. |
 | pytest-cov | 7.1.0 | Informes de cobertura para pytest. |
@@ -44,7 +45,10 @@ transitivas que resolvió pip:
 | Pygments | 2.21.0 |
 | asgiref | 3.12.1 |
 | attrs | 26.1.0 |
+| certifi | 2026.10.23 |
+| charset_normalizer | 3.5.2 |
 | coverage | 7.16.2 |
+| idna | 3.20 |
 | inflection | 0.5.1 |
 | iniconfig | 2.3.1 |
 | jsonschema | 4.26.0 |
@@ -52,10 +56,13 @@ transitivas que resolvió pip:
 | packaging | 26.3 |
 | pluggy | 1.6.0 |
 | referencing | 0.37.0 |
+| requests | 2.34.2 |
 | rpds-py | 2026.9.1 |
+| six | 1.17.0 |
 | sqlparse | 0.6.0 |
 | typing_extensions | 4.16.0 |
 | uritemplate | 4.2.0 |
+| urllib3 | 2.8.0 |
 
 ### Dependencias de producción
 
@@ -70,8 +77,9 @@ transitivas que resolvió pip:
 | h11 | 0.16.0 | Dependencia de uvicorn. |
 
 Las dependencias de otras áreas previstas por la arquitectura —como Channels,
-Redis, Django Q2, Cloudinary y Web Push— se incorporarán cuando se trabaje en
-las fases correspondientes, con sus versiones y cambios documentados.
+Redis, Django Q2 y Web Push— se incorporarán cuando se trabaje en las fases
+correspondientes, con sus versiones y cambios documentados. Cloudinary ya está
+incluido para el almacenamiento de las fotos de prueba diaria.
 
 ### Instalación local
 

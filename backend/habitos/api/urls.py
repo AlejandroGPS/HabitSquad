@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 
 from .views import HabitoDiarioDetailView
 
@@ -10,4 +10,5 @@ urlpatterns = [
         HabitoDiarioDetailView.as_view(),
         name="habito-diario",
     ),
+    path("", include("habitos.prueba.api.urls")),
 ]
