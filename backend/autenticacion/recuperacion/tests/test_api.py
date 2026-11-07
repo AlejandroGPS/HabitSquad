@@ -1,9 +1,11 @@
 import pytest
+from django.contrib.auth.tokens import default_token_generator
 from django.core import mail
 from django.core.cache import cache
 from django.test import override_settings
 from django.urls import reverse
-from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework.test import APIClient
 
 from usuarios.models import CustomUser
@@ -31,6 +33,17 @@ def user(db):
 
 def password_reset_url():
     return reverse("autenticacion:password-reset-request")
+
+
+def password_reset_confirm_url():
+    return reverse("autenticacion:password-reset-confirm")
+
+
+def reset_credentials(user):
+    return {
+        "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+        "token": default_token_generator.make_token(user),
+    }
 
 
 @pytest.mark.django_db
@@ -131,6 +144,127 @@ def test_password_reset_request_is_limited_to_five_requests_per_hour(api_client)
         200,
         429,
     ]
+
+
+@pytest.mark.django_db
+def test_password_reset_confirm_updates_password_and_invalidates_token(
+    api_client,
+    user,
+):
+    credentials = reset_credentials(user)
+    payload = {
+        **credentials,
+        "new_password": "N3w!Secure-Password-497",
+        "new_password_confirm": "N3w!Secure-Password-497",
+    }
+
+    response = api_client.post(
+        password_reset_confirm_url(),
+        payload,
+        format="json",
+    )
+
+    user.refresh_from_db()
+    assert response.status_code == 200
+    assert response.data == {"detail": "La contraseña se ha actualizado correctamente."}
+    assert user.check_password("N3w!Secure-Password-497")
+    assert not user.check_password("S0mething!Secure-497")
+
+    reused_response = api_client.post(
+        password_reset_confirm_url(),
+        payload,
+        format="json",
+    )
+    assert reused_response.status_code == 400
+    assert "token" in reused_response.data
+
+
+@pytest.mark.parametrize(
+    ("new_password", "new_password_confirm"),
+    [
+        ("N3w!Secure-Password-497", "Different!Secure-Password-497"),
+        ("", ""),
+        ("password", "password"),
+    ],
+)
+@pytest.mark.django_db
+def test_password_reset_confirm_rejects_invalid_passwords(
+    api_client,
+    user,
+    new_password,
+    new_password_confirm,
+):
+    response = api_client.post(
+        password_reset_confirm_url(),
+        {
+            **reset_credentials(user),
+            "new_password": new_password,
+            "new_password_confirm": new_password_confirm,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    user.refresh_from_db()
+    assert user.check_password("S0mething!Secure-497")
+
+
+@pytest.mark.parametrize(
+    ("uid", "token"),
+    [
+        ("invalid", "invalid"),
+        ("999999", "invalid"),
+    ],
+)
+@pytest.mark.django_db
+def test_password_reset_confirm_rejects_invalid_token(api_client, user, uid, token):
+    response = api_client.post(
+        password_reset_confirm_url(),
+        {
+            "uid": uid,
+            "token": token,
+            "new_password": "N3w!Secure-Password-497",
+            "new_password_confirm": "N3w!Secure-Password-497",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "token" in response.data
+
+
+@pytest.mark.django_db
+def test_password_reset_confirm_rejects_expired_token(
+    api_client,
+    user,
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        "autenticacion.recuperacion.services.reset.default_token_generator.check_token",
+        lambda user, token: False,
+    )
+
+    response = api_client.post(
+        password_reset_confirm_url(),
+        {
+            **reset_credentials(user),
+            "new_password": "N3w!Secure-Password-497",
+            "new_password_confirm": "N3w!Secure-Password-497",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "token" in response.data
+
+
+def test_password_reset_confirm_is_documented_in_openapi_schema(api_client):
+    response = api_client.get(reverse("schema"))
+
+    assert response.status_code == 200
+    operation = response.data["paths"]["/api/auth/password-reset/confirm/"]["post"]
+    assert set(operation["responses"]) == {"200", "400", "429"}
+    assert operation["requestBody"]["required"] is True
 
 
 def test_password_reset_request_is_documented_in_openapi_schema(api_client):

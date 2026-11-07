@@ -66,6 +66,21 @@ responde `400 Bad Request`.
 Para entender el ciclo de tokens, sus límites de seguridad y probarlo
 manualmente, consulta la [guía de autenticación JWT](../docs/AUTENTICACION_JWT.md).
 
+## Recuperación de contraseña
+
+La recuperación se realiza mediante dos endpoints anónimos:
+
+- `POST /api/auth/password-reset/` solicita un enlace mediante el email.
+- `POST /api/auth/password-reset/confirm/` establece la nueva contraseña con
+  el `uid` y el `token` recibidos.
+
+La respuesta de la solicitud es neutra para no revelar si un email tiene una
+cuenta. Los enlaces duran una hora, solo pueden utilizarse una vez y se
+invalidan al cambiar la contraseña. El backend de correo de consola se usa por
+defecto en desarrollo; producción debe configurar un backend SMTP mediante
+variables de entorno. El contrato completo está en
+[docs/RECUPERACION_CONTRASENA.md](../docs/RECUPERACION_CONTRASENA.md).
+
 ## API de escuadrones
 
 El endpoint autenticado `POST /api/escuadrones/` recibe `nombre` y crea un
@@ -113,10 +128,14 @@ autenticacion/
 ├── refresh/                    # Renovación y rotación de tokens
 │   ├── api/
 │   └── tests/
-└── registro/
+├── registro/
     ├── api/                    # Endpoints, rutas y serializadores HTTP
     ├── services/               # Operaciones de aplicación y escritura de datos
     └── tests/                  # Pruebas de API y servicios
+└── recuperacion/               # Solicitud y confirmación de recuperación
+    ├── api/
+    ├── services/
+    └── tests/
 
 usuarios/
 ├── models/                     # Entidades persistentes compartidas

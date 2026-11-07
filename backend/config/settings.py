@@ -54,6 +54,7 @@ PASSWORD_RESET_FRONTEND_URL = os.environ.get(
     "PASSWORD_RESET_FRONTEND_URL",
     "http://localhost:5173/reset-password",
 )
+PASSWORD_RESET_TIMEOUT = int(os.environ.get("PASSWORD_RESET_TIMEOUT", "3600"))
 
 
 # Application definition

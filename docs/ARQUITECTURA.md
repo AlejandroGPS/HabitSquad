@@ -4,7 +4,8 @@ Este documento recoge la arquitectura y las tecnologías acordadas por el
 equipo para HabitSquad. Describe el objetivo global del producto; no implica
 que todas las funcionalidades estén dentro de la asignación actual. El trabajo
 actual incluye la infraestructura base, los PBI #01 y #02 de autenticación,
-y el PBI #05 de definición del hábito diario por escuadrón.
+el PBI #05 de definición del hábito diario por escuadrón y el PBI #06 de
+recuperación de contraseña.
 
 ## Componentes y tecnologías
 
@@ -54,3 +55,6 @@ Los hábitos diarios se almacenan por `Membresia`: cada usuario puede definir
 un hábito diferente en cada escuadrón. La asignación, consulta propia y
 consulta de hábitos del panel están descritas en
 [`docs/HABITOS.md`](HABITOS.md).
+
+La recuperación de contraseña, sus endpoints y su configuración de correo
+están descritas en [`docs/RECUPERACION_CONTRASENA.md`](RECUPERACION_CONTRASENA.md).

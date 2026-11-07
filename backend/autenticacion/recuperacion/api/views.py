@@ -8,7 +8,9 @@ from rest_framework.views import APIView
 from usuarios.models import CustomUser
 
 from ..services.request import send_password_reset_email
+from ..services.reset import reset_password
 from .serializers import (
+    PasswordResetConfirmSerializer,
     PasswordResetRequestResponseSerializer,
     PasswordResetRequestSerializer,
 )
@@ -52,5 +54,40 @@ class PasswordResetRequestView(APIView):
                     "recibirás instrucciones para recuperar la contraseña."
                 )
             },
+            status=status.HTTP_200_OK,
+        )
+
+
+class PasswordResetConfirmView(APIView):
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+    throttle_classes = (AnonRateThrottle,)
+
+    @extend_schema(
+        request=PasswordResetConfirmSerializer,
+        responses={
+            200: PasswordResetRequestResponseSerializer,
+            400: OpenApiResponse(
+                description="El token o la nueva contraseña no son válidos."
+            ),
+            429: OpenApiResponse(
+                description="Se ha superado el límite de solicitudes."
+            ),
+        },
+        description=(
+            "Establece una nueva contraseña con un enlace válido. El enlace "
+            "queda invalidado después de actualizar la contraseña."
+        ),
+    )
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reset_password(
+            uid=serializer.validated_data["uid"],
+            token=serializer.validated_data["token"],
+            password=serializer.validated_data["new_password"],
+        )
+        return Response(
+            {"detail": "La contraseña se ha actualizado correctamente."},
             status=status.HTTP_200_OK,
         )
