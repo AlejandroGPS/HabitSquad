@@ -9,7 +9,9 @@ from usuarios.models import CustomUser
 
 from ..services.request import send_password_reset_email
 from ..services.reset import reset_password
+from ..services.verification import send_email_verification
 from .serializers import (
+    EmailVerificationSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestResponseSerializer,
     PasswordResetRequestSerializer,
@@ -89,5 +91,75 @@ class PasswordResetConfirmView(APIView):
         )
         return Response(
             {"detail": "La contraseña se ha actualizado correctamente."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class EmailVerificationRequestView(APIView):
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+    throttle_classes = (AnonRateThrottle,)
+
+    @extend_schema(
+        request=PasswordResetRequestSerializer,
+        responses={
+            200: PasswordResetRequestResponseSerializer,
+            400: OpenApiResponse(description="El email no es válido."),
+            429: OpenApiResponse(
+                description="Se ha superado el límite de solicitudes."
+            ),
+        },
+        description=(
+            "Solicita o reenvía la verificación del email. La respuesta no "
+            "revela si existe una cuenta con ese email."
+        ),
+    )
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"].strip().lower()
+        user = CustomUser.objects.filter(
+            email__iexact=email,
+            is_active=True,
+            email_verified=False,
+        ).first()
+        if user is not None:
+            send_email_verification(user=user)
+
+        return Response(
+            {
+                "detail": (
+                    "Si existe una cuenta pendiente de verificación, "
+                    "recibirás un nuevo enlace por email."
+                )
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class EmailVerificationConfirmView(APIView):
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+    throttle_classes = (AnonRateThrottle,)
+
+    @extend_schema(
+        request=EmailVerificationSerializer,
+        responses={
+            200: PasswordResetRequestResponseSerializer,
+            400: OpenApiResponse(description="El token de verificación no es válido."),
+            429: OpenApiResponse(
+                description="Se ha superado el límite de solicitudes."
+            ),
+        },
+        description=(
+            "Confirma el email con un enlace válido y activa la cuenta. "
+            "El enlace solo puede utilizarse una vez."
+        ),
+    )
+    def post(self, request):
+        serializer = EmailVerificationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(
+            {"detail": "El email se ha verificado correctamente."},
             status=status.HTTP_200_OK,
         )

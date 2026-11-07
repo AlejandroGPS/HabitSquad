@@ -2,6 +2,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 from ..services.reset import reset_password
+from ..services.verification import verify_email
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
@@ -10,6 +11,23 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 
 class PasswordResetRequestResponseSerializer(serializers.Serializer):
     detail = serializers.CharField()
+
+
+class EmailVerificationSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+
+    def validate(self, attrs):
+        user = verify_email(
+            uid=attrs["uid"],
+            token=attrs["token"],
+        )
+        if user is None:
+            raise serializers.ValidationError(
+                {"token": "El enlace de verificación no es válido o ha expirado."}
+            )
+        attrs["user"] = user
+        return attrs
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
