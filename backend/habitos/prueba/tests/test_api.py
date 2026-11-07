@@ -255,3 +255,97 @@ def test_post_prueba_updates_same_day_registro(
     registro = RegistroDiario.objects.get(pk=first.data["id"])
     assert registro.cloudinary_public_id == "pruebas/mock_foto_2"
     assert RegistroDiario.objects.filter(habito=habit).count() == 1
+
+
+def detail_url(squad, registro_id):
+    return reverse(
+        "habitos:prueba:visualizar-prueba-foto",
+        kwargs={
+            "escuadron_id": squad.pk,
+            "registro_id": registro_id,
+        },
+    )
+
+
+@pytest.fixture
+def registro(habit):
+    return RegistroDiario.objects.create(
+        habito=habit,
+        cloudinary_public_id="pruebas/mock_foto_1",
+        fecha=timezone.localdate(),
+        estado=RegistroDiario.Estado.PENDIENTE,
+    )
+
+
+@pytest.mark.django_db
+def test_get_prueba_returns_signed_url_for_squad_member(
+    api_client,
+    squad,
+    creator,
+    registro,
+    member,
+):
+    token = AccessToken.for_user(creator)
+    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    with patch(
+        "habitos.prueba.services.upload.cloudinary.utils.cloudinary_url",
+        return_value=(SIGNED_URL, {}),
+    ) as url_mock:
+        response = api_client.get(detail_url(squad, registro.pk))
+
+    assert response.status_code == 200
+    assert response.data["id"] == registro.pk
+    assert response.data["habito_id"] == registro.habito_id
+    assert response.data["usuario_id"] == member.pk
+    assert response.data["estado"] == "pendiente"
+    assert response.data["foto_url"] == SIGNED_URL
+    assert url_mock.call_args.kwargs["sign_url"] is True
+    assert url_mock.call_args.kwargs["type"] == "private"
+
+
+@pytest.mark.django_db
+def test_get_prueba_rejects_outsider(api_client, squad, outsider, registro):
+    token = AccessToken.for_user(outsider)
+    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    response = api_client.get(detail_url(squad, registro.pk))
+
+    assert response.status_code == 403
+    assert response.data["detail"] == "El usuario no pertenece a este escuadrón."
+
+
+@pytest.mark.django_db
+def test_get_prueba_rejects_unknown_registro(member_client, squad, habit):
+    del habit
+    response = member_client.get(detail_url(squad, 999999))
+
+    assert response.status_code == 404
+    assert response.data["detail"] == "No se ha encontrado esa prueba de foto."
+
+
+@pytest.mark.django_db
+def test_get_prueba_rejects_registro_from_other_squad(
+    api_client,
+    squad,
+    creator,
+    member,
+    registro,
+):
+    other_squad = Escuadron.objects.create(
+        nombre="Otro",
+        creador=creator,
+        codigo_invitacion="OTRO01",
+    )
+    Membresia.objects.create(
+        escuadron=other_squad,
+        usuario=member,
+        es_administrador=False,
+    )
+    token = AccessToken.for_user(member)
+    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    response = api_client.get(detail_url(other_squad, registro.pk))
+
+    assert response.status_code == 404
+    assert response.data["detail"] == "No se ha encontrado esa prueba de foto."

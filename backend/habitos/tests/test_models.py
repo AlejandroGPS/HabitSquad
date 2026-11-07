@@ -1,9 +1,11 @@
+from datetime import date
+
 import pytest
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 
 from escuadrones.models import Escuadron, Membresia
-from habitos.models import HabitoDiario
+from habitos.models import HabitoDiario, RegistroDiario
 from usuarios.models import CustomUser
 
 
@@ -149,3 +151,25 @@ def test_habito_diario_string_representation(membership):
     )
 
     assert str(habit) == "miembro@example.com - Madrugadores"
+
+
+@pytest.mark.django_db
+def test_registro_diario_is_unique_per_habit_and_date(membership):
+    habit = HabitoDiario.objects.create(
+        membresia=membership,
+        opcion=HabitoDiario.Opcion.LEER,
+    )
+    RegistroDiario.objects.create(
+        habito=habit,
+        cloudinary_public_id="pruebas/uno",
+        fecha=date(2026, 11, 7),
+        estado=RegistroDiario.Estado.PENDIENTE,
+    )
+
+    with pytest.raises(IntegrityError), transaction.atomic():
+        RegistroDiario.objects.create(
+            habito=habit,
+            cloudinary_public_id="pruebas/dos",
+            fecha=date(2026, 11, 7),
+            estado=RegistroDiario.Estado.PENDIENTE,
+        )
