@@ -19,6 +19,7 @@ class CustomUserManager(BaseUserManager):
 
     def create_user(self, email, password=None, **extra_fields):
         normalized_email = self.normalize_email(email)
+        extra_fields.setdefault("email_verified", True)
         user = self.model(email=normalized_email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -39,6 +40,10 @@ class CustomUserManager(BaseUserManager):
 class CustomUser(AbstractUser):
     username = None
     email = models.EmailField("email address", unique=True)
+    email_verified = models.BooleanField(
+        default=False,
+        verbose_name="email verified",
+    )
 
     objects = CustomUserManager()
 
