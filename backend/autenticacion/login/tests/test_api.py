@@ -48,8 +48,9 @@ def test_login_returns_access_and_refresh_tokens_for_email_case_insensitively(
     refresh_token = RefreshToken(response.data["refresh"])
     assert access_token["user_id"] == str(user.pk)
     assert refresh_token["user_id"] == str(user.pk)
-    assert access_token["exp"] - access_token["iat"] == 300
-    assert refresh_token["exp"] - refresh_token["iat"] == 86400
+    # Margen de 1 s: iat/exp JWT pueden caer en segundos distintos al crear el token
+    assert 299 <= access_token["exp"] - access_token["iat"] <= 300
+    assert 86399 <= refresh_token["exp"] - refresh_token["iat"] <= 86400
 
 
 @pytest.mark.parametrize(

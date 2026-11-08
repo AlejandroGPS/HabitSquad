@@ -1,4 +1,5 @@
 from datetime import date
+from unittest.mock import patch
 
 import pytest
 from django.urls import reverse
@@ -7,6 +8,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from escuadrones.models import Escuadron, Membresia
 from habitos.models import HabitoDiario, RegistroDiario
+from habitos.validacion.services import VotoInvalidoError
 from usuarios.models import CustomUser
 
 
@@ -169,6 +171,28 @@ def test_post_voto_rejects_invalid_value(api_client, squad, registro, voter):
 
     assert response.status_code == 400
     assert "voto" in response.data
+
+
+@pytest.mark.django_db
+def test_post_voto_maps_voto_invalido_from_service(
+    api_client,
+    squad,
+    registro,
+    voter,
+):
+    # El serializer ya filtra valores raros, esta rama cubre VotoInvalidoError
+    with patch(
+        "habitos.validacion.api.views.emitir_voto",
+        side_effect=VotoInvalidoError('Debe ser "sí" o "no".'),
+    ):
+        response = auth_client(api_client, voter).post(
+            votos_url(squad, registro),
+            {"voto": "sí"},
+            format="json",
+        )
+
+    assert response.status_code == 400
+    assert response.data["voto"] == ['Debe ser "sí" o "no".']
 
 
 @pytest.mark.django_db
