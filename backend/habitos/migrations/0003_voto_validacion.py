@@ -6,26 +6,57 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('habitos', '0002_registro_diario'),
+        ("habitos", "0002_registro_diario"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='VotoValidacion',
+            name="VotoValidacion",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('voto', models.CharField(choices=[('sí', 'Sí'), ('no', 'No')], max_length=2)),
-                ('creado_en', models.DateTimeField(auto_now_add=True)),
-                ('registro', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='votos', to='habitos.registrodiario')),
-                ('usuario', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='votos_validacion', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "voto",
+                    models.CharField(
+                        choices=[("sí", "Sí"), ("no", "No")], max_length=2
+                    ),
+                ),
+                ("creado_en", models.DateTimeField(auto_now_add=True)),
+                (
+                    "registro",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="votos",
+                        to="habitos.registrodiario",
+                    ),
+                ),
+                (
+                    "usuario",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="votos_validacion",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'voto de validación',
-                'verbose_name_plural': 'votos de validación',
-                'constraints': [models.UniqueConstraint(fields=('registro', 'usuario'), name='unique_voto_validacion_registro_usuario')],
+                "verbose_name": "voto de validación",
+                "verbose_name_plural": "votos de validación",
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("registro", "usuario"),
+                        name="unique_voto_validacion_registro_usuario",
+                    )
+                ],
             },
         ),
     ]
