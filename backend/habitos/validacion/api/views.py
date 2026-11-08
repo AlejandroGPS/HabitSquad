@@ -1,9 +1,23 @@
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from rest_framework import status
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from escuadrones.models import Escuadron
+from habitos.models import RegistroDiario
+from habitos.services.assignment import MembershipNotFoundError, get_membership
+from habitos.validacion.services import (
+    AutovotoError,
+    PruebaCerradaError,
+    VotoDuplicadoError,
+    VotoInvalidoError,
+    emitir_voto,
+    obtener_estado_votacion,
+)
 
 from .serializers import (
     EmitirVotoSerializer,
@@ -31,10 +45,36 @@ _EJEMPLO_ESTADO_VOTACION = {
 
 
 class ValidacionVotoView(APIView):
-    """Stub OpenAPI de emisión y consulta de votos (lógica real en T41)"""
+    """Emisión y consulta de votos de validación sobre una prueba de foto."""
 
     authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAuthenticated,)
+
+    def get_membership(self, request, escuadron_id):
+        get_object_or_404(Escuadron, pk=escuadron_id)
+        try:
+            return get_membership(
+                escuadron_id=escuadron_id,
+                usuario=request.user,
+            )
+        except MembershipNotFoundError as error:
+            raise PermissionDenied(
+                "El usuario no pertenece a este escuadrón."
+            ) from error
+
+    def get_registro(self, escuadron_id, registro_id) -> RegistroDiario:
+        registro = (
+            RegistroDiario.objects.select_related("habito__membresia")
+            .prefetch_related("votos")
+            .filter(
+                pk=registro_id,
+                habito__membresia__escuadron_id=escuadron_id,
+            )
+            .first()
+        )
+        if registro is None:
+            raise NotFound("No se ha encontrado esa prueba de foto.")
+        return registro
 
     @extend_schema(
         operation_id="emitirVotoValidacion",
@@ -72,18 +112,13 @@ class ValidacionVotoView(APIView):
                 response=ErrorDetalleValidacionSerializer,
                 description="El usuario ya ha emitido un voto sobre esa prueba.",
             ),
-            501: OpenApiResponse(
-                response=ErrorDetalleValidacionSerializer,
-                description=("Stub de T43: la lógica de votos se implementa en T41."),
-            ),
         },
         description=(
             "Registra el voto «sí» o «no» del usuario autenticado sobre una "
             "foto de prueba ajena. Requiere pertenencia al escuadrón. No "
             "permite autovoto ni segundo voto. Si votos_si supera la mitad "
             "de los votantes elegibles, el registro pasa a cumplido. "
-            "Contrato: docs/VALIDACION_HABITO.md. Implementación pendiente "
-            "en T41."
+            "Contrato: docs/VALIDACION_HABITO.md."
         ),
         examples=[
             OpenApiExample(
@@ -100,7 +135,11 @@ class ValidacionVotoView(APIView):
             ),
             OpenApiExample(
                 "Autovoto",
-                value={"detail": "No puedes votar tu propia prueba de foto."},
+                value={
+                    "detail": (
+                        "No puedes votar tu propia prueba de foto de hábito diario."
+                    )
+                },
                 response_only=True,
                 status_codes=["400"],
             ),
@@ -133,16 +172,41 @@ class ValidacionVotoView(APIView):
         ],
     )
     def post(self, request, escuadron_id, registro_id):
-        # Stub T43: contrato OpenAPI listo, T41 implementa la lógica
-        del request, escuadron_id, registro_id
-        return Response(
-            {
-                "detail": (
-                    "La emisión de votos aún no está implementada (pendiente de T41)."
-                )
-            },
-            status=status.HTTP_501_NOT_IMPLEMENTED,
-        )
+        self.get_membership(request, escuadron_id)
+        registro = self.get_registro(escuadron_id, registro_id)
+
+        serializer = EmitirVotoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        voto = serializer.validated_data["voto"]
+
+        try:
+            payload = emitir_voto(
+                registro=registro,
+                usuario=request.user,
+                voto=voto,
+            )
+        except AutovotoError as error:
+            return Response(
+                {"detail": str(error)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except PruebaCerradaError as error:
+            return Response(
+                {"detail": str(error)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except VotoInvalidoError as error:
+            return Response(
+                {"voto": [str(error)]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except VotoDuplicadoError as error:
+            return Response(
+                {"detail": str(error)},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        return Response(payload, status=status.HTTP_201_CREATED)
 
     @extend_schema(
         operation_id="consultarEstadoVotacion",
@@ -171,16 +235,11 @@ class ValidacionVotoView(APIView):
                     "pertenece a un hábito de ese escuadrón."
                 ),
             ),
-            501: OpenApiResponse(
-                response=ErrorDetalleValidacionSerializer,
-                description=("Stub de T43: la lógica de votos se implementa en T41."),
-            ),
         },
         description=(
             "Devuelve el estado de votación de una prueba fotográfica para "
             "cualquier miembro del escuadrón. No emite ni modifica votos. "
-            "Contrato: docs/VALIDACION_HABITO.md. Implementación pendiente "
-            "en T41."
+            "Contrato: docs/VALIDACION_HABITO.md."
         ),
         examples=[
             OpenApiExample(
@@ -206,14 +265,10 @@ class ValidacionVotoView(APIView):
         ],
     )
     def get(self, request, escuadron_id, registro_id):
-        # Stub T43: contrato OpenAPI listo, T41 implementa la lógica
-        del request, escuadron_id, registro_id
-        return Response(
-            {
-                "detail": (
-                    "La consulta de votación aún no está implementada "
-                    "(pendiente de T41)."
-                )
-            },
-            status=status.HTTP_501_NOT_IMPLEMENTED,
+        self.get_membership(request, escuadron_id)
+        registro = self.get_registro(escuadron_id, registro_id)
+        payload = obtener_estado_votacion(
+            registro=registro,
+            usuario=request.user,
         )
+        return Response(payload, status=status.HTTP_200_OK)
