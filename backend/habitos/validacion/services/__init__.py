@@ -1,3 +1,4 @@
+from .closing import cerrar_pruebas_pendientes
 from .voting import (
     AutovotoError,
     PruebaCerradaError,
@@ -12,6 +13,7 @@ __all__ = [
     "PruebaCerradaError",
     "VotoDuplicadoError",
     "VotoInvalidoError",
+    "cerrar_pruebas_pendientes",
     "emitir_voto",
     "obtener_estado_votacion",
 ]
