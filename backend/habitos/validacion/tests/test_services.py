@@ -5,12 +5,13 @@ import pytest
 from django.db import IntegrityError
 
 from escuadrones.models import Escuadron, Membresia
-from habitos.models import HabitoDiario, RegistroDiario
+from habitos.models import HabitoDiario, RegistroDiario, VotoValidacion
 from habitos.validacion.services import (
     AutovotoError,
     PruebaCerradaError,
     VotoDuplicadoError,
     VotoInvalidoError,
+    cerrar_pruebas_pendientes,
     emitir_voto,
     obtener_estado_votacion,
 )
@@ -39,7 +40,7 @@ def voters(db):
 
 @pytest.fixture
 def registro(author, voters):
-    """Escuadrón de 4 miembros → 3 elegibles; mayoría con 2 «sí»."""
+    """Escuadrón de 4 miembros → 3 elegibles; mayoría con 2 sí."""
     squad = Escuadron.objects.create(
         nombre="Servicio Votos",
         creador=author,
@@ -174,3 +175,169 @@ def test_obtener_estado_votacion_con_voto_propio(registro, voters):
 
     assert estado["voto_propio"] == "no"
     assert estado["votos_emitidos"] == 1
+
+
+def _habit_for(squad, usuario, opcion=HabitoDiario.Opcion.LEER):
+    return HabitoDiario.objects.create(
+        membresia=Membresia.objects.get(escuadron=squad, usuario=usuario),
+        opcion=opcion,
+        texto_personalizado="x" if opcion == HabitoDiario.Opcion.OTRO else "",
+    )
+
+
+@pytest.mark.django_db
+def test_cerrar_pruebas_pendientes_sin_mayoria_pasa_a_no_cumplido(author, voters):
+    squad = Escuadron.objects.create(
+        nombre="Cierre Sin Mayoria",
+        creador=author,
+        codigo_invitacion="CL0SE1",
+    )
+    for usuario, admin in [
+        (author, True),
+        (voters[0], False),
+        (voters[1], False),
+        (voters[2], False),
+    ]:
+        Membresia.objects.create(
+            escuadron=squad,
+            usuario=usuario,
+            es_administrador=admin,
+        )
+    dia = date(2026, 11, 8)
+    r_sin = RegistroDiario.objects.create(
+        habito=_habit_for(squad, author),
+        cloudinary_public_id="pruebas/cierre-sin",
+        fecha=dia,
+        estado=RegistroDiario.Estado.PENDIENTE,
+    )
+
+    cerrados = cerrar_pruebas_pendientes(fecha=dia)
+
+    r_sin.refresh_from_db()
+    assert cerrados == 1
+    assert r_sin.estado == RegistroDiario.Estado.NO_CUMPLIDO
+
+
+@pytest.mark.django_db
+def test_cerrar_pruebas_pendientes_con_mayoria_pasa_a_cumplido(author, voters):
+    squad = Escuadron.objects.create(
+        nombre="Cierre Con Mayoria",
+        creador=author,
+        codigo_invitacion="CL0SE2",
+    )
+    for usuario, admin in [
+        (author, True),
+        (voters[0], False),
+        (voters[1], False),
+        (voters[2], False),
+    ]:
+        Membresia.objects.create(
+            escuadron=squad,
+            usuario=usuario,
+            es_administrador=admin,
+        )
+    dia = date(2026, 11, 8)
+    # Autor de la prueba = voters[0]; elegibles = 3; 2 sí → mayoría
+    r_may = RegistroDiario.objects.create(
+        habito=_habit_for(squad, voters[0], HabitoDiario.Opcion.GIMNASIO),
+        cloudinary_public_id="pruebas/cierre-may",
+        fecha=dia,
+        estado=RegistroDiario.Estado.PENDIENTE,
+    )
+    VotoValidacion.objects.create(
+        registro=r_may,
+        usuario=author,
+        voto=VotoValidacion.Valor.SI,
+    )
+    VotoValidacion.objects.create(
+        registro=r_may,
+        usuario=voters[1],
+        voto=VotoValidacion.Valor.SI,
+    )
+
+    cerrados = cerrar_pruebas_pendientes(fecha=dia)
+
+    r_may.refresh_from_db()
+    assert cerrados == 1
+    assert r_may.estado == RegistroDiario.Estado.CUMPLIDO
+
+
+@pytest.mark.django_db
+def test_cerrar_pruebas_pendientes_no_toca_otra_fecha_ni_cerrados(author, voters):
+    squad = Escuadron.objects.create(
+        nombre="Cierre Selectivo",
+        creador=author,
+        codigo_invitacion="CL0SE3",
+    )
+    for usuario, admin in [
+        (author, True),
+        (voters[0], False),
+        (voters[1], False),
+        (voters[2], False),
+    ]:
+        Membresia.objects.create(
+            escuadron=squad,
+            usuario=usuario,
+            es_administrador=admin,
+        )
+    dia = date(2026, 11, 8)
+    otra = date(2026, 11, 7)
+    r_dia = RegistroDiario.objects.create(
+        habito=_habit_for(squad, author),
+        cloudinary_public_id="pruebas/cierre-dia",
+        fecha=dia,
+        estado=RegistroDiario.Estado.PENDIENTE,
+    )
+    r_otra = RegistroDiario.objects.create(
+        habito=_habit_for(squad, voters[0], HabitoDiario.Opcion.GIMNASIO),
+        cloudinary_public_id="pruebas/cierre-otra",
+        fecha=otra,
+        estado=RegistroDiario.Estado.PENDIENTE,
+    )
+    r_cerr = RegistroDiario.objects.create(
+        habito=_habit_for(squad, voters[1], HabitoDiario.Opcion.ESTUDIAR),
+        cloudinary_public_id="pruebas/cierre-cerr",
+        fecha=dia,
+        estado=RegistroDiario.Estado.CUMPLIDO,
+    )
+
+    cerrados = cerrar_pruebas_pendientes(fecha=dia)
+
+    r_dia.refresh_from_db()
+    r_otra.refresh_from_db()
+    r_cerr.refresh_from_db()
+    assert cerrados == 1
+    assert r_dia.estado == RegistroDiario.Estado.NO_CUMPLIDO
+    assert r_otra.estado == RegistroDiario.Estado.PENDIENTE
+    assert r_cerr.estado == RegistroDiario.Estado.CUMPLIDO
+
+
+@pytest.mark.django_db
+def test_cerrar_pruebas_pendientes_usa_localdate_si_no_hay_fecha(author, voters):
+    squad = Escuadron.objects.create(
+        nombre="Cierre Hoy",
+        creador=author,
+        codigo_invitacion="CL0SE4",
+    )
+    Membresia.objects.create(
+        escuadron=squad,
+        usuario=author,
+        es_administrador=True,
+    )
+    hoy = date(2026, 12, 1)
+    registro = RegistroDiario.objects.create(
+        habito=_habit_for(squad, author),
+        cloudinary_public_id="pruebas/cierre-hoy",
+        fecha=hoy,
+        estado=RegistroDiario.Estado.PENDIENTE,
+    )
+
+    with patch(
+        "habitos.validacion.services.closing.timezone.localdate",
+        return_value=hoy,
+    ):
+        cerrados = cerrar_pruebas_pendientes()
+
+    registro.refresh_from_db()
+    assert cerrados == 1
+    assert registro.estado == RegistroDiario.Estado.NO_CUMPLIDO
