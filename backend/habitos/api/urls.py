@@ -11,4 +11,5 @@ urlpatterns = [
         name="habito-diario",
     ),
     path("", include("habitos.prueba.api.urls")),
+    path("", include("habitos.validacion.api.urls")),
 ]
