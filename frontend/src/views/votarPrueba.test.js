@@ -100,11 +100,14 @@ describe('validación de una prueba desde el escuadrón', () => {
 
     start('/escuadrones/panel?id=7')
     await vi.waitFor(() => expect(button('Subir foto de prueba').disabled).toBe(false))
-    const input = document.querySelector('input[type="file"]')
-    const photo = new File(['foto'], 'prueba.png', { type: 'image/png' })
     button('Subir foto de prueba').click()
+    await vi.waitFor(() => expect(document.querySelector('[aria-label="Elegir una foto de la galería"]')).not.toBeNull())
+    const input = document.querySelector('[aria-label="Elegir una foto de la galería"]')
+    const photo = new File(['foto'], 'prueba.png', { type: 'image/png' })
     Object.defineProperty(input, 'files', { value: [photo] })
     input.dispatchEvent(new Event('change'))
+    await vi.waitFor(() => expect(button('Enviar prueba').disabled).toBe(false))
+    button('Enviar prueba').click()
 
     await vi.waitFor(() => expect(votes().textContent).toContain('Es tu prueba'))
     expect(window.location.pathname + window.location.search).toBe(voteUrl)

@@ -1,49 +1,11 @@
-import { ApiError, getDailyHabit, getSquad, logout, uploadProof } from '../api.js'
+import { ApiError, getDailyHabit, getSquad, logout } from '../api.js'
 import { appLayout } from '../components/appLayout.js'
 import { accountMenu } from '../components/accountMenu.js'
 import { element } from '../components/dom.js'
 import { habitoCard, invitaCard, miembrosCard } from '../components/panel/index.js'
 import { habitText } from './habitoDiario.js'
 
-function tarjetaHabito({ habito, onElegirHabito, onVerPrueba, subirFoto }) {
-  if (!habito || onVerPrueba) return habitoCard({ habito, onElegirHabito, onVerPrueba })
-
-  const input = element('input')
-  input.type = 'file'
-  input.accept = 'image/jpeg,image/png,image/webp'
-  input.hidden = true
-  const feedback = element('p', 'mt-2 text-sm font-bold')
-  feedback.setAttribute('role', 'status')
-  let uploadButton
-  const card = habitoCard({
-    habito,
-    onElegirHabito,
-    onSubirPrueba: ({ currentTarget }) => {
-      uploadButton = currentTarget
-      input.click()
-    },
-  })
-  input.addEventListener('change', async () => {
-    const [photo] = input.files
-    input.value = ''
-    if (!photo || !uploadButton || uploadButton.disabled) return
-    uploadButton.disabled = true
-    feedback.textContent = 'Subiendo foto…'
-    try {
-      await subirFoto(photo)
-    } catch (error) {
-      feedback.textContent = error instanceof ApiError
-        ? error.data?.foto?.[0] ?? error.data?.detail ?? 'No se ha podido subir la foto.'
-        : 'No se ha podido confirmar la subida. Comprueba tu conexión y vuelve al panel.'
-    } finally {
-      uploadButton.disabled = false
-    }
-  })
-  card.append(input, feedback)
-  return card
-}
-
-export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHabit, uploadProof } } = {}) {
+export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHabit } } = {}) {
   const id = new URLSearchParams(window.location.search).get('id')
   const root = element('div')
   const body = element('div', 'mt-5 px-4 lg:px-0')
@@ -83,14 +45,11 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
       const abrirPrueba = ({ pruebaId }) => navigate(`/escuadrones/prueba?escuadron=${id}&registro=${pruebaId}`)
       const pruebaPropia = miembros.find(({ esUsuario }) => esUsuario)?.pruebaId
       const content = element('div', 'mt-5 grid grid-cols-2 gap-4 px-4 lg:px-0', back,
-        tarjetaHabito({
+        habitoCard({
           habito: habitText(ownHabit),
           onElegirHabito: () => navigate(`/habito?escuadron=${id}`),
+          onSubirPrueba: () => navigate(`/prueba?escuadron=${id}`),
           onVerPrueba: pruebaPropia ? () => abrirPrueba({ pruebaId: pruebaPropia }) : undefined,
-          subirFoto: async (photo) => {
-            const proof = await api.uploadProof(id, photo)
-            if (root.isConnected) abrirPrueba({ pruebaId: proof.id })
-          },
         }),
         miembrosCard({ miembros, className: 'col-span-2', onVerFoto: abrirPrueba, onVotar: abrirPrueba }),
         invitaCard({ codigo: squad.codigo_invitacion, libres: 5 - squad.miembros.length }))
