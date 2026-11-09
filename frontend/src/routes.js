@@ -14,6 +14,7 @@ import { menuScreen } from './views/menu.js'
 import { habitoDiarioScreen } from './views/habitoDiario.js'
 import { panelSeleccionadoScreen } from './views/panelSeleccionado.js'
 import { presentacionScreen } from './views/presentacion.js'
+import { pruebaDiaScreen } from './views/pruebaDia.js'
 import { recuperarContrasenaScreen } from './views/recuperarContrasena.js'
 import { screen } from './views/screen.js'
 import { unirseEscuadronScreen } from './views/unirseEscuadron.js'
@@ -183,6 +184,12 @@ export const routes = [
     title: 'Tu hábito diario',
     private: true,
     view: ({ navigate } = {}) => habitoDiarioScreen({ navigate }),
+  },
+  {
+    path: '/prueba',
+    title: 'Tu prueba de hoy',
+    private: true,
+    view: ({ navigate } = {}) => pruebaDiaScreen({ navigate }),
   },
   {
     path: '/menu',
