@@ -1,7 +1,16 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from escuadrones.models import Escuadron, Membresia
 from habitos.api.serializers import HabitoDiarioSerializer
+from habitos.models import RegistroDiario
+
+
+class ResumenPruebaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RegistroDiario
+        fields = ("id", "estado")
+        read_only_fields = fields
 
 
 class MembresiaDetalleSerializer(serializers.ModelSerializer):
@@ -18,7 +27,32 @@ class MembresiaDetalleSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class EscuadronDetalleSerializer(serializers.ModelSerializer):
+class MembresiaConPruebaSerializer(MembresiaDetalleSerializer):
+    nombre = serializers.CharField(source="usuario.get_full_name", read_only=True)
+    es_usuario = serializers.SerializerMethodField()
+    prueba_hoy = serializers.SerializerMethodField()
+
+    class Meta(MembresiaDetalleSerializer.Meta):
+        fields = (
+            *MembresiaDetalleSerializer.Meta.fields,
+            "nombre",
+            "es_usuario",
+            "prueba_hoy",
+        )
+        read_only_fields = fields
+
+    def get_es_usuario(self, obj) -> bool:
+        return obj.usuario_id == self.context["request"].user.pk
+
+    @extend_schema_field(ResumenPruebaSerializer(allow_null=True))
+    def get_prueba_hoy(self, obj):
+        habito = getattr(obj, "habito_diario", None)
+        if habito and habito.pruebas_hoy:
+            return ResumenPruebaSerializer(habito.pruebas_hoy[0]).data
+        return None
+
+
+class EscuadronConMiembrosSerializer(serializers.ModelSerializer):
     creador_id = serializers.IntegerField(read_only=True)
     miembros = MembresiaDetalleSerializer(
         source="membresias",
@@ -36,3 +70,11 @@ class EscuadronDetalleSerializer(serializers.ModelSerializer):
             "miembros",
         )
         read_only_fields = fields
+
+
+class EscuadronDetalleSerializer(EscuadronConMiembrosSerializer):
+    miembros = MembresiaConPruebaSerializer(
+        source="membresias",
+        many=True,
+        read_only=True,
+    )

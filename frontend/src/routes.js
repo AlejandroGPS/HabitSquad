@@ -17,6 +17,7 @@ import { presentacionScreen } from './views/presentacion.js'
 import { recuperarContrasenaScreen } from './views/recuperarContrasena.js'
 import { screen } from './views/screen.js'
 import { unirseEscuadronScreen } from './views/unirseEscuadron.js'
+import { votarPruebaScreen } from './views/votarPrueba.js'
 
 const backHome = [{ href: '/', label: 'Volver al inicio' }]
 
@@ -112,6 +113,12 @@ export const routes = [
           navigate('/login')
         } })
         : presentacionScreen({ navigate }),
+  },
+  {
+    path: '/escuadrones/prueba',
+    title: 'Validar prueba',
+    private: true,
+    view: () => votarPruebaScreen(),
   },
   {
     path: '/escuadrones/panel',

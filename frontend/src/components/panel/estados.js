@@ -9,6 +9,11 @@ export const ESTADOS = {
     avatar: 'bg-[#c93400] text-white',
     barra: 'bg-[#c93400]',
   },
+  no_cumplido: {
+    texto: 'No cumplido',
+    avatar: 'bg-red-100 text-red-700',
+    barra: 'bg-red-600',
+  },
   'sin-prueba': {
     texto: 'Sin prueba',
     avatar: 'bg-[#f2f2f7] text-ink-muted',

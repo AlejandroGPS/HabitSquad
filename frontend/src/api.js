@@ -126,6 +126,43 @@ export async function getSquad(squadId) {
   return readJson(response)
 }
 
+function proofPath(squadId, proofId) {
+  return `/api/escuadrones/${squadId}/pruebas/${proofId}/`
+}
+
+export async function uploadProof(squadId, photo) {
+  const body = new FormData()
+  body.append('foto', photo)
+  const response = await authFetch(`/api/escuadrones/${squadId}/prueba/`, {
+    method: 'POST',
+    body,
+  })
+  if (!response.ok) throw new ApiError(response.status, await readJson(response))
+  return readJson(response)
+}
+
+export async function getProof(squadId, proofId) {
+  const response = await authFetch(proofPath(squadId, proofId))
+  if (!response.ok) throw new ApiError(response.status, await readJson(response))
+  return readJson(response)
+}
+
+export async function getProofVotes(squadId, proofId) {
+  const response = await authFetch(`${proofPath(squadId, proofId)}votos/`)
+  if (!response.ok) throw new ApiError(response.status, await readJson(response))
+  return readJson(response)
+}
+
+export async function castProofVote(squadId, proofId, voto) {
+  const response = await authFetch(`${proofPath(squadId, proofId)}votos/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ voto }),
+  })
+  if (!response.ok) throw new ApiError(response.status, await readJson(response))
+  return readJson(response)
+}
+
 export async function getDailyHabit(squadId) {
   const response = await authFetch(`/api/escuadrones/${squadId}/habito/`)
   // El selector ya ha comprobado que el escuadrón existe y pertenece al usuario.

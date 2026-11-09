@@ -11,14 +11,15 @@ export function habitoCard({
   habito,
   cierre = '23:59',
   onSubirPrueba,
+  onVerPrueba,
   onElegirHabito,
   className = 'col-span-2',
 } = {}) {
   const contenido = habito
     ? [
         element('p', 'mt-0.5 text-[1.25rem] font-black', habito),
-        element('p', 'text-[0.8125rem] font-bold', `Sube una foto antes de las ${cierre}`),
-        button(PRIMARY, onSubirPrueba, icon('camera'), 'Subir foto de prueba'),
+        element('p', 'text-[0.8125rem] font-bold', onVerPrueba ? 'Ya has subido la prueba de hoy.' : `Sube una foto antes de las ${cierre}`),
+        button(PRIMARY, onVerPrueba ?? onSubirPrueba, icon('camera'), onVerPrueba ? 'Ver mi prueba' : 'Subir foto de prueba'),
         button('mt-2 min-h-11 font-bold text-white underline disabled:opacity-60', onElegirHabito, 'Cambiar hábito'),
       ]
     : [

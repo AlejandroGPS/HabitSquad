@@ -15,6 +15,7 @@ const OUTLINE_PATHS = {
   calendar: ['M4 6h16v14H4z', 'M4 10h16', 'M8 3v4', 'M16 3v4'],
   camera: ['M4 8h3l2-3h6l2 3h3v11H4z', 'M12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z'],
   check: ['m5 12.5 4.5 4.5L19 7.5'],
+  close: ['m18 6-12 12M6 6l12 12'],
   clock: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M12 7v5l3 2'],
   copy: ['M9 9h11v11H9z', 'M5 15H4V4h11v1'],
   dumbbell: ['M6 7v10', 'M18 7v10', 'M3 9.5v5', 'M21 9.5v5', 'M6 12h12'],

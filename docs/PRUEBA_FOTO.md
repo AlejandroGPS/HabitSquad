@@ -1,6 +1,6 @@
 # Prueba diaria por foto — contrato de API
 
-Contrato acordado para la carga y la visualización de fotos del hábito diario. 
+Contrato acordado para la carga y la visualización de fotos del hábito diario.
 La implementación y la documentación OpenAPI (`/api/docs/`)
 deben respetar este documento.
 
@@ -178,7 +178,7 @@ Ejemplo de registro no encontrado (`404`):
 - El mismo usuario no mantiene dos registros distintos para el mismo hábito y
   el mismo día; una nueva subida actualiza el existente.
 - Los valores posibles de `estado` en el modelo son `pendiente`, `cumplido` y
-  `no cumplido`. Este contrato solo fija `pendiente` tras la carga; el cambio
+  `no_cumplido`. Este contrato solo fija `pendiente` tras la carga; el cambio
   de estado por validación del escuadrón queda fuera de estos endpoints.
 - La especificación OpenAPI está disponible en `/api/schema/` y la interfaz
   interactiva en `/api/docs/`.

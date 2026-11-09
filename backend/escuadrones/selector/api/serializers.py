@@ -1,6 +1,5 @@
-from escuadrones.detalle.api.serializers import EscuadronDetalleSerializer
+from escuadrones.detalle.api.serializers import EscuadronConMiembrosSerializer
 
 
-class EscuadronSelectorSerializer(EscuadronDetalleSerializer):
-    class Meta(EscuadronDetalleSerializer.Meta):
-        pass
+class EscuadronSelectorSerializer(EscuadronConMiembrosSerializer):
+    pass

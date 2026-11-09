@@ -15,6 +15,11 @@ const SUGGESTIONS = [
   ['Estudiar 1 hora', 'pencil', 'bg-[#fff1e6] text-[#c93400]'],
 ]
 
+export function habitText(habit) {
+  if (!habit) return null
+  return habit.opcion === 'otro' ? habit.texto_personalizado : PREDEFINED[habit.opcion]
+}
+
 export function habitPayload(text) {
   const value = text.trim()
   const option = Object.keys(PREDEFINED).find((key) => PREDEFINED[key] === value)
