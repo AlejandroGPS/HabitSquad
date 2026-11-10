@@ -2,10 +2,19 @@ import { ApiError, getDailyHabit, getSquad, logout } from '../api.js'
 import { appLayout } from '../components/appLayout.js'
 import { accountMenu } from '../components/accountMenu.js'
 import { element } from '../components/dom.js'
-import { habitoCard, invitaCard, miembrosCard } from '../components/panel/index.js'
+import {
+  cierreCard,
+  habitoCard,
+  hoyCard,
+  invitaCard,
+  miembrosCard,
+  rachaCard,
+  rachaChip,
+  semanaCard,
+} from '../components/panel/index.js'
 import { habitText } from './habitoDiario.js'
 
-export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHabit } } = {}) {
+export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHabit }, ahora = () => new Date() } = {}) {
   const id = new URLSearchParams(window.location.search).get('id')
   const root = element('div')
   const body = element('div', 'mt-5 px-4 lg:px-0')
@@ -41,21 +50,28 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
         habito: habitText(miembro.habito),
         estado: miembro.prueba_hoy?.estado,
         pruebaId: miembro.prueba_hoy?.id,
+        semana: miembro.semana,
       }))
+      const racha = squad.racha ?? 0
+      const momento = ahora()
       const abrirPrueba = ({ pruebaId }) => navigate(`/escuadrones/prueba?escuadron=${id}&registro=${pruebaId}`)
       const pruebaPropia = miembros.find(({ esUsuario }) => esUsuario)?.pruebaId
-      const content = element('div', 'mt-5 grid grid-cols-2 gap-4 px-4 lg:px-0', back,
+      const content = element('div', 'mt-4 grid grid-cols-2 gap-3 px-4 lg:mt-6 lg:grid-cols-4 lg:gap-4 lg:px-0', back,
+        rachaCard({ racha }),
+        hoyCard({ miembros }),
+        cierreCard({ ahora: momento }),
+        semanaCard({ miembros, ahora: momento }),
         habitoCard({
           habito: habitText(ownHabit),
           onElegirHabito: () => navigate(`/habito?escuadron=${id}`),
           onSubirPrueba: () => navigate(`/prueba?escuadron=${id}`),
           onVerPrueba: pruebaPropia ? () => abrirPrueba({ pruebaId: pruebaPropia }) : undefined,
         }),
-        miembrosCard({ miembros, className: 'col-span-2', onVerFoto: abrirPrueba, onVotar: abrirPrueba }),
+        miembrosCard({ miembros, onVerFoto: abrirPrueba, onVotar: abrirPrueba }),
         invitaCard({ codigo: squad.codigo_invitacion, libres: 5 - squad.miembros.length }))
-      back.classList.add('col-span-2')
+      back.classList.add('col-span-2', 'lg:col-span-4')
       root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Escuadrón', title: squad.nombre, body: content,
-        trailing: [accountMenu({ onLogout: async () => { await logout(); navigate('/login') } })] }))
+        trailing: [rachaChip({ racha }), accountMenu({ onLogout: async () => { await logout(); navigate('/login') } })] }))
       for (const link of root.querySelectorAll('a[href="/habito"]')) {
         link.href = `/habito?escuadron=${id}`
       }
