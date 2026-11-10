@@ -29,29 +29,24 @@ La pantalla **Registrarme** está en `/registro`. El usuario escribe su correo y
 una contraseña. La aplicación comprueba el formato en el navegador y envía
 `POST /api/auth/register/`.
 
-Ese alta no devuelve tokens. El usuario debe verificar primero su correo
-mediante el enlace recibido. Después, la propia aplicación llama a
-`POST /api/auth/token/` con el mismo correo y la misma contraseña. Guarda
-`access` en `localStorage` con la clave `habitsquad.access` y `refresh` con
-`habitsquad.refresh`, y abre la pantalla principal (`/`). La ruta `/menu` se
-conserva por compatibilidad.
+El alta devuelve `201` y pide verificar el correo. El enlace recibido abre
+`/verify-email`. Una vez confirmada la dirección, el usuario puede iniciar
+sesión con el mismo correo y la misma contraseña. La aplicación guarda los
+tokens en `localStorage` con la clave `habitsquad.session` y abre la pantalla
+principal (`/`). La ruta `/menu` se conserva por compatibilidad.
 
-Si el alta responde `201` pero el token no se obtiene, la cuenta queda creada
-y no se guarda la sesión. La pantalla muestra «La cuenta se ha creado, pero no
-se ha podido iniciar la sesión.». Un `400` muestra el aviso del campo (`email`
+Un `400` muestra el aviso del campo (`email`
 o `password`), por ejemplo si el correo ya existe. Un `429` indica que se ha
 superado el límite de cinco registros anónimos por hora.
 
 Para verlo: con el backend en el puerto 8000 y el frontend de Vite, abre
-`/registro`, crea la cuenta con un correo nuevo y comprueba que la dirección
-pasa a `/`. En las herramientas del navegador, la pestaña Red debe mostrar
-el `201` de `register/` y el `200` de `token/`. En Almacenamiento deben aparecer
-las dos claves.
+`/registro` y crea una cuenta. Abre el enlace que muestra la consola de Django,
+verifica el correo e inicia sesión. En la pestaña Red del navegador se deben
+ver el `201` de `register/` y los `200` de confirmación y de `token/`.
 
 ## Flujo de uso
 
 1. El cliente envía su email y contraseña a `POST /api/auth/token/`.
-   Tras un alta correcta, la pantalla de registro hace esta llamada sola.
 2. Si son válidos y la cuenta está activa, la API devuelve `{ "access":
    "...", "refresh": "..." }`.
 3. El cliente envía el access token en `Authorization: Bearer <access>` al

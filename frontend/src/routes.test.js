@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, login, logout, register } from './api.js'
+import {
+  ApiError,
+  confirmEmailVerification,
+  confirmPasswordReset,
+  login,
+  logout,
+  register,
+  requestEmailVerification,
+} from './api.js'
 import { guard, notFound, routes } from './routes.js'
 import { hasSession, saveSession } from './session.js'
 
@@ -11,6 +19,9 @@ vi.mock('./api.js', async (importOriginal) => {
     register: vi.fn(),
     logout: vi.fn(),
     requestPasswordReset: vi.fn(),
+    confirmEmailVerification: vi.fn(),
+    confirmPasswordReset: vi.fn(),
+    requestEmailVerification: vi.fn(),
   }
 })
 
@@ -63,6 +74,10 @@ describe('sesión', () => {
     login.mockReset()
     register.mockReset()
     logout.mockReset()
+    confirmEmailVerification.mockReset()
+    confirmPasswordReset.mockReset()
+    requestEmailVerification.mockReset()
+    window.history.replaceState({}, '', '/')
   })
 
   it('sin sesión las rutas privadas llevan a /login', () => {
@@ -133,18 +148,15 @@ describe('sesión', () => {
 
     await vi.waitFor(() => {
       expect(element.textContent).toContain(
-        'El correo o la contraseña no son correctos.',
+        'El correo o la contraseña no son correctos, o falta verificar el correo.',
       )
     })
     expect(navigate).not.toHaveBeenCalled()
     expect(hasSession()).toBe(false)
   })
 
-  it('un registro correcto guarda los tokens y abre el inicio', async () => {
+  it('un registro correcto pide verificar el correo antes de iniciar sesión', async () => {
     register.mockResolvedValue({ id: 1, email: 'persona@example.com' })
-    login.mockImplementation(async () => {
-      saveSession({ access: 'access-token', refresh: 'refresh-token' })
-    })
     const { element, navigate } = mount('/registro')
 
     fillLogin(element, {
@@ -158,12 +170,77 @@ describe('sesión', () => {
         email: 'persona@example.com',
         password: 'S0mething!Secure-497',
       })
-      expect(login).toHaveBeenCalledWith({
-        email: 'persona@example.com',
-        password: 'S0mething!Secure-497',
+      expect(element.querySelector('[role="status"]').textContent).toContain('Cuenta creada')
+    })
+    expect(login).not.toHaveBeenCalled()
+    expect(hasSession()).toBe(false)
+    expect(navigate).not.toHaveBeenCalled()
+  })
+
+  it('restablece la contraseña desde el enlace del correo', async () => {
+    window.history.replaceState({}, '', '/reset-password?uid=abc&token=123')
+    confirmPasswordReset.mockResolvedValue(undefined)
+    const { element } = mount('/reset-password')
+    const newPassword = 'N3w!Secure-Password-497'
+    element.querySelector('[name="new_password"]').value = newPassword
+    element.querySelector('[name="new_password_confirm"]').value = newPassword
+    submit(element)
+
+    await vi.waitFor(() => {
+      expect(confirmPasswordReset).toHaveBeenCalledWith({
+        uid: 'abc', token: '123', newPassword, confirmation: newPassword,
       })
-      expect(hasSession()).toBe(true)
-      expect(navigate).toHaveBeenCalledWith('/')
+      expect(element.querySelector('[role="status"]').textContent).toContain('Contraseña actualizada')
+    })
+    expect(element.querySelector('form')).toBeNull()
+  })
+
+  it('permite solicitar otro enlace de recuperación si el anterior ha caducado', async () => {
+    window.history.replaceState({}, '', '/reset-password?uid=abc&token=expired')
+    const message = 'El enlace de recuperación no es válido o ha expirado.'
+    confirmPasswordReset.mockRejectedValue(new ApiError(400, { token: [message] }))
+    const { element } = mount('/reset-password')
+    element.querySelector('[name="new_password"]').value = 'N3w!Secure-Password-497'
+    element.querySelector('[name="new_password_confirm"]').value = 'N3w!Secure-Password-497'
+    submit(element)
+
+    await vi.waitFor(() => {
+      expect(element.textContent).toContain(message)
+    })
+    expect(element.querySelector('a[href="/recuperar-contrasena"]').textContent).toBe('Solicitar otro enlace')
+  })
+
+  it('confirma el enlace recibido y ofrece iniciar sesión', async () => {
+    window.history.replaceState({}, '', '/verify-email?uid=abc&token=123')
+    confirmEmailVerification.mockResolvedValue(undefined)
+    const { element } = mount('/verify-email')
+    submit(element)
+
+    await vi.waitFor(() => {
+      expect(confirmEmailVerification).toHaveBeenCalledWith({ uid: 'abc', token: '123' })
+      expect(element.querySelector('[role="status"]').textContent).toContain('Correo verificado')
+    })
+    expect(login).not.toHaveBeenCalled()
+  })
+
+  it('permite pedir otro enlace si la verificación ha caducado', async () => {
+    window.history.replaceState({}, '', '/verify-email?uid=abc&token=expired')
+    confirmEmailVerification.mockRejectedValue(new ApiError(400))
+    const { element } = mount('/verify-email')
+    submit(element)
+
+    await vi.waitFor(() => {
+      expect(element.querySelector('[role="alert"]').textContent).toContain('ha caducado')
+    })
+    const resendPath = element.querySelector('a[href="/reenviar-verificacion"]').getAttribute('href')
+    requestEmailVerification.mockResolvedValue(undefined)
+    const resend = mount(resendPath).element
+    resend.querySelector('input[name="email"]').value = 'Persona@Example.com'
+    submit(resend)
+
+    await vi.waitFor(() => {
+      expect(requestEmailVerification).toHaveBeenCalledWith('persona@example.com')
+      expect(resend.querySelector('[role="status"]').textContent).toContain('te hemos enviado un enlace')
     })
   })
 

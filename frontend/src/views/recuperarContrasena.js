@@ -13,10 +13,10 @@ import { accessLayout } from '../components/layout.js'
 import { backLink } from '../components/navigation.js'
 import { validateEmail } from './login.js'
 
-export function recuperarContrasenaScreen({ onSubmit } = {}) {
+function emailLinkScreen({ onSubmit, title, description, emailId } = {}) {
   const { main, content } = accessLayout({
-    title: 'Recuperar contraseña',
-    description: 'Te enviaremos un enlace para crear una contraseña nueva.',
+    title,
+    description,
     bubble: '¡Te echo una mano!',
   })
 
@@ -26,7 +26,7 @@ export function recuperarContrasenaScreen({ onSubmit } = {}) {
 
   const email = labeledField({
     label: 'Correo',
-    id: 'recuperar-email',
+    id: emailId,
     name: 'email',
     type: 'email',
     placeholder: 'tu@correo.com',
@@ -79,4 +79,22 @@ export function recuperarContrasenaScreen({ onSubmit } = {}) {
   form.append(email.wrapper, submit)
   content.append(form, backLink({ href: '/login', label: 'Volver a iniciar sesión' }))
   return main
+}
+
+export function recuperarContrasenaScreen({ onSubmit } = {}) {
+  return emailLinkScreen({
+    onSubmit,
+    title: 'Recuperar contraseña',
+    description: 'Te enviaremos un enlace para crear una contraseña nueva.',
+    emailId: 'recuperar-email',
+  })
+}
+
+export function reenviarVerificacionScreen({ onSubmit } = {}) {
+  return emailLinkScreen({
+    onSubmit,
+    title: 'Reenviar correo de verificación',
+    description: 'Te enviaremos otro enlace si tu cuenta está pendiente de verificación.',
+    emailId: 'reenviar-email',
+  })
 }

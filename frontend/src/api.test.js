@@ -3,6 +3,7 @@ import {
   ApiError,
   SESSION_EXPIRED_EVENT,
   authFetch,
+  confirmPasswordReset,
   createSquad,
   joinSquad,
   login,
@@ -66,6 +67,27 @@ describe('api', () => {
       }),
     })
     expect(result).toEqual(userData)
+  })
+
+  it('envía el token y ambas contraseñas al confirmar la recuperación', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200))
+    await confirmPasswordReset({
+      uid: 'abc',
+      token: 'token',
+      newPassword: 'N3w!Secure-Password-497',
+      confirmation: 'N3w!Secure-Password-497',
+    })
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/auth/password-reset/confirm/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        uid: 'abc',
+        token: 'token',
+        new_password: 'N3w!Secure-Password-497',
+        new_password_confirm: 'N3w!Secure-Password-497',
+      }),
+    })
   })
 
   it('un registro con 400 lanza ApiError con los datos de error', async () => {

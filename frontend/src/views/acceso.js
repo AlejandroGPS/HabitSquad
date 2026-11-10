@@ -11,7 +11,7 @@ import {
   submitButton,
 } from '../components/forms.js'
 import { accessLayout } from '../components/layout.js'
-import { passwordRecoveryLink } from '../components/navigation.js'
+import { backLink, passwordRecoveryLink } from '../components/navigation.js'
 import { validateLogin } from './login.js'
 import { validateRegistration } from './registro.js'
 
@@ -106,6 +106,18 @@ function accesoScreen({ mode, onSubmit, notice: noticeMessage } = {}) {
     setSubmitPending(submit, true, copy.pending)
     try {
       await onSubmit({ email: result.email, password: result.password })
+      if (!isLogin) {
+        const confirmation = document.createElement('div')
+        confirmation.className = 'mt-5 flex flex-col'
+        confirmation.tabIndex = -1
+        confirmation.append(
+          notice('Cuenta creada. Revisa tu correo y verifica tu dirección antes de iniciar sesión.'),
+          backLink({ href: '/login', label: 'Ir a iniciar sesión' }),
+          backLink({ href: '/reenviar-verificacion', label: 'Reenviar correo de verificación' }),
+        )
+        form.replaceWith(confirmation)
+        confirmation.focus()
+      }
     } catch (error) {
       const fieldErrors = error?.cause?.data
       if (fieldErrors && typeof fieldErrors === 'object') {
@@ -145,6 +157,11 @@ function accesoScreen({ mode, onSubmit, notice: noticeMessage } = {}) {
     content.append(noticeWrapper)
   }
   content.append(form, note)
+  if (isLogin) {
+    content.append(
+      backLink({ href: '/reenviar-verificacion', label: 'Reenviar correo de verificación' }),
+    )
+  }
   return main
 }
 
