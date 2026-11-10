@@ -11,11 +11,12 @@ describe('miembroItem', () => {
     )
   })
 
-  it('muestra al usuario como "Tú" y sin botón de votar su propia prueba', () => {
+  it('muestra al usuario como "Tú" y solo le deja ver su propia prueba, no votarla', () => {
     const item = miembroItem({ nombre: 'Alejandro', habito: 'Leer', estado: 'pendiente', esUsuario: true })
 
-    expect(item.textContent).toBe('ATúLeer · Pendiente')
-    expect(item.querySelector('button')).toBeNull()
+    expect(item.textContent).toBe('ATúLeer · PendienteVer foto')
+    expect(item.querySelectorAll('button')).toHaveLength(1)
+    expect(item.querySelector('button').textContent).toBe('Ver foto')
   })
 
   it('deja ver la foto propia si ya ha cumplido', () => {

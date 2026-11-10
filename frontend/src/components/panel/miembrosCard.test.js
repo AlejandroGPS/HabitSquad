@@ -8,7 +8,7 @@ describe('miembrosCard', () => {
       plazas: 4,
     })
 
-    expect(card.querySelector('h2').textContent).toBe('Miembros2 de 4')
+    expect(card.querySelector('h2').textContent).toBe('Miembros2 de 4 miembros')
     expect(card.querySelectorAll('li')).toHaveLength(2)
   })
 
@@ -23,7 +23,7 @@ describe('miembrosCard', () => {
   it('usa 5 plazas y ninguna persona por defecto', () => {
     const card = miembrosCard()
 
-    expect(card.querySelector('h2').textContent).toBe('Miembros0 de 5')
+    expect(card.querySelector('h2').textContent).toBe('Miembros0 de 5 miembros')
     expect(card.querySelector('li')).toBeNull()
   })
 })
