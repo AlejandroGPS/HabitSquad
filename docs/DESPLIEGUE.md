@@ -57,6 +57,42 @@ servidor y no están en el repositorio.
 Sin `POSTGRES_DB`, Django sigue usando SQLite, así que el desarrollo local no
 cambia.
 
+### Enviar correo de verificación con Gmail
+
+Activa la verificación en dos pasos en la cuenta remitente del proyecto y
+[crea una contraseña de aplicación](https://support.google.com/accounts/answer/185833?hl=es).
+En la VM, añade o actualiza estas variables en `~/habitsquad/.env`, con
+permisos `600`. Usa la misma cuenta en `EMAIL_HOST_USER` y
+`DEFAULT_FROM_EMAIL` y pega la contraseña de aplicación sin espacios.
+
+```dotenv
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=true
+EMAIL_TIMEOUT=10
+EMAIL_HOST_USER=remitente@gmail.com
+EMAIL_HOST_PASSWORD=CONTRASENA_DE_APLICACION
+DEFAULT_FROM_EMAIL=remitente@gmail.com
+EMAIL_VERIFICATION_FRONTEND_URL=https://habitsquad.austriaeast.cloudapp.azure.com/verify-email
+```
+
+Si la versión con `/verify-email` ya está desplegada, recrea el contenedor de
+la API para que Docker lea el archivo actualizado.
+
+```bash
+cd ~/habitsquad
+docker compose config --quiet
+docker compose up -d --no-deps --force-recreate api
+```
+
+Abre la web pública y registra una cuenta de prueba o solicita el reenvío para
+una cuenta pendiente de verificar. Comprueba que el mensaje llega, que el
+enlace apunta al dominio público y que después de confirmarlo puedes iniciar
+sesión. Si hay un error, revisa `docker compose logs --tail 80 api`. Un error
+SMTP `535` indica que Google rechazó la autenticación. Un tiempo de espera
+agotado puede indicar que el contenedor no alcanza `smtp.gmail.com:587`.
+
 ## Despliegue automático
 
 El workflow `.github/workflows/deploy.yml` se ejecuta cuando termina
