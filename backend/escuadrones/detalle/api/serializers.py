@@ -13,6 +13,14 @@ class ResumenPruebaSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class DiaSemanaSerializer(serializers.Serializer):
+    fecha = serializers.DateField()
+    estado = serializers.ChoiceField(
+        choices=RegistroDiario.Estado.choices,
+        allow_null=True,
+    )
+
+
 class MembresiaDetalleSerializer(serializers.ModelSerializer):
     usuario_id = serializers.IntegerField(read_only=True)
     habito = HabitoDiarioSerializer(
@@ -31,6 +39,7 @@ class MembresiaConPruebaSerializer(MembresiaDetalleSerializer):
     nombre = serializers.CharField(source="usuario.get_full_name", read_only=True)
     es_usuario = serializers.SerializerMethodField()
     prueba_hoy = serializers.SerializerMethodField()
+    semana = serializers.SerializerMethodField()
 
     class Meta(MembresiaDetalleSerializer.Meta):
         fields = (
@@ -38,6 +47,7 @@ class MembresiaConPruebaSerializer(MembresiaDetalleSerializer):
             "nombre",
             "es_usuario",
             "prueba_hoy",
+            "semana",
         )
         read_only_fields = fields
 
@@ -50,6 +60,10 @@ class MembresiaConPruebaSerializer(MembresiaDetalleSerializer):
         if habito and habito.pruebas_hoy:
             return ResumenPruebaSerializer(habito.pruebas_hoy[0]).data
         return None
+
+    @extend_schema_field(DiaSemanaSerializer(many=True))
+    def get_semana(self, obj):
+        return DiaSemanaSerializer(self.context["resumen"].semana(obj), many=True).data
 
 
 class EscuadronConMiembrosSerializer(serializers.ModelSerializer):
@@ -78,3 +92,11 @@ class EscuadronDetalleSerializer(EscuadronConMiembrosSerializer):
         many=True,
         read_only=True,
     )
+    racha = serializers.SerializerMethodField()
+
+    class Meta(EscuadronConMiembrosSerializer.Meta):
+        fields = (*EscuadronConMiembrosSerializer.Meta.fields, "racha")
+        read_only_fields = fields
+
+    def get_racha(self, obj) -> int:
+        return self.context["resumen"].racha
