@@ -20,6 +20,7 @@ services:
     env_file: .env
     environment:
       POSTGRES_HOST: db
+      EMAIL_VERIFICATION_FRONTEND_URL: ${EMAIL_VERIFICATION_FRONTEND_URL:-https://${SITE_ADDRESS}/verify-email}
     depends_on:
       db:
         condition: service_healthy

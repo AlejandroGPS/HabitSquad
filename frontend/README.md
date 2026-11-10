@@ -38,12 +38,9 @@ crear elementos y lanzar eventos.
 
 ## Registro y sesión
 
-`/registro` envía el correo y la contraseña a `POST /api/auth/register/`. Si el
-backend responde `201`, la ruta pide `POST /api/auth/token/` y guarda la sesión
-en `localStorage` mediante el cliente de `src/api.js` y `src/session.js`:
-
-- `habitsquad.access`
-- `habitsquad.refresh`
+`/registro` envía el correo y la contraseña a `POST /api/auth/register/`. Tras
+verificar el correo, `/login` pide `POST /api/auth/token/` y guarda la sesión
+en `localStorage` con la clave `habitsquad.session`.
 
 A continuación la aplicación abre `/`. La ruta `/menu` se conserva por
 compatibilidad. En desarrollo, Vite reenvía `/api` a
@@ -136,8 +133,9 @@ El flujo completo de tokens está en `docs/AUTENTICACION_JWT.md`.
 
 La pantalla `/registro` envía el correo y la contraseña a
 `POST /api/auth/register/` mediante `register()` (`src/api.js`). Si el alta
-es correcta (`201`), la aplicación llama automáticamente a `login()` con las
-mismas credenciales para obtener y guardar los tokens, y redirige al inicio (`/`).
+es correcta (`201`), la aplicación pide al usuario que revise su correo.
+El enlace abre `/verify-email` para confirmar la dirección y continuar a
+`/login`. Desde el inicio de sesión se puede pedir otro enlace de verificación.
 Si el backend rechaza los datos (`400`), muestra el error en el campo
 correspondiente (correo duplicado o contraseña no válida) y avisa en caso de
 límite de peticiones (`429`).

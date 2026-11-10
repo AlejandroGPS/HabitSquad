@@ -117,8 +117,9 @@ configurados en `AUTH_PASSWORD_VALIDATORS`.
   `PASSWORD_RESET_FRONTEND_URL`; por defecto es
   `http://localhost:5173/reset-password`.
 - La URL de verificación se configura con
-  `EMAIL_VERIFICATION_FRONTEND_URL`; por defecto es
-  `http://localhost:5173/verify-email`.
+  `EMAIL_VERIFICATION_FRONTEND_URL`. En desarrollo apunta a
+  `http://localhost:5173/verify-email`. Docker Compose usa
+  `https://<SITE_ADDRESS>/verify-email` si no se indica otra URL.
 - En desarrollo se usa el backend de correo de consola.
 - En producción se debe configurar `EMAIL_BACKEND`, `EMAIL_HOST`,
   `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` y
