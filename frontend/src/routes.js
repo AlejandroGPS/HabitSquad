@@ -1,6 +1,7 @@
 import {
   ApiError,
   confirmEmailVerification,
+  confirmPasswordReset,
   createSquad,
   joinSquad,
   login,
@@ -17,6 +18,7 @@ import { habitoDiarioScreen } from './views/habitoDiario.js'
 import { panelSeleccionadoScreen } from './views/panelSeleccionado.js'
 import { presentacionScreen } from './views/presentacion.js'
 import { recuperarContrasenaScreen, reenviarVerificacionScreen } from './views/recuperarContrasena.js'
+import { restablecerContrasenaScreen } from './views/restablecerContrasena.js'
 import { screen } from './views/screen.js'
 import { unirseEscuadronScreen } from './views/unirseEscuadron.js'
 import { verificarCorreoScreen } from './views/verificarCorreo.js'
@@ -62,6 +64,22 @@ function emailLinkErrorMessage(error) {
     return 'Has hecho demasiados intentos. Espera un rato y vuelve a probar.'
   }
   return 'No se ha podido enviar el enlace. Comprueba tu conexión e inténtalo de nuevo.'
+}
+
+function passwordResetErrorMessage(error) {
+  if (error instanceof ApiError && error.status === 400) {
+    return (
+      firstMessage(error.data?.token) ||
+      firstMessage(error.data?.uid) ||
+      firstMessage(error.data?.new_password) ||
+      firstMessage(error.data?.new_password_confirm) ||
+      'No se ha podido actualizar la contraseña. Revisa los datos e inténtalo de nuevo.'
+    )
+  }
+  if (error instanceof ApiError && error.status === 429) {
+    return 'Has hecho demasiados intentos. Espera un rato y vuelve a probar.'
+  }
+  return 'No se ha podido actualizar la contraseña. Inténtalo de nuevo.'
 }
 
 function createSquadErrorMessage(error) {
@@ -208,6 +226,24 @@ export const routes = [
           }
         },
       }),
+  },
+  {
+    path: '/reset-password',
+    title: 'Restablecer contraseña',
+    view: () => {
+      const params = new URLSearchParams(window.location.search)
+      return restablecerContrasenaScreen({
+        uid: params.get('uid'),
+        token: params.get('token'),
+        onSubmit: async (credentials) => {
+          try {
+            await confirmPasswordReset(credentials)
+          } catch (error) {
+            throw new Error(passwordResetErrorMessage(error), { cause: error })
+          }
+        },
+      })
+    },
   },
   {
     path: '/habito',
