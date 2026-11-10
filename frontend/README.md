@@ -143,13 +143,10 @@ límite de peticiones (`429`).
 ### Recuperar la contraseña
 
 La pantalla `/recuperar-contrasena` envía el correo a
-`POST /api/auth/password-reset/` con `{ "email": "..." }`. Ese endpoint aún no
-existe en el backend; mientras tanto la API responde `404` y la pantalla avisa
-de que la función todavía no está disponible. Cuando se implemente, debe
-responder `204` exista o no la cuenta, para no revelar qué correos están
-registrados, y `429` si se supera el límite de intentos. La pantalla para
-escribir la contraseña nueva desde el enlace del correo se hará junto con ese
-endpoint.
+`POST /api/auth/password-reset/`. La API devuelve la misma respuesta exista
+o no la cuenta. El enlace del mensaje abre `/reset-password`, donde el usuario
+escribe y confirma la nueva contraseña. La pantalla envía el código del enlace
+y la nueva contraseña a `POST /api/auth/password-reset/confirm/`.
 
 En desarrollo, `npm run dev` y `npm run preview` reenvían `/api` al backend en
 `http://localhost:8000`, así que hay que tener `python manage.py runserver` en
