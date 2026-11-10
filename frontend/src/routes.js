@@ -17,11 +17,13 @@ import { menuScreen } from './views/menu.js'
 import { habitoDiarioScreen } from './views/habitoDiario.js'
 import { panelSeleccionadoScreen } from './views/panelSeleccionado.js'
 import { presentacionScreen } from './views/presentacion.js'
+import { pruebaDiaScreen } from './views/pruebaDia.js'
 import { recuperarContrasenaScreen, reenviarVerificacionScreen } from './views/recuperarContrasena.js'
 import { restablecerContrasenaScreen } from './views/restablecerContrasena.js'
 import { screen } from './views/screen.js'
 import { unirseEscuadronScreen } from './views/unirseEscuadron.js'
 import { verificarCorreoScreen } from './views/verificarCorreo.js'
+import { votarPruebaScreen } from './views/votarPrueba.js'
 
 const backHome = [{ href: '/', label: 'Volver al inicio' }]
 
@@ -133,6 +135,12 @@ export const routes = [
           navigate('/login')
         } })
         : presentacionScreen({ navigate }),
+  },
+  {
+    path: '/escuadrones/prueba',
+    title: 'Validar prueba',
+    private: true,
+    view: () => votarPruebaScreen(),
   },
   {
     path: '/escuadrones/panel',
@@ -250,6 +258,12 @@ export const routes = [
     title: 'Tu hábito diario',
     private: true,
     view: ({ navigate } = {}) => habitoDiarioScreen({ navigate }),
+  },
+  {
+    path: '/prueba',
+    title: 'Tu prueba de hoy',
+    private: true,
+    view: ({ navigate } = {}) => pruebaDiaScreen({ navigate }),
   },
   {
     path: '/menu',

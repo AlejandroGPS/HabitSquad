@@ -244,5 +244,6 @@ Tras el cierre (`cumplido` o `no_cumplido`), no se aceptan nuevos votos.
 - El autor de la prueba no es votante elegible y no puede votarse a sí mismo.
 - El endpoint de visualización de la foto (`GET /api/escuadrones/{escuadron_id}/pruebas/{registro_id}/`) no emite ni registra votos; ver [PRUEBA_FOTO.md](PRUEBA_FOTO.md).
 - Los valores de `estado` del registro son `pendiente`, `cumplido` y `no_cumplido`. Tras la carga de la foto el estado es `pendiente`; este contrato define cómo pasa a `cumplido` o `no_cumplido`.
-- La pantalla frontend de revisión puede usar datos de ejemplo hasta conectar estos endpoints; el umbral de mayoría de este documento es la fuente de verdad (no el recuento solo sobre votos emitidos de la vista mock).
+- El panel encuentra las pruebas del día con `GET /api/escuadrones/{escuadron_id}/`. Cada miembro incluye `prueba_hoy` (un objeto con `id` y `estado`, o `null`), `es_usuario` y el nombre visible `nombre` si está configurado.
+- La pantalla muestra `votos_si` de `votantes_elegibles` y usa `estado` y `voto_propio` devueltos por la API para habilitar los botones.
 - La especificación OpenAPI está disponible en `/api/schema/` y la interfaz interactiva en `/api/docs/`.

@@ -1,10 +1,13 @@
+from datetime import timedelta
+
 import pytest
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
 from escuadrones.models import Escuadron, Membresia
-from habitos.models import HabitoDiario
+from habitos.models import HabitoDiario, RegistroDiario
 from usuarios.models import CustomUser
 
 
@@ -104,6 +107,15 @@ def test_squad_detail_includes_each_members_habit_or_null(
         opcion=HabitoDiario.Opcion.OTRO,
         texto_personalizado="Leer 20 páginas",
     )
+    today = timezone.localdate()
+    RegistroDiario.objects.create(
+        habito=habit,
+        fecha=today - timedelta(days=1),
+        cloudinary_public_id="pruebas/ayer",
+    )
+    proof = RegistroDiario.objects.create(
+        habito=habit, fecha=today, cloudinary_public_id="pruebas/hoy"
+    )
 
     response = authenticated_client(api_client, creator).get(detail_url(squad))
 
@@ -121,6 +133,13 @@ def test_squad_detail_includes_each_members_habit_or_null(
         "Leer 20 páginas"
     )
     assert members_by_id[creator.pk]["habito"] is None
+    assert members_by_id[creator.pk]["es_usuario"] is True
+    assert members_by_id[creator.pk]["prueba_hoy"] is None
+    assert members_by_id[member.pk]["es_usuario"] is False
+    assert members_by_id[member.pk]["prueba_hoy"] == {
+        "id": proof.pk,
+        "estado": "pendiente",
+    }
 
 
 def test_squad_detail_is_documented_in_openapi_schema(api_client):

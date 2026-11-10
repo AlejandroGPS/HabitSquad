@@ -6,8 +6,8 @@ import { ESTADOS } from './estados.js'
 
 // Nadie puede votar su propia prueba, pero sí ver la foto que ha subido.
 function accion(miembro, { onVerFoto, onVotar }) {
-  if (miembro.estado === 'cumplido') return { texto: 'Ver foto', handler: onVerFoto }
   if (miembro.estado === 'pendiente' && !miembro.esUsuario) return { texto: 'Votar', handler: onVotar }
+  if (miembro.estado !== 'sin-prueba') return { texto: 'Ver foto', handler: onVerFoto }
   return null
 }
 

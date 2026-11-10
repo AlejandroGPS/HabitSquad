@@ -1,14 +1,9 @@
 import { ApiError, getDailyHabit, getSquad, logout } from '../api.js'
 import { appLayout } from '../components/appLayout.js'
 import { accountMenu } from '../components/accountMenu.js'
-import { card } from '../components/card.js'
 import { element } from '../components/dom.js'
-import { habitoCard, invitaCard } from '../components/panel/index.js'
-
-function habitText(habit) {
-  if (!habit) return null
-  return habit.opcion === 'otro' ? habit.texto_personalizado : { gimnasio: 'Ir al gimnasio', leer: 'Leer', estudiar: 'Estudiar' }[habit.opcion]
-}
+import { habitoCard, invitaCard, miembrosCard } from '../components/panel/index.js'
+import { habitText } from './habitoDiario.js'
 
 export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHabit } } = {}) {
   const id = new URLSearchParams(window.location.search).get('id')
@@ -40,11 +35,23 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
     try {
       const squad = await api.getSquad(id)
       const ownHabit = await api.getDailyHabit(id)
+      const miembros = squad.miembros.map((miembro) => ({
+        nombre: miembro.nombre || `Miembro ${miembro.usuario_id}`,
+        esUsuario: miembro.es_usuario,
+        habito: habitText(miembro.habito),
+        estado: miembro.prueba_hoy?.estado,
+        pruebaId: miembro.prueba_hoy?.id,
+      }))
+      const abrirPrueba = ({ pruebaId }) => navigate(`/escuadrones/prueba?escuadron=${id}&registro=${pruebaId}`)
+      const pruebaPropia = miembros.find(({ esUsuario }) => esUsuario)?.pruebaId
       const content = element('div', 'mt-5 grid grid-cols-2 gap-4 px-4 lg:px-0', back,
-        habitoCard({ habito: habitText(ownHabit), onElegirHabito: () => navigate(`/habito?escuadron=${id}`) }),
-        card('col-span-2', element('h2', 'text-lg font-black', 'Miembros'),
-          element('p', 'mt-2 font-semibold text-ink-muted', `${squad.miembros.length} de 5 miembros`),
-          element('p', 'mt-2 text-sm text-ink-muted', 'Las fotos y el seguimiento de la racha estarán disponibles próximamente.')),
+        habitoCard({
+          habito: habitText(ownHabit),
+          onElegirHabito: () => navigate(`/habito?escuadron=${id}`),
+          onSubirPrueba: () => navigate(`/prueba?escuadron=${id}`),
+          onVerPrueba: pruebaPropia ? () => abrirPrueba({ pruebaId: pruebaPropia }) : undefined,
+        }),
+        miembrosCard({ miembros, className: 'col-span-2', onVerFoto: abrirPrueba, onVotar: abrirPrueba }),
         invitaCard({ codigo: squad.codigo_invitacion, libres: 5 - squad.miembros.length }))
       back.classList.add('col-span-2')
       root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Escuadrón', title: squad.nombre, body: content,

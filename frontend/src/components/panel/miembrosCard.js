@@ -15,7 +15,7 @@ export function miembrosCard({
       'h2',
       'mb-1 flex items-center justify-between text-[0.8125rem] font-extrabold text-ink-muted',
       'Miembros',
-      element('span', 'font-bold', `${miembros.length} de ${plazas}`),
+      element('span', 'font-bold', `${miembros.length} de ${plazas} miembros`),
     ),
     element(
       'ul',
