@@ -46,6 +46,14 @@ export async function requestPasswordReset(email) {
   await postJson('/api/auth/password-reset/', { email })
 }
 
+export async function confirmEmailVerification({ uid, token }) {
+  await postJson('/api/auth/email-verification/confirm/', { uid, token })
+}
+
+export async function requestEmailVerification(email) {
+  await postJson('/api/auth/email-verification/', { email })
+}
+
 export async function joinSquad(codigoInvitacion) {
   const response = await authFetch('/api/escuadrones/unirse/', {
     method: 'POST',

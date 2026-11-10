@@ -1,10 +1,12 @@
 import {
   ApiError,
+  confirmEmailVerification,
   createSquad,
   joinSquad,
   login,
   logout,
   register,
+  requestEmailVerification,
   requestPasswordReset,
 } from './api.js'
 import { hasSession } from './session.js'
@@ -14,15 +16,16 @@ import { menuScreen } from './views/menu.js'
 import { habitoDiarioScreen } from './views/habitoDiario.js'
 import { panelSeleccionadoScreen } from './views/panelSeleccionado.js'
 import { presentacionScreen } from './views/presentacion.js'
-import { recuperarContrasenaScreen } from './views/recuperarContrasena.js'
+import { recuperarContrasenaScreen, reenviarVerificacionScreen } from './views/recuperarContrasena.js'
 import { screen } from './views/screen.js'
 import { unirseEscuadronScreen } from './views/unirseEscuadron.js'
+import { verificarCorreoScreen } from './views/verificarCorreo.js'
 
 const backHome = [{ href: '/', label: 'Volver al inicio' }]
 
 function loginErrorMessage(error) {
   if (error instanceof ApiError && error.status === 401) {
-    return 'El correo o la contraseña no son correctos.'
+    return 'El correo o la contraseña no son correctos, o falta verificar el correo.'
   }
   if (error instanceof ApiError && error.status === 429) {
     return 'Has hecho demasiados intentos. Espera un rato y vuelve a probar.'
@@ -51,9 +54,9 @@ function registerErrorMessage(error) {
   return 'No se ha podido crear la cuenta. Comprueba tu conexión e inténtalo de nuevo.'
 }
 
-function passwordResetErrorMessage(error) {
+function emailLinkErrorMessage(error) {
   if (error instanceof ApiError && error.status === 404) {
-    return 'La recuperación de contraseña todavía no está disponible.'
+    return 'El envío de enlaces todavía no está disponible.'
   }
   if (error instanceof ApiError && error.status === 429) {
     return 'Has hecho demasiados intentos. Espera un rato y vuelve a probar.'
@@ -143,16 +146,51 @@ export const routes = [
     path: '/registro',
     title: 'Registrarme',
     guestOnly: true,
-    view: ({ navigate } = {}) =>
+    view: () =>
       registroScreen({
         onSubmit: async (credentials) => {
           try {
             await register(credentials)
-            await login(credentials)
           } catch (error) {
             throw new Error(registerErrorMessage(error), { cause: error })
           }
-          navigate(destinoTrasAcceso())
+        },
+      }),
+  },
+  {
+    path: '/verify-email',
+    title: 'Verificar correo',
+    view: () => {
+      const params = new URLSearchParams(window.location.search)
+      return verificarCorreoScreen({
+        uid: params.get('uid'),
+        token: params.get('token'),
+        onConfirm: async (credentials) => {
+          try {
+            await confirmEmailVerification(credentials)
+          } catch (error) {
+            const message = error.status === 400
+              ? 'El enlace de verificación no es válido o ha caducado.'
+              : error.status === 429
+                ? 'Has hecho demasiados intentos. Espera un rato y vuelve a probar.'
+                : 'No se ha podido verificar el correo. Inténtalo de nuevo.'
+            throw new Error(message, { cause: error })
+          }
+        },
+      })
+    },
+  },
+  {
+    path: '/reenviar-verificacion',
+    title: 'Reenviar correo de verificación',
+    view: () =>
+      reenviarVerificacionScreen({
+        onSubmit: async (email) => {
+          try {
+            await requestEmailVerification(email)
+          } catch (error) {
+            throw new Error(emailLinkErrorMessage(error), { cause: error })
+          }
         },
       }),
   },
@@ -166,7 +204,7 @@ export const routes = [
           try {
             await requestPasswordReset(email)
           } catch (error) {
-            throw new Error(passwordResetErrorMessage(error), { cause: error })
+            throw new Error(emailLinkErrorMessage(error), { cause: error })
           }
         },
       }),
