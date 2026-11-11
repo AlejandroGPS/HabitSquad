@@ -1,5 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
+import { ApiError, requestPasswordReset } from '../api.js'
+import { routes } from '../routes.js'
+import { loginScreen } from './acceso.js'
 import { recuperarContrasenaScreen } from './recuperarContrasena.js'
+
+vi.mock('../api.js', async (importOriginal) => {
+  const actual = await importOriginal()
+  return { ...actual, requestPasswordReset: vi.fn() }
+})
 
 function mount(screen = recuperarContrasenaScreen()) {
   document.body.replaceChildren(screen)
@@ -88,5 +96,86 @@ describe('recuperarContrasenaScreen', () => {
       )
       expect(element429.querySelector('form')).not.toBeNull()
     })
+  })
+
+  it('mientras envía, desactiva el botón y no envía dos veces', async () => {
+    let terminar
+    const onSubmit = vi.fn(() => new Promise((resolve) => { terminar = resolve }))
+    const element = mount(recuperarContrasenaScreen({ onSubmit }))
+    const boton = element.querySelector('button[type="submit"]')
+
+    fill(element, 'persona@example.com')
+    submit(element)
+    submit(element)
+
+    expect(onSubmit).toHaveBeenCalledTimes(1)
+    expect(boton.disabled).toBe(true)
+    expect(boton.textContent).toBe('Enviando…')
+
+    terminar()
+    await vi.waitFor(() => expect(element.querySelector('form')).toBeNull())
+  })
+
+  it('tras un error reactiva el botón y quita el aviso al escribir', async () => {
+    const onSubmit = vi.fn().mockRejectedValue(new Error('Fallo'))
+    const element = mount(recuperarContrasenaScreen({ onSubmit }))
+    const boton = element.querySelector('button[type="submit"]')
+
+    fill(element, 'persona@example.com')
+    submit(element)
+    await vi.waitFor(() => expect(element.querySelector('form > [role="alert"]').textContent).toBe('Fallo'))
+    expect(boton.disabled).toBe(false)
+    expect(boton.textContent).toBe('Enviar enlace')
+
+    element.querySelector('input[name="email"]').dispatchEvent(new Event('input'))
+    expect(element.querySelector('form > [role="alert"]')).toBeNull()
+  })
+
+  it('permite volver a iniciar sesión', () => {
+    const element = mount()
+    const volver = [...element.querySelectorAll('a')].find((a) => a.textContent === 'Volver a iniciar sesión')
+    expect(volver.getAttribute('href')).toBe('/login')
+  })
+})
+
+describe('enlace de recuperación en el login', () => {
+  it('el login enlaza con la recuperación de contraseña', () => {
+    const element = mount(loginScreen())
+    const link = [...element.querySelectorAll('a')].find((a) => a.textContent === '¿Has olvidado tu contraseña?')
+
+    expect(link.getAttribute('href')).toBe('/recuperar-contrasena')
+    expect(link.hasAttribute('data-link')).toBe(true)
+    expect(element.querySelector('form').contains(link)).toBe(true)
+  })
+})
+
+describe('ruta /recuperar-contrasena', () => {
+  function mountRuta() {
+    requestPasswordReset.mockReset()
+    return mount(routes.find((route) => route.path === '/recuperar-contrasena').view())
+  }
+
+  it('pide el enlace a la API con el correo normalizado', async () => {
+    const element = mountRuta()
+    requestPasswordReset.mockResolvedValue(undefined)
+
+    fill(element, ' Persona@Example.com ')
+    submit(element)
+
+    await vi.waitFor(() => expect(requestPasswordReset).toHaveBeenCalledWith('persona@example.com'))
+  })
+
+  it.each([
+    ['404', new ApiError(404), 'El envío de enlaces todavía no está disponible.'],
+    ['429', new ApiError(429), 'Has hecho demasiados intentos. Espera un rato y vuelve a probar.'],
+    ['sin conexión', new TypeError('Failed to fetch'), 'No se ha podido enviar el enlace. Comprueba tu conexión e inténtalo de nuevo.'],
+  ])('traduce el error de la API (%s)', async (_, error, mensaje) => {
+    const element = mountRuta()
+    requestPasswordReset.mockRejectedValue(error)
+
+    fill(element, 'persona@example.com')
+    submit(element)
+
+    await vi.waitFor(() => expect(element.querySelector('form > [role="alert"]').textContent).toBe(mensaje))
   })
 })
