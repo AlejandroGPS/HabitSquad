@@ -245,5 +245,6 @@ Tras el cierre (`cumplido` o `no_cumplido`), no se aceptan nuevos votos.
 - El endpoint de visualización de la foto (`GET /api/escuadrones/{escuadron_id}/pruebas/{registro_id}/`) no emite ni registra votos; ver [PRUEBA_FOTO.md](PRUEBA_FOTO.md).
 - Los valores de `estado` del registro son `pendiente`, `cumplido` y `no_cumplido`. Tras la carga de la foto el estado es `pendiente`; este contrato define cómo pasa a `cumplido` o `no_cumplido`.
 - El panel encuentra las pruebas del día con `GET /api/escuadrones/{escuadron_id}/`. Cada miembro incluye `prueba_hoy` (un objeto con `id` y `estado`, o `null`), `es_usuario` y el nombre visible `nombre` si está configurado.
+- La misma respuesta incluye `racha`: los días seguidos en que todos los miembros tienen la prueba en `cumplido`. Quien se une a un escuadrón empieza a contar al día siguiente, y el día de hoy suma si ya está cumplido y solo corta la racha si alguna prueba está en `no_cumplido`. Cada miembro incluye también `semana`, una lista de lunes a domingo con `fecha` y `estado` de su prueba (`null` si ese día no hay prueba).
 - La pantalla muestra `votos_si` de `votantes_elegibles` y usa `estado` y `voto_propio` devueltos por la API para habilitar los botones.
 - La especificación OpenAPI está disponible en `/api/schema/` y la interfaz interactiva en `/api/docs/`.

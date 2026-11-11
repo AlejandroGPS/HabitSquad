@@ -126,6 +126,7 @@ def test_squad_detail_includes_each_members_habit_or_null(
         "codigo_invitacion",
         "creador_id",
         "miembros",
+        "racha",
     }
     members_by_id = {item["usuario_id"]: item for item in response.data["miembros"]}
     assert members_by_id[member.pk]["habito"]["id"] == habit.pk
@@ -140,6 +141,38 @@ def test_squad_detail_includes_each_members_habit_or_null(
         "id": proof.pk,
         "estado": "pendiente",
     }
+
+
+@pytest.mark.django_db
+def test_squad_detail_includes_streak_and_week(api_client, creator, member, squad):
+    today = timezone.localdate()
+    Escuadron.objects.filter(pk=squad.pk).update(
+        creado_en=timezone.now() - timedelta(days=10)
+    )
+    Membresia.objects.filter(escuadron=squad).update(
+        unido_en=timezone.now() - timedelta(days=10)
+    )
+    for user in (creator, member):
+        habit = HabitoDiario.objects.create(
+            membresia=Membresia.objects.get(escuadron=squad, usuario=user),
+            opcion=HabitoDiario.Opcion.LEER,
+        )
+        for days in (0, 1):
+            RegistroDiario.objects.create(
+                habito=habit,
+                fecha=today - timedelta(days=days),
+                estado=RegistroDiario.Estado.CUMPLIDO,
+                cloudinary_public_id=f"pruebas/{user.pk}-{days}",
+            )
+
+    response = authenticated_client(api_client, member).get(detail_url(squad))
+
+    assert response.status_code == 200
+    assert response.data["racha"] == 2
+    week = response.data["miembros"][0]["semana"]
+    assert len(week) == 7
+    assert week[today.weekday()] == {"fecha": today.isoformat(), "estado": "cumplido"}
+    assert all(day["estado"] is None for day in week[today.weekday() + 1 :])
 
 
 def test_squad_detail_is_documented_in_openapi_schema(api_client):

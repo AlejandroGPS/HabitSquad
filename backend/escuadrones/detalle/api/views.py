@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from escuadrones.detalle.services import ResumenEscuadron
 from escuadrones.models import Escuadron, Membresia
 from habitos.models import RegistroDiario
 
@@ -37,7 +38,10 @@ class EscuadronDetailView(APIView):
         },
         description=(
             "Devuelve el escuadrón, los hábitos y las pruebas de hoy de sus miembros. "
-            "Los miembros que todavía no tienen hábito incluyen «habito: null»."
+            "Los miembros que todavía no tienen hábito incluyen «habito: null». "
+            "«racha» cuenta los días seguidos en que todos los miembros cumplieron; "
+            "hoy suma si ya está cumplido. «semana» da el estado de la prueba de "
+            "cada miembro de lunes a domingo, o null si no hay prueba ese día."
         ),
     )
     def get(self, request, escuadron_id):
@@ -57,6 +61,10 @@ class EscuadronDetailView(APIView):
             usuario=request.user,
         ).exists():
             raise PermissionDenied("El usuario no pertenece a este escuadrón.")
+        resumen = ResumenEscuadron(escuadron, escuadron.membresias.all())
         return Response(
-            EscuadronDetalleSerializer(escuadron, context={"request": request}).data
+            EscuadronDetalleSerializer(
+                escuadron,
+                context={"request": request, "resumen": resumen},
+            ).data
         )
