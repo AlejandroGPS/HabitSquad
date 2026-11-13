@@ -187,6 +187,20 @@ describe('selector recuperado conectado al backend', () => {
     ;[...root.querySelectorAll('button')].find((button) => button.textContent === 'Reintentar').click()
     await vi.waitFor(() => expect(root.querySelectorAll('a[aria-label^="Abrir panel"]')).toHaveLength(2))
   })
+  it('con sesión, los enlaces de la barra abren la presentación y el logo vuelve al selector', async () => {
+    start()
+    await vi.waitFor(() => expect(root.textContent).toContain('Todavía no perteneces'))
+    const comoFunciona = [...root.querySelectorAll('header a')].find((link) => link.textContent === 'Cómo funciona')
+    comoFunciona.click()
+    expect(window.location.pathname).toBe('/presentacion')
+    expect(window.location.hash).toBe('#como-funciona')
+    expect(root.querySelector('h1').textContent).toBe('Cumple tu hábito. Que no caiga la racha.')
+    expect(root.querySelector('#como-funciona')).not.toBeNull()
+
+    root.querySelector('header a[aria-label="HabitSquad"]').click()
+    expect(window.location.pathname).toBe('/')
+    await vi.waitFor(() => expect(root.querySelector('h1').textContent).toBe('Mis escuadrones'))
+  })
   it('protege el selector /menu y el panel sin sesión', () => {
     clearSession()
     expect(guard(routes.find((route) => route.path === '/menu'))).toBe('/login')

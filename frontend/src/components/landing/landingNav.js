@@ -10,8 +10,8 @@ const ACTIVO = ['bg-black/[0.07]', 'text-accent']
 
 // En la portada, los enlaces a secciones no cambian la URL: el enrutador repintaría la página
 // al cambiar el hash. Desde otras pantallas llevan a la portada, que baja sola a la sección.
-function enlaceSeccion({ id, label }, enPortada) {
-  if (!enPortada) return enlaceRuta(`/#${id}`, `px-4 ${INACTIVO.join(' ')}`, label)
+function enlaceSeccion({ id, label }, enPortada, portada) {
+  if (!enPortada) return enlaceRuta(`${portada}#${id}`, `px-4 ${INACTIVO.join(' ')}`, label)
   const link = element('a', `${ENLACE} px-4 ${INACTIVO.join(' ')}`, label)
   link.href = `#${id}`
   link.dataset.seccion = id
@@ -68,12 +68,13 @@ function marcaCompacta(className) {
 }
 
 // `secciones` solo se pasa en la portada. Fuera de ella, `cuenta` sustituye a los enlaces de la derecha.
-export function landingNav({ secciones = [], cuenta, conSecciones = true } = {}) {
+// Con sesión, `/` abre el selector de escuadrón: `portada` indica dónde se ve entonces la presentación.
+export function landingNav({ secciones = [], cuenta, conSecciones = true, portada = '/' } = {}) {
   const enPortada = secciones.length > 0
   const claseMarca =
     'me-auto shrink-0 justify-self-start text-[1.25rem] font-black tracking-tight text-accent lg:me-0 lg:text-[1.5rem]'
   const marca = marcaCompacta(claseMarca)
-  const enlaces = conSecciones ? SECCIONES.map((seccion) => enlaceSeccion(seccion, enPortada)) : []
+  const enlaces = conSecciones ? SECCIONES.map((seccion) => enlaceSeccion(seccion, enPortada, portada)) : []
   const derecha = cuenta === undefined ? selectorCuenta({ resaltada: 'register', conFondo: false }) : cuenta
 
   const nav = element(
