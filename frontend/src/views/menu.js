@@ -1,5 +1,5 @@
 import mascotUrl from '../assets/mascota.webp'
-import { appLayout } from '../components/appLayout.js'
+import { accessNavbar } from '../components/navbar.js'
 
 import { listSquads, ApiError } from '../api.js'
 
@@ -16,8 +16,9 @@ export function link(href, text, className = 'squad-primary') {
   return el
 }
 export function menuScreen({ onLogout, title = 'Menú principal', loadSquads = listSquads } = {}) {
-  const wrap = node('div', 'squad-page mt-4 px-4 lg:mt-6 lg:px-0')
-  wrap.append(node('p', 'squad-muted text-base font-semibold', 'Tu próximo día de racha empieza aquí. Elige con quién lo compartes.'))
+  const wrap = node('div', 'squad-page mx-auto w-full max-w-6xl px-4 py-6 sm:px-8 sm:py-10')
+  wrap.append(node('h1', 'text-[2rem] font-black tracking-tight', title))
+  wrap.append(node('p', 'squad-muted mt-2 text-base font-semibold', 'Tu próximo día de racha empieza aquí. Elige con quién lo compartes.'))
   const layout = node('div', 'mt-8 grid items-start gap-6 lg:grid-cols-[1.5fr_1fr]')
   const selector = node('section', 'squad-card p-5 sm:p-7')
   selector.setAttribute('aria-labelledby', 'squad-list-title')
@@ -91,5 +92,11 @@ export function menuScreen({ onLogout, title = 'Menú principal', loadSquads = l
   aside.append(create, account)
   layout.append(selector, aside)
   wrap.append(layout)
-  return appLayout({ active: 'escuadron', kicker: 'Un día más, juntos.', title, body: wrap })
+  const backdrop = node('div', 'access-backdrop pointer-events-none fixed inset-0 -z-10')
+  backdrop.setAttribute('aria-hidden', 'true')
+  const page = node('div', 'relative isolate flex min-h-dvh flex-col overflow-x-clip font-rounded antialiased')
+  const main = node('main', 'flex flex-col')
+  main.append(wrap)
+  page.append(backdrop, accessNavbar({ showAccountLinks: false }), main)
+  return page
 }

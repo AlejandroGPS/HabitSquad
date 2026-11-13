@@ -4,12 +4,13 @@ import { menuScreen } from './menu.js'
 afterEach(() => { document.body.replaceChildren() })
 
 describe('menuScreen', () => {
-  it('muestra la barra lateral y la de pestañas con Escuadrón como sección activa', () => {
+  it('muestra la barra de navegación de la portada sin enlaces de invitado', () => {
     const menu = menuScreen({ title: 'HabitSquad', loadSquads: () => new Promise(() => {}) })
-    const navs = menu.querySelectorAll('nav[aria-label="Secciones"]')
-    expect(navs).toHaveLength(2)
-    expect(menu.querySelector('aside nav')).not.toBeNull()
-    expect([...menu.querySelectorAll('[aria-current="page"]')].map((item) => item.textContent)).toEqual(['Escuadrón', 'Escuadrón'])
+    const nav = menu.querySelector('header nav[aria-label="Principal"]')
+    expect(nav).not.toBeNull()
+    expect(nav.classList.contains('nav-portada')).toBe(true)
+    expect(nav.querySelector('a[href="/"]').getAttribute('aria-label')).toBe('HabitSquad')
+    expect(nav.querySelector('a[href="/login"], a[href="/registro"], a[href^="/#"]')).toBeNull()
     expect(menu.querySelectorAll('header')).toHaveLength(1)
     expect(menu.querySelectorAll('h1')).toHaveLength(1)
     expect(menu.querySelector('h1').textContent).toBe('HabitSquad')
