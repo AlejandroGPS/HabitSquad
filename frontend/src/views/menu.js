@@ -1,5 +1,5 @@
 import mascotUrl from '../assets/mascota.webp'
-import { appMark } from '../components/brand.js'
+import { appLayout } from '../components/appLayout.js'
 
 import { listSquads, ApiError } from '../api.js'
 
@@ -15,21 +15,9 @@ export function link(href, text, className = 'squad-primary') {
   el.dataset.link = ''
   return el
 }
-export function squadShell(title) {
-  const main = node('main', 'squad-page min-h-dvh font-rounded antialiased')
-  const wrap = node('div', 'mx-auto w-full max-w-6xl px-4 py-5 sm:px-8 sm:py-8')
-  const header = node('header', 'squad-nav mb-8 flex items-center justify-between gap-4 rounded-[2rem] p-4 sm:mb-12')
-  const brand = link('/', '', 'flex min-h-11 items-center gap-2 text-lg font-black')
-  brand.setAttribute('aria-label', 'HabitSquad, inicio')
-  brand.append(appMark('h-9 w-9'), node('span', '', 'HabitSquad'))
-  header.append(brand, node('span', 'squad-muted text-sm font-bold', 'Un día más, juntos.'))
-  wrap.append(header, node('h1', 'text-[2rem] font-black tracking-tight', title))
-  main.append(wrap)
-  return { main, wrap }
-}
 export function menuScreen({ onLogout, title = 'Menú principal', loadSquads = listSquads } = {}) {
-  const { main, wrap } = squadShell(title)
-  wrap.append(node('p', 'squad-muted mt-2 text-base font-semibold', 'Tu próximo día de racha empieza aquí. Elige con quién lo compartes.'))
+  const wrap = node('div', 'squad-page mt-4 px-4 lg:mt-6 lg:px-0')
+  wrap.append(node('p', 'squad-muted text-base font-semibold', 'Tu próximo día de racha empieza aquí. Elige con quién lo compartes.'))
   const layout = node('div', 'mt-8 grid items-start gap-6 lg:grid-cols-[1.5fr_1fr]')
   const selector = node('section', 'squad-card p-5 sm:p-7')
   selector.setAttribute('aria-labelledby', 'squad-list-title')
@@ -103,5 +91,5 @@ export function menuScreen({ onLogout, title = 'Menú principal', loadSquads = l
   aside.append(create, account)
   layout.append(selector, aside)
   wrap.append(layout)
-  return main
+  return appLayout({ active: 'escuadron', kicker: 'Un día más, juntos.', title, body: wrap })
 }

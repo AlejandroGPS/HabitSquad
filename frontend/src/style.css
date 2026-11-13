@@ -487,11 +487,9 @@
     --squad-soft: #f2f2f7;
     --squad-purple: #5b32ea;
     color: var(--squad-text);
-    background: radial-gradient(ellipse at 5% 5%, #ffdcc6 0, transparent 38%), radial-gradient(ellipse at 95% 90%, #d6c8ff 0, transparent 45%), #ece8f6;
   }
   .squad-muted { color: var(--squad-muted); }
   .squad-card { background: var(--squad-card); border-radius: 1.75rem; box-shadow: 0 12px 32px -22px #39237066; }
-  .squad-nav { background: rgb(255 255 255 / .55); border: 1px solid rgb(255 255 255 / .6); backdrop-filter: blur(18px); }
   .squad-choice { background: var(--squad-soft); border: 2px solid transparent; }
   .squad-choice:hover { border-color: var(--squad-purple); }
   .squad-avatar, .squad-demo { background: #efeaff; color: #4c28cc; }
@@ -504,7 +502,4 @@
   .squad-logout:disabled { opacity: .5; cursor: wait; }
   .squad-page :is(a, button):focus-visible { outline: 3px solid var(--squad-purple); outline-offset: 4px; }
   .squad-back { color: var(--squad-purple); }
-  @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-    .squad-nav { background: var(--squad-card); backdrop-filter: none; }
-  }
 }
