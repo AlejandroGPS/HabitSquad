@@ -130,11 +130,16 @@ export const routes = [
     title: 'HabitSquad',
     view: ({ navigate } = {}) =>
       hasSession()
-        ? menuScreen({ title: 'HabitSquad', onLogout: async () => {
+        ? menuScreen({ onLogout: async () => {
           await logout()
           navigate('/login')
         } })
         : presentacionScreen({ navigate }),
+  },
+  {
+    path: '/presentacion',
+    title: 'HabitSquad',
+    view: ({ navigate } = {}) => presentacionScreen({ navigate }),
   },
   {
     path: '/escuadrones/prueba',
@@ -267,7 +272,7 @@ export const routes = [
   },
   {
     path: '/menu',
-    title: 'Menú principal',
+    title: 'Mis escuadrones',
     private: true,
     view: ({ navigate } = {}) => menuScreen({ onLogout: async () => {
       await logout()

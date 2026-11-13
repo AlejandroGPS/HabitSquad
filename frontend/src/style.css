@@ -476,30 +476,3 @@
     }
   }
 }
-
-/* Pantallas de selección y panel: tokens locales para conservar las otras vistas. */
-@layer components {
-  .squad-page {
-    color-scheme: light;
-    --squad-card: #fff;
-    --squad-text: #1d1d1f;
-    --squad-muted: #6e6e73;
-    --squad-soft: #f2f2f7;
-    --squad-purple: #5b32ea;
-    color: var(--squad-text);
-  }
-  .squad-muted { color: var(--squad-muted); }
-  .squad-card { background: var(--squad-card); border-radius: 1.75rem; box-shadow: 0 12px 32px -22px #39237066; }
-  .squad-choice { background: var(--squad-soft); border: 2px solid transparent; }
-  .squad-choice:hover { border-color: var(--squad-purple); }
-  .squad-avatar, .squad-demo { background: #efeaff; color: #4c28cc; }
-  .squad-create { background: linear-gradient(135deg, #6a45f0, #4c28cc); }
-  .squad-streak { background: linear-gradient(135deg, #d4460c, #a83400); }
-  .squad-primary, .squad-white-button, .squad-logout { display: inline-flex; min-height: 52px; align-items: center; justify-content: center; border-radius: 999px; padding: 12px 24px; font-weight: 800; font-size: 17px; text-align: center; }
-  .squad-primary { background: var(--squad-purple); color: white; }
-  .squad-white-button { background: white; color: #4c28cc; }
-  .squad-logout { background: var(--squad-soft); color: #d70015; cursor: pointer; }
-  .squad-logout:disabled { opacity: .5; cursor: wait; }
-  .squad-page :is(a, button):focus-visible { outline: 3px solid var(--squad-purple); outline-offset: 4px; }
-  .squad-back { color: var(--squad-purple); }
-}

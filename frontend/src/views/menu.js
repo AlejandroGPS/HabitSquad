@@ -1,102 +1,212 @@
-import mascotUrl from '../assets/mascota.webp'
-import { accessNavbar } from '../components/navbar.js'
-
 import { listSquads, ApiError } from '../api.js'
+import { accountMenu } from '../components/accountMenu.js'
+import { squadAvatar } from '../components/avatar.js'
+import { pillLink } from '../components/buttons.js'
+import { cardClass } from '../components/card.js'
+import { element } from '../components/dom.js'
+import { icon } from '../components/icons.js'
+import { landingNav } from '../components/landing/landingNav.js'
+import { mascota } from '../components/mascota.js'
+import { plazasLibres } from '../components/panel/invitaCard.js'
 
-export function node(tag, className = '', text = '') {
-  const el = document.createElement(tag)
-  el.className = className
-  el.textContent = text
-  return el
+const PLAZAS = 5
+const SALUDO = '¡Hola! ¿Con quién sumamos racha hoy?'
+const SALUDO_VACIO = '¡Vamos a por tu primer escuadrón!'
+
+function plazasOcupadas(ocupadas) {
+  const puntos = element(
+    'span',
+    'flex gap-1',
+    ...Array.from({ length: PLAZAS }, (_, indice) =>
+      element('span', `h-2.5 w-2.5 rounded-full ${indice < ocupadas ? 'bg-accent' : 'bg-accent/15'}`),
+    ),
+  )
+  puntos.setAttribute('aria-hidden', 'true')
+  return puntos
 }
-export function link(href, text, className = 'squad-primary') {
-  const el = node('a', className, text)
-  el.href = href
-  el.dataset.link = ''
-  return el
+
+function tarjetaEscuadron(squad) {
+  const ocupadas = squad.miembros.length
+  const link = element(
+    'a',
+    `${cardClass} flex flex-col justify-between gap-5 outline-accent sm:min-h-44 transition-[outline-color] hover:outline-2 focus-visible:outline-2 focus-visible:outline-offset-2 lg:p-6`,
+    element(
+      'span',
+      'flex items-center gap-3.5',
+      squadAvatar({ nombre: squad.nombre, className: 'h-14 w-14' }),
+      element(
+        'span',
+        'min-w-0',
+        element('span', 'block truncate text-[1.25rem] leading-tight font-black', squad.nombre),
+        element('span', 'mt-0.5 block text-[0.9375rem] font-bold text-ink-muted', `${ocupadas} de ${PLAZAS} miembros`),
+      ),
+    ),
+    element(
+      'span',
+      'flex items-end justify-between gap-3',
+      element(
+        'span',
+        'flex flex-col gap-1.5',
+        plazasOcupadas(ocupadas),
+        element('span', 'text-[0.8125rem] font-bold text-ink-muted', plazasLibres(PLAZAS - ocupadas)),
+      ),
+      element(
+        'span',
+        'inline-flex items-center gap-0.5 font-extrabold text-accent',
+        'Abrir panel',
+        icon('back', 'h-5 w-5 shrink-0 rotate-180'),
+      ),
+    ),
+  )
+  link.href = `/escuadrones/panel?id=${squad.id}`
+  link.dataset.link = ''
+  link.setAttribute('aria-label', `Abrir panel de ${squad.nombre}`)
+  return element('li', 'flex flex-col', link)
 }
-export function menuScreen({ onLogout, title = 'Menú principal', loadSquads = listSquads } = {}) {
-  const wrap = node('div', 'squad-page mx-auto w-full max-w-6xl px-4 py-6 sm:px-8 sm:py-10')
-  wrap.append(node('h1', 'text-[2rem] font-black tracking-tight', title))
-  wrap.append(node('p', 'squad-muted mt-2 text-base font-semibold', 'Tu próximo día de racha empieza aquí. Elige con quién lo compartes.'))
-  const layout = node('div', 'mt-8 grid items-start gap-6 lg:grid-cols-[1.5fr_1fr]')
-  const selector = node('section', 'squad-card p-5 sm:p-7')
-  selector.setAttribute('aria-labelledby', 'squad-list-title')
-  const heading = node('h2', 'text-xl font-black', 'Mis escuadrones')
-  heading.id = 'squad-list-title'
-  selector.append(heading, node('p', 'squad-muted mt-1 text-sm font-semibold', 'Selecciona un escuadrón para abrir su panel.'))
-  const list = node('ul', 'mt-5 flex flex-col gap-3')
-  const listStatus = node('p', 'squad-muted mt-4 text-sm font-semibold', 'Cargando tus escuadrones…')
-  listStatus.setAttribute('role', 'status')
-  const listError = node('p', 'mt-3 text-sm font-bold text-red-700')
-  listError.setAttribute('role', 'alert')
-  const retry = node('button', 'min-h-11 font-bold text-accent underline', 'Reintentar')
-  retry.type = 'button'
-  retry.hidden = true
-  selector.append(listStatus, listError, list, retry)
-  let loading = false
-  async function load() {
-    if (loading) return
-    loading = true
-    retry.hidden = true
-    list.replaceChildren()
-    listError.textContent = ''
-    listStatus.textContent = 'Cargando tus escuadrones…'
-    selector.setAttribute('aria-busy', 'true')
+
+const ACCION_COMPACTA = [
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 text-[0.9375rem] font-bold',
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+].join(' ')
+
+function accionCompacta(href, clase, ...children) {
+  const link = element('a', `${ACCION_COMPACTA} ${clase}`, ...children)
+  link.href = href
+  link.dataset.link = ''
+  return link
+}
+
+function tarjetaOtraRacha() {
+  return element(
+    'li',
+    'flex min-h-44 flex-col justify-center gap-3 rounded-[1.75rem] border-2 border-dashed border-accent-line bg-white/40 p-4 lg:p-5',
+    element('h2', 'text-[1.125rem] font-black', '¿Una racha más?'),
+    accionCompacta('/escuadrones/nuevo', 'bg-accent text-white hover:bg-accent-hover', icon('plus'), 'Crear un escuadrón'),
+    accionCompacta('/escuadrones/unirse', 'bg-white text-accent', icon('join'), 'Tengo un código'),
+  )
+}
+
+function primerEscuadron() {
+  const crear = element(
+    'section',
+    'flex flex-col rounded-[2rem] bg-gradient-to-br from-[#6a45f0] to-[#4c28cc] p-6 text-white shadow-[0_8px_24px_-14px_rgb(60_30_140/0.5)] lg:p-8',
+    element('span', 'grid h-12 w-12 place-items-center rounded-2xl bg-white/20', icon('users', 'h-6 w-6 shrink-0')),
+    element('h2', 'mt-4 text-[1.625rem] leading-tight font-black', 'Crea tu escuadrón'),
+    element('p', 'mt-1 mb-6 font-semibold text-pretty', 'Reúne hasta 5 personas, compartid el código y empezad la racha juntos.'),
+    pillLink({ href: '/escuadrones/nuevo', variant: 'onColor', className: 'mt-auto self-start px-8' }, icon('plus'), 'Crear un escuadrón'),
+  )
+  const unirse = element(
+    'section',
+    `${cardClass} flex flex-col rounded-[2rem] p-6 lg:p-8`,
+    element('span', 'grid h-12 w-12 place-items-center rounded-2xl bg-accent-soft text-accent', icon('join', 'h-6 w-6 shrink-0')),
+    element('h2', 'mt-4 text-[1.625rem] leading-tight font-black', 'Únete con un código'),
+    element('p', 'mt-1 mb-6 font-semibold text-pretty text-ink-muted', '¿Te han pasado un código de 6 caracteres? Entra en su escuadrón en un momento.'),
+    pillLink({ href: '/escuadrones/unirse', className: 'mt-auto self-start px-8' }, icon('join'), 'Tengo un código'),
+  )
+  return element('div', 'grid gap-4 sm:grid-cols-2', crear, unirse)
+}
+
+function tarjetasCargando() {
+  const lista = element(
+    'div',
+    'grid gap-4 sm:grid-cols-2 lg:grid-cols-3',
+    ...Array.from({ length: 3 }, () =>
+      element(
+        'div',
+        `${cardClass} flex min-h-44 animate-pulse flex-col justify-between lg:p-6`,
+        element(
+          'span',
+          'flex items-center gap-3.5',
+          element('span', 'h-14 w-14 rounded-2xl bg-fill'),
+          element('span', 'flex flex-col gap-2', element('span', 'h-4 w-32 rounded-full bg-fill'), element('span', 'h-3 w-20 rounded-full bg-fill')),
+        ),
+        element('span', 'h-3 w-24 rounded-full bg-fill'),
+      ),
+    ),
+  )
+  lista.setAttribute('aria-hidden', 'true')
+  return lista
+}
+
+export function menuScreen({ onLogout, loadSquads = listSquads } = {}) {
+  const bocadillo = element(
+    'p',
+    'glass speech-bubble rounded-2xl px-4 py-2.5 text-[1rem] font-extrabold text-balance text-ink',
+    SALUDO,
+  )
+  const titulo = element('h1', 'mt-6 text-[2rem] leading-tight font-black tracking-tight lg:text-[2.5rem]', 'Mis escuadrones')
+  titulo.id = 'squad-list-title'
+  const estado = element('p', 'mt-1 text-[1.0625rem] font-semibold text-ink-muted', 'Cargando tus escuadrones…')
+  estado.setAttribute('role', 'status')
+  const error = element('p', 'font-bold text-red-700')
+  error.setAttribute('role', 'alert')
+  const reintentar = element('button', 'min-h-11 self-start font-bold text-accent underline', 'Reintentar')
+  reintentar.type = 'button'
+  reintentar.hidden = true
+  const contenido = element('div', 'mt-6')
+
+  const seccion = element(
+    'section',
+    'mx-auto flex w-full max-w-6xl flex-col px-4 pt-6 pb-12 sm:px-8 lg:pt-10',
+    element(
+      'div',
+      'flex items-center gap-4',
+      mascota('h-20 w-auto drop-shadow-[0_14px_16px_rgb(60_30_140/0.22)] motion-safe:animate-bob'),
+      bocadillo,
+    ),
+    titulo,
+    estado,
+    element('div', 'mt-4 flex flex-col gap-1', error, reintentar),
+    contenido,
+  )
+  seccion.setAttribute('aria-labelledby', titulo.id)
+
+  let cargando = false
+  async function cargar() {
+    if (cargando) return
+    cargando = true
+    reintentar.hidden = true
+    error.textContent = ''
+    estado.textContent = 'Cargando tus escuadrones…'
+    contenido.replaceChildren(tarjetasCargando())
+    seccion.setAttribute('aria-busy', 'true')
     try {
       const squads = await loadSquads()
-      listStatus.textContent = squads.length ? `${squads.length} escuadrones disponibles` : 'Todavía no perteneces a ningún escuadrón. Crea uno o únete con un código.'
-      for (const squad of squads) {
-        const row = node('li')
-        const item = link(`/escuadrones/panel?id=${squad.id}`, '', 'squad-choice flex min-h-24 items-center gap-4 rounded-[1.25rem] p-4')
-        item.setAttribute('aria-label', `Abrir panel de ${squad.nombre}`)
-        const details = node('span', 'min-w-0 flex-1')
-        details.append(node('span', 'block text-base font-black', squad.nombre), node('span', 'squad-muted mt-1 block text-sm font-semibold', `${squad.miembros.length} de 5 miembros`))
-        const initials = squad.nombre.trim().split(/\s+/).slice(0, 2).map((word) => word[0]).join('').toUpperCase()
-        item.append(node('span', 'squad-avatar grid h-12 w-12 shrink-0 place-items-center rounded-2xl font-black', initials), details, node('span', 'text-xl', '→'))
-        row.append(item)
-        list.append(row)
+      if (squads.length) {
+        bocadillo.textContent = SALUDO
+        estado.textContent = squads.length === 1
+          ? 'Tienes 1 escuadrón. Ábrelo para ver cómo va el día.'
+          : `Tienes ${squads.length} escuadrones. Elige uno para ver cómo va el día.`
+        contenido.replaceChildren(
+          element('ul', 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3', ...squads.map(tarjetaEscuadron), tarjetaOtraRacha()),
+        )
+      } else {
+        bocadillo.textContent = SALUDO_VACIO
+        estado.textContent = 'Todavía no perteneces a ningún escuadrón. Crea uno o únete con un código.'
+        contenido.replaceChildren(primerEscuadron())
       }
-    } catch (error) {
-      listStatus.textContent = ''
-      listError.textContent = error instanceof ApiError && error.status === 401
+    } catch (causa) {
+      estado.textContent = ''
+      contenido.replaceChildren()
+      error.textContent = causa instanceof ApiError && causa.status === 401
         ? 'Tu sesión ha caducado. Vuelve a iniciar sesión.'
         : 'No se han podido cargar tus escuadrones. Comprueba la conexión y vuelve a intentarlo.'
-      retry.hidden = false
+      reintentar.hidden = false
     } finally {
-      loading = false
-      selector.setAttribute('aria-busy', 'false')
+      cargando = false
+      seccion.setAttribute('aria-busy', 'false')
     }
   }
-  retry.addEventListener('click', load)
-  void load()
-  const aside = node('div', 'flex flex-col gap-6')
-  const create = node('section', 'squad-create overflow-hidden rounded-[1.75rem] p-6 text-white')
-  const mascot = node('img', 'mb-3 h-24 w-24 object-contain')
-  mascot.src = mascotUrl
-  mascot.alt = ''
-  create.append(mascot, node('h2', 'text-2xl font-black', 'Empieza una nueva racha'), node('p', 'mt-2 mb-5 text-base font-semibold', 'Reúne a tu gente y cread un hábito que dure.'), link('/escuadrones/nuevo', 'Crear un escuadrón', 'squad-white-button'), link('/escuadrones/unirse', 'Tengo un código de invitación', 'mt-3 flex min-h-11 items-center font-bold text-white underline'))
-  const account = node('section', 'squad-card p-6')
-  const logout = node('button', 'squad-logout mt-4 w-full', 'Cerrar sesión')
-  logout.type = 'button'
-  const status = node('p', 'squad-muted mt-2 text-sm font-semibold')
-  status.setAttribute('role', 'status')
-  logout.addEventListener('click', async () => {
-    if (logout.disabled) return
-    logout.disabled = true
-    try { await onLogout?.() }
-    catch { status.textContent = 'No se ha podido cerrar la sesión. Inténtalo de nuevo.' }
-    finally { logout.disabled = false }
-  })
-  account.append(node('h2', 'text-lg font-black', 'Tu sesión'), node('p', 'squad-muted mt-1 text-sm font-semibold', 'Puedes volver cuando quieras. Tu escuadrón te espera.'), logout, status)
-  aside.append(create, account)
-  layout.append(selector, aside)
-  wrap.append(layout)
-  const backdrop = node('div', 'access-backdrop pointer-events-none fixed inset-0 -z-10')
-  backdrop.setAttribute('aria-hidden', 'true')
-  const page = node('div', 'relative isolate flex min-h-dvh flex-col overflow-x-clip font-rounded antialiased')
-  const main = node('main', 'flex flex-col')
-  main.append(wrap)
-  page.append(backdrop, accessNavbar({ showAccountLinks: false }), main)
-  return page
+  reintentar.addEventListener('click', cargar)
+  void cargar()
+
+  const fondo = element('div', 'access-backdrop pointer-events-none fixed inset-0 -z-10')
+  fondo.setAttribute('aria-hidden', 'true')
+  return element(
+    'div',
+    'relative isolate flex min-h-dvh flex-col overflow-x-clip font-rounded text-ink antialiased',
+    fondo,
+    landingNav({ portada: '/presentacion', cuenta: accountMenu({ onLogout }) }),
+    element('main', 'flex flex-col', seccion),
+  )
 }
