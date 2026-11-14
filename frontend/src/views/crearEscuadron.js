@@ -12,7 +12,7 @@ import {
 } from '../components/forms.js'
 import { accessLayout } from '../components/layout.js'
 
-const NAME_MAX_LENGTH = 100
+export const NAME_MAX_LENGTH = 100
 
 function element(tag, className = '', text = '') {
   const node = document.createElement(tag)

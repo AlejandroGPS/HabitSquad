@@ -153,6 +153,24 @@ En desarrollo, `npm run dev` y `npm run preview` reenvían `/api` al backend en
 marcha para iniciar sesión. En producción Caddy sirve frontend y API en el
 mismo dominio.
 
+## Configuración del escuadrón
+
+`/escuadrones/configuracion` se abre desde «Configuración» en la barra
+lateral, que como «Mi hábito» solo sale en web. Por ahora es un boceto con los
+datos de `src/datosEjemplo.js`, hasta que el backend guarde estos ajustes.
+Sigue el diseño del panel: la misma rejilla, las tarjetas de
+`components/card.js` y la cabecera con alertas y cuenta.
+
+Solo el administrador ve el formulario; el resto de miembros ve un aviso y un
+enlace para volver al panel. El administrador puede:
+
+- Cambiar el nombre, la visibilidad (privado o público) y el límite de
+  miembros. Se guardan juntos con «Guardar» y se pueden descartar. El límite va
+  de 2 a 10 y nunca baja de los miembros que ya hay.
+- Copiar el código de invitación o generar otro. El anterior deja de servir.
+- Expulsar a un miembro y eliminar el escuadrón. Estos botones salen
+  desactivados hasta que exista su endpoint.
+
 ## PWA
 
 `vite-plugin-pwa` genera en el build el manifest (`manifest.webmanifest`) y el

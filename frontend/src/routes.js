@@ -10,7 +10,7 @@ import {
   requestEmailVerification,
   requestPasswordReset,
 } from './api.js'
-import { configuracionEjemplo } from './datosEjemplo.js'
+import { codigoEjemplo, configuracionEjemplo } from './datosEjemplo.js'
 import { hasSession } from './session.js'
 import { loginScreen, registroScreen } from './views/acceso.js'
 import { configuracionEscuadronScreen } from './views/configuracionEscuadron.js'
@@ -154,7 +154,18 @@ export const routes = [
     path: '/escuadrones/configuracion',
     title: 'Configuración',
     private: true,
-    view: () => configuracionEscuadronScreen({ ...configuracionEjemplo, onGuardar: async () => {} }),
+    view: ({ navigate } = {}) =>
+      configuracionEscuadronScreen({
+        ...configuracionEjemplo,
+        acciones: {
+          guardar: async () => {},
+          generarCodigo: async () => codigoEjemplo(),
+          cerrarSesion: async () => {
+            await logout()
+            navigate('/login')
+          },
+        },
+      }),
   },
   {
     path: '/login',

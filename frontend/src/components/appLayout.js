@@ -7,6 +7,7 @@ export const APP_NAV = [
   { id: 'racha', label: 'Racha', icon: 'flame' },
   { id: 'alertas', label: 'Alertas', icon: 'bell' },
   { id: 'habito', label: 'Mi hábito', icon: 'book', href: '/habito', webOnly: true },
+  { id: 'configuracion', label: 'Configuración', icon: 'settings', href: '/escuadrones/configuracion', webOnly: true },
 ]
 
 // Las secciones sin pantalla todavía se muestran desactivadas en vez de llevar a una página vacía.

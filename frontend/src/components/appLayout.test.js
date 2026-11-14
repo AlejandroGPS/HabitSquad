@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { APP_NAV, appLayout } from './appLayout.js'
+import { appLayout } from './appLayout.js'
 
 function mount(options = {}) {
   const screen = appLayout({
@@ -33,7 +33,7 @@ describe('appLayout', () => {
     const screen = mount()
     const [sidebarNav, tabBar] = screen.querySelectorAll('nav[aria-label="Secciones"]')
 
-    expect(navLabels(sidebarNav)).toEqual(APP_NAV.map(({ label }) => label))
+    expect(navLabels(sidebarNav)).toEqual(['Escuadrón', 'Racha', 'Alertas', 'Mi hábito', 'Configuración'])
     expect(navLabels(tabBar)).toEqual(['Escuadrón', 'Racha', 'Alertas'])
     expect(screen.querySelector('aside a[href="/"]').textContent).toBe('HabitSquad')
   })
