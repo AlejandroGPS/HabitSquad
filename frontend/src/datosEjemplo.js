@@ -15,3 +15,19 @@ export const panelEjemplo = {
     { nombre: 'Alejandro', habito: 'Leer un libro', estado: 'sin-prueba', esUsuario: true },
   ],
 }
+
+// TODO: boceto de la configuración del escuadrón (PBI #130). Falta en el backend guardar la
+// visibilidad y el límite de miembros, devolverlos en el detalle y un endpoint para cambiarlos.
+export const configuracionEjemplo = {
+  escuadron: {
+    nombre: 'Los Inquebrantables',
+    codigo: 'K7P2QX',
+    visibilidad: 'privado',
+    plazas: 5,
+  },
+  miembros: [
+    { nombre: 'Alejandro', esUsuario: true, esAdministrador: true },
+    { nombre: 'Carlos' },
+    { nombre: 'Laura' },
+  ],
+}
