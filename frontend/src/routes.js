@@ -10,8 +10,10 @@ import {
   requestEmailVerification,
   requestPasswordReset,
 } from './api.js'
+import { codigoEjemplo, configuracionEjemplo } from './datosEjemplo.js'
 import { hasSession } from './session.js'
 import { loginScreen, registroScreen } from './views/acceso.js'
+import { configuracionEscuadronScreen } from './views/configuracionEscuadron.js'
 import { crearEscuadronScreen } from './views/crearEscuadron.js'
 import { menuScreen } from './views/menu.js'
 import { habitoDiarioScreen } from './views/habitoDiario.js'
@@ -147,6 +149,21 @@ export const routes = [
     title: 'Panel del escuadrón',
     private: true,
     view: ({ navigate } = {}) => panelSeleccionadoScreen({ navigate }),
+  },
+  {
+    path: '/escuadrones/configuracion',
+    title: 'Configuración',
+    private: true,
+    view: ({ navigate } = {}) =>
+      configuracionEscuadronScreen({
+        ...configuracionEjemplo,
+        acciones: {
+          guardar: async () => {},
+          generarCodigo: async () => codigoEjemplo(),
+          expulsar: async () => {},
+          eliminar: async () => navigate('/'),
+        },
+      }),
   },
   {
     path: '/login',

@@ -15,3 +15,25 @@ export const panelEjemplo = {
     { nombre: 'Alejandro', habito: 'Leer un libro', estado: 'sin-prueba', esUsuario: true },
   ],
 }
+
+// TODO: boceto de la configuración del escuadrón (PBI #130). Faltan en el backend la visibilidad y
+// el límite de miembros, y los endpoints para guardarlos, cambiar el código, expulsar (PBI #131)
+// y eliminar el escuadrón.
+export function codigoEjemplo() {
+  const alfabeto = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  return Array.from({ length: 6 }, () => alfabeto[Math.floor(Math.random() * alfabeto.length)]).join('')
+}
+
+export const configuracionEjemplo = {
+  escuadron: {
+    nombre: 'Los Inquebrantables',
+    codigo: 'K7P2QX',
+    visibilidad: 'privado',
+    plazas: 5,
+  },
+  miembros: [
+    { nombre: 'Alejandro', esUsuario: true, esAdministrador: true },
+    { nombre: 'Carlos' },
+    { nombre: 'Laura' },
+  ],
+}
