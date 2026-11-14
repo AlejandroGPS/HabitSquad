@@ -162,14 +162,15 @@ Sigue el estilo de «Mi hábito»: tarjetas blancas en lista, con un chip de
 color por fila, el texto a la izquierda y el control a la derecha.
 
 Solo el administrador ve la configuración; el resto de miembros ve un aviso y
-un enlace para volver al panel. Tiene dos pestañas:
+un enlace para volver al panel. Tiene tres pestañas:
 
 - **General**: nombre, visibilidad (privado o público) y plazas. Se guardan
   juntos con «Guardar cambios» y se pueden descartar. Las plazas van de 2 a 10
   y nunca bajan de los miembros que ya hay.
-- **Miembros**: el código de invitación (copiar o generar otro, y el anterior
-  deja de servir), la lista de miembros con «Expulsar» y las plazas libres.
-  Al final, «Eliminar escuadrón». Expulsar y eliminar piden pulsar dos veces.
+- **Miembros**: la lista de miembros con «Expulsar» y las plazas libres. Al
+  final, «Eliminar escuadrón». Expulsar y eliminar piden pulsar dos veces.
+- **Invitaciones**: el código de invitación para copiar, generar otro (el
+  anterior deja de servir) y cuántas plazas quedan.
 
 ## PWA
 

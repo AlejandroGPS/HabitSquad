@@ -13,6 +13,7 @@ const CHIPS = {
   morado: 'bg-[#efeaff] text-[#5b32ea]',
   verde: 'bg-[#e8f5ec] text-[#248a3d]',
   azul: 'bg-[#e6f3ff] text-[#0878c9]',
+  naranja: 'bg-[#fff1e6] text-[#c93400]',
   rojo: 'bg-[#ffebeb] text-[#d70015]',
 }
 
@@ -32,7 +33,6 @@ const chicoClass = [
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
 ].join(' ')
 const grisClass = `${chicoClass} bg-[#f2f2f7] text-[#1d1d1f]`
-const moradoClass = `${chicoClass} bg-[#efeaff] text-[#5b32ea]`
 const rojoClass = `${chicoClass} bg-[#ffebeb] text-[#d70015]`
 const pasoClass = [
   'grid h-11 w-11 shrink-0 place-items-center rounded-full text-[#1d1d1f] disabled:opacity-35',
@@ -291,10 +291,13 @@ export function configuracionEscuadronScreen({ escuadron, miembros: miembrosInic
   )
   general.noValidate = true
 
-  // Miembros
+  // Invitaciones
 
   let codigo = escuadron.codigo ?? ''
-  const codigoTexto = element('span', 'font-black tracking-[0.15em] text-[#1d1d1f] select-all')
+  const codigoTexto = element(
+    'span',
+    'inline-flex min-h-11 items-center rounded-xl bg-[#f2f2f7] px-4 text-[1.0625rem] font-black tracking-[0.3em] text-[#1d1d1f] select-all',
+  )
   const codigoEstado = element('p', 'hidden px-5 pb-4 text-[0.875rem] font-semibold text-[#6e6e73]')
   codigoEstado.setAttribute('role', 'status')
   const avisarCodigo = (texto) => {
@@ -302,7 +305,7 @@ export function configuracionEscuadronScreen({ escuadron, miembros: miembrosInic
     codigoEstado.classList.remove('hidden')
   }
   const copiar = button(
-    moradoClass,
+    `${chicoClass} bg-accent text-white`,
     async () => {
       try {
         await navigator.clipboard.writeText(codigo)
@@ -312,7 +315,7 @@ export function configuracionEscuadronScreen({ escuadron, miembros: miembrosInic
       }
     },
     icon('copy', 'h-4 w-4 shrink-0'),
-    'Copiar código',
+    'Copiar',
   )
   const generar = button(
     grisClass,
@@ -329,17 +332,45 @@ export function configuracionEscuadronScreen({ escuadron, miembros: miembrosInic
           generar.disabled = false
         }
       }),
-    icon('refresh', 'h-4 w-4 shrink-0'),
-    'Generar otro',
+    'Generar',
   )
-  const invitarFila = fila({
-    inicio: chip('userPlus', CHIPS.morado),
-    titulo: 'Invitar',
+  const libresValor = element('p', 'text-[1.125rem] font-black tabular-nums text-[#1d1d1f]')
+  const libresFila = fila({
+    inicio: chip('users', CHIPS.azul),
+    titulo: 'Plazas libres',
     descripcion: '',
-    control: element('div', 'flex flex-wrap gap-2 lg:ms-auto', copiar, generar),
+    control: element('div', 'lg:ms-auto', libresValor),
   })
-  invitarFila.querySelectorAll('p')[1].append('Código ', codigoTexto)
+  const libresDescripcion = libresFila.querySelectorAll('p')[1]
 
+  const invitacionesPanel = element(
+    'div',
+    '',
+    seccionTitulo('Invitar a tu escuadrón'),
+    element(
+      'section',
+      cardClass,
+      fila({
+        inicio: chip('userPlus', CHIPS.morado),
+        titulo: 'Código de invitación',
+        descripcion: 'Compártelo con tus amigos',
+        control: element('div', 'flex flex-wrap items-center gap-2 lg:ms-auto', codigoTexto, copiar),
+      }),
+      fila({
+        inicio: chip('refresh', CHIPS.naranja),
+        titulo: 'Generar otro código',
+        descripcion: 'El código antiguo deja de valer',
+        control: element('div', 'lg:ms-auto', generar),
+      }),
+      libresFila,
+      codigoEstado,
+    ),
+  )
+
+  // Miembros
+
+  const miembrosEstado = element('p', 'hidden px-5 pb-4 text-[0.875rem] font-semibold text-red-700')
+  miembrosEstado.setAttribute('role', 'alert')
   const miembrosTitulo = seccionTitulo('')
   const miembrosLista = element('div')
 
@@ -383,7 +414,8 @@ export function configuracionEscuadronScreen({ escuadron, miembros: miembrosInic
       sync()
     } catch {
       boton.disabled = false
-      avisarCodigo(`No se ha podido expulsar a ${miembro.nombre}. Inténtalo de nuevo.`)
+      miembrosEstado.textContent = `No se ha podido expulsar a ${miembro.nombre}. Inténtalo de nuevo.`
+      miembrosEstado.classList.remove('hidden')
     }
   }
 
@@ -419,14 +451,14 @@ export function configuracionEscuadronScreen({ escuadron, miembros: miembrosInic
       'div',
       '',
       miembrosTitulo,
-      element('section', cardClass, invitarFila, codigoEstado, element('div', 'border-t border-black/5', miembrosLista)),
+      element('section', cardClass, miembrosLista, miembrosEstado),
     ),
     element('section', cardClass, eliminarFila),
   )
 
   // Pestañas
 
-  const paneles = { general, miembros: miembrosPanel }
+  const paneles = { general, miembros: miembrosPanel, invitaciones: invitacionesPanel }
   for (const [id, panel] of Object.entries(paneles)) {
     panel.id = `panel-${id}`
     panel.setAttribute('role', 'tabpanel')
@@ -436,6 +468,7 @@ export function configuracionEscuadronScreen({ escuadron, miembros: miembrosInic
     [
       { id: 'general', titulo: 'General' },
       { id: 'miembros', titulo: 'Miembros' },
+      { id: 'invitaciones', titulo: 'Invitaciones' },
     ],
     mostrar,
   )
@@ -487,6 +520,9 @@ export function configuracionEscuadronScreen({ escuadron, miembros: miembrosInic
     general.setAttribute('aria-busy', String(guardando))
 
     codigoTexto.textContent = codigo
+    const libres = Math.max(guardado.plazas - miembros.length, 0)
+    libresValor.textContent = `${libres} de ${guardado.plazas}`
+    libresDescripcion.textContent = libres ? 'Si no quedan, nadie puede entrar' : 'No queda ninguna: sube las plazas en General'
     miembrosTitulo.textContent = `Miembros · ${miembros.length} de ${guardado.plazas}`
     miembrosLista.replaceChildren(
       ...miembros.map(miembroFila),
@@ -556,5 +592,5 @@ export function configuracionEscuadronScreen({ escuadron, miembros: miembrosInic
 
   mostrar('general')
   sync()
-  return layout(element('div', 'mt-4 space-y-4 px-4 lg:mt-6 lg:px-0', tabs.lista, general, miembrosPanel))
+  return layout(element('div', 'mt-4 space-y-4 px-4 lg:mt-6 lg:px-0', tabs.lista, general, miembrosPanel, invitacionesPanel))
 }
