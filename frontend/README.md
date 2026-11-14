@@ -158,18 +158,18 @@ mismo dominio.
 `/escuadrones/configuracion` se abre desde «Configuración» en la barra
 lateral, que como «Mi hábito» solo sale en web. Por ahora es un boceto con los
 datos de `src/datosEjemplo.js`, hasta que el backend guarde estos ajustes.
-Sigue el diseño del panel: la misma rejilla, las tarjetas de
-`components/card.js` y la cabecera con alertas y cuenta.
+Sigue el estilo de «Mi hábito»: tarjetas blancas en lista, con un chip de
+color por fila, el texto a la izquierda y el control a la derecha.
 
-Solo el administrador ve el formulario; el resto de miembros ve un aviso y un
-enlace para volver al panel. El administrador puede:
+Solo el administrador ve la configuración; el resto de miembros ve un aviso y
+un enlace para volver al panel. Tiene dos pestañas:
 
-- Cambiar el nombre, la visibilidad (privado o público) y el límite de
-  miembros. Se guardan juntos con «Guardar» y se pueden descartar. El límite va
-  de 2 a 10 y nunca baja de los miembros que ya hay.
-- Copiar el código de invitación o generar otro. El anterior deja de servir.
-- Expulsar a un miembro y eliminar el escuadrón. Estos botones salen
-  desactivados hasta que exista su endpoint.
+- **General**: nombre, visibilidad (privado o público) y plazas. Se guardan
+  juntos con «Guardar cambios» y se pueden descartar. Las plazas van de 2 a 10
+  y nunca bajan de los miembros que ya hay.
+- **Miembros**: el código de invitación (copiar o generar otro, y el anterior
+  deja de servir), la lista de miembros con «Expulsar» y las plazas libres.
+  Al final, «Eliminar escuadrón». Expulsar y eliminar piden pulsar dos veces.
 
 ## PWA
 

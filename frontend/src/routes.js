@@ -160,10 +160,8 @@ export const routes = [
         acciones: {
           guardar: async () => {},
           generarCodigo: async () => codigoEjemplo(),
-          cerrarSesion: async () => {
-            await logout()
-            navigate('/login')
-          },
+          expulsar: async () => {},
+          eliminar: async () => navigate('/'),
         },
       }),
   },

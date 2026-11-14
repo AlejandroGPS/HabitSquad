@@ -1,53 +1,42 @@
-import { accountMenu } from '../components/accountMenu.js'
 import { appLayout } from '../components/appLayout.js'
-import { iniciales } from '../components/avatar.js'
+import { iniciales, squadAvatar } from '../components/avatar.js'
 import { pillClass, pillLink } from '../components/buttons.js'
-import { card, cardChip, cardLabel, cardNote, pillButtonClass, progressBars } from '../components/card.js'
 import { button, element } from '../components/dom.js'
-import {
-  clearFieldError,
-  clearFormAlert,
-  formAlert,
-  labeledField,
-  setFieldError,
-  showFormAlert,
-} from '../components/forms.js'
+import { clearFormAlert, formAlert, showFormAlert } from '../components/forms.js'
 import { icon } from '../components/icons.js'
-import { alertasBoton, escuadronResumen } from '../components/panel/cabecera.js'
-import { plazasLibres } from '../components/panel/invitaCard.js'
 import { NAME_MAX_LENGTH, validateSquadName } from './crearEscuadron.js'
 
 export const PLAZAS_MIN = 2
 export const PLAZAS_MAX = 10
 
-const VISIBILIDADES = [
-  {
-    valor: 'privado',
-    titulo: 'Privado',
-    icono: 'lock',
-    color: 'bg-accent/10 text-accent',
-    descripcion: 'Solo entra quien tenga el código de invitación.',
-  },
-  {
-    valor: 'publico',
-    titulo: 'Público',
-    icono: 'globe',
-    color: 'bg-sky/10 text-sky',
-    descripcion: 'Sale en el buscador y cualquiera puede unirse mientras queden plazas.',
-  },
-]
+const CHIPS = {
+  morado: 'bg-[#efeaff] text-[#5b32ea]',
+  verde: 'bg-[#e8f5ec] text-[#248a3d]',
+  azul: 'bg-[#e6f3ff] text-[#0878c9]',
+  rojo: 'bg-[#ffebeb] text-[#d70015]',
+}
 
-const labelClass = 'text-[0.8125rem] font-extrabold text-ink-muted'
+const AVATARES = ['bg-[#5b32ea]', 'bg-[#0878c9]', 'bg-[#248a3d]', 'bg-[#c93400]']
 
-const pasoClass = [
-  'grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent/10 text-accent disabled:opacity-40',
+const VISIBILIDADES = {
+  privado: { titulo: 'Privado', icono: 'lock', descripcion: 'Solo entra quien tenga el código.' },
+  publico: { titulo: 'Público', icono: 'globe', descripcion: 'Sale en el buscador y cualquiera puede unirse.' },
+}
+
+const cardClass = 'overflow-hidden rounded-[1.75rem] bg-white shadow-sm'
+const filaClass = 'flex flex-col gap-3 border-t border-black/5 px-5 py-4 first:border-t-0 lg:flex-row lg:items-center lg:gap-4'
+const controlClass = 'w-full lg:ms-auto lg:w-80 lg:shrink-0'
+const chicoClass = [
+  'inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-full px-4',
+  'text-[0.9375rem] font-bold disabled:opacity-50',
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
 ].join(' ')
-
-const peligroClass = [
-  'inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-red-50 px-4',
-  'text-[0.9375rem] font-bold text-red-700 disabled:opacity-50',
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700',
+const grisClass = `${chicoClass} bg-[#f2f2f7] text-[#1d1d1f]`
+const moradoClass = `${chicoClass} bg-[#efeaff] text-[#5b32ea]`
+const rojoClass = `${chicoClass} bg-[#ffebeb] text-[#d70015]`
+const pasoClass = [
+  'grid h-11 w-11 shrink-0 place-items-center rounded-full text-[#1d1d1f] disabled:opacity-35',
+  'focus-visible:outline-2 focus-visible:outline-accent',
 ].join(' ')
 
 // El límite nunca baja de los miembros que ya hay: nadie sale del escuadrón por cambiarlo.
@@ -55,78 +44,95 @@ export function limitesPlazas(miembros) {
   return { minimo: Math.max(PLAZAS_MIN, miembros), maximo: Math.max(PLAZAS_MAX, miembros) }
 }
 
-function rangoTexto({ minimo, maximo }, miembros) {
-  return miembros > PLAZAS_MIN
-    ? `Mínimo ${minimo}, porque ya sois ${miembros}. Máximo ${maximo}.`
-    : `Entre ${minimo} y ${maximo} miembros.`
+function plazasTexto(miembros, plazas) {
+  const libres = plazas - miembros
+  if (libres <= 0) return `Sois ${miembros} · Completo, nadie más puede unirse`
+  return `Sois ${miembros} · ${libres === 1 ? 'Queda 1 plaza' : `Quedan ${libres} plazas`}`
 }
 
-function opcionVisibilidad(opcion) {
-  const radio = element('input', 'peer sr-only')
-  radio.type = 'radio'
-  radio.name = 'visibilidad'
-  radio.value = opcion.valor
-  const label = element(
-    'label',
-    [
-      'flex min-w-0 cursor-pointer items-start gap-3 rounded-[1.25rem] border-2 border-hairline p-3',
-      'has-checked:border-accent has-checked:bg-accent-soft',
-      'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent',
-    ].join(' '),
-    radio,
-    element('span', `grid h-10 w-10 shrink-0 place-items-center rounded-xl ${opcion.color}`, icon(opcion.icono)),
-    element(
-      'span',
-      'min-w-0 flex-1',
-      element('span', 'block font-extrabold', opcion.titulo),
-      element('span', 'block text-[0.8125rem] font-bold text-ink-muted', opcion.descripcion),
-    ),
-    element(
-      'span',
-      'grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 border-hairline text-transparent peer-checked:border-accent peer-checked:bg-accent peer-checked:text-white',
-      icon('check', 'h-3.5 w-3.5 shrink-0', 3.2),
-    ),
-  )
-  return { label, radio }
+function chip(iconName, color) {
+  return element('span', `grid h-11 w-11 shrink-0 place-items-center rounded-xl ${color}`, icon(iconName))
 }
 
-function miembroFila(miembro, onExpulsar) {
+function fila({ inicio, titulo, descripcion, control }) {
   return element(
-    'li',
-    'flex items-center gap-3 py-1.5 lg:rounded-xl lg:bg-fill/60 lg:p-3',
-    element(
-      'span',
-      'grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft font-black text-accent',
-      iniciales(miembro.nombre),
-    ),
+    'div',
+    filaClass,
     element(
       'div',
-      'min-w-0 flex-1',
-      element('p', 'truncate font-extrabold', miembro.esUsuario ? 'Tú' : miembro.nombre),
-      element('p', 'text-[0.8125rem] font-bold text-ink-muted', miembro.esAdministrador ? 'Administrador' : 'Miembro'),
+      'flex min-w-0 items-center gap-3.5',
+      inicio,
+      element(
+        'div',
+        'min-w-0',
+        element('p', 'font-extrabold text-[#1d1d1f]', titulo),
+        element('p', 'text-[0.875rem] font-semibold text-[#6e6e73]', descripcion),
+      ),
     ),
-    !miembro.esAdministrador &&
-      button(`${peligroClass} lg:px-3.5`, onExpulsar && (() => onExpulsar(miembro)), 'Expulsar'),
+    control,
   )
+}
+
+function seccionTitulo(texto) {
+  return element('h2', 'mb-2 text-sm font-bold text-[#6e6e73]', texto)
+}
+
+function pestanas(opciones, onCambio) {
+  const lista = element('div', 'inline-flex rounded-full bg-black/5 p-1')
+  lista.setAttribute('role', 'tablist')
+  lista.setAttribute('aria-label', 'Secciones de la configuración')
+  const botones = opciones.map(({ id, titulo }) => {
+    const tab = element(
+      'button',
+      [
+        'min-h-11 rounded-full px-6 text-[0.9375rem] font-bold text-[#1d1d1f]',
+        'aria-selected:bg-white aria-selected:text-accent aria-selected:shadow-sm',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+      ].join(' '),
+      titulo,
+    )
+    tab.type = 'button'
+    tab.id = `pestana-${id}`
+    tab.setAttribute('role', 'tab')
+    tab.setAttribute('aria-controls', `panel-${id}`)
+    tab.addEventListener('click', () => onCambio(id))
+    return tab
+  })
+  lista.append(...botones)
+  lista.addEventListener('keydown', (event) => {
+    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return
+    const actual = botones.indexOf(document.activeElement)
+    const siguiente = botones[(actual + (event.key === 'ArrowRight' ? 1 : -1) + botones.length) % botones.length]
+    siguiente.focus()
+    siguiente.click()
+  })
+  const marcar = (id) => {
+    for (const tab of botones) {
+      const activa = tab.id === `pestana-${id}`
+      tab.setAttribute('aria-selected', String(activa))
+      tab.tabIndex = activa ? 0 : -1
+    }
+  }
+  return { lista, marcar }
 }
 
 function soloAdministrador({ miembros, volverA }) {
   const administrador = miembros.find(({ esAdministrador }) => esAdministrador)
   return element(
     'div',
-    'mt-4 grid grid-cols-2 gap-3 px-4 lg:mt-6 lg:grid-cols-4 lg:gap-4 lg:px-0',
-    card(
-      'col-span-2',
-      cardChip('lock', 'bg-accent/10 text-accent'),
-      cardLabel('Configuración del escuadrón'),
+    'mt-4 px-4 lg:mt-6 lg:px-0',
+    element(
+      'section',
+      `${cardClass} max-w-xl p-5`,
       element(
-        'h2',
-        'mt-1 pe-10 text-[1.25rem] leading-tight font-black',
-        'Solo el administrador puede cambiar la configuración',
+        'div',
+        'flex items-center gap-3.5',
+        chip('lock', CHIPS.morado),
+        element('h2', 'font-black text-[#1d1d1f]', 'Solo el administrador puede cambiar la configuración'),
       ),
       element(
         'p',
-        'mt-2 font-bold text-ink-muted',
+        'mt-3 font-semibold text-[#6e6e73]',
         administrador
           ? `Si quieres cambiar algo del escuadrón, habla con ${administrador.nombre}.`
           : 'Si quieres cambiar algo del escuadrón, habla con quien lo administra.',
@@ -136,116 +142,180 @@ function soloAdministrador({ miembros, volverA }) {
   )
 }
 
-export function configuracionEscuadronScreen({ escuadron, miembros = [], acciones = {} } = {}) {
+export function configuracionEscuadronScreen({ escuadron, miembros: miembrosIniciales = [], acciones = {} } = {}) {
   const { nombre, visibilidad = 'privado', plazas = 5 } = escuadron
   const volverA = escuadron.id ? `/escuadrones/panel?id=${escuadron.id}` : '/'
+  let miembros = [...miembrosIniciales]
   const usuario = miembros.find(({ esUsuario }) => esUsuario)
 
-  const back = element(
-    'a',
-    'glass grid h-11 w-11 shrink-0 place-items-center rounded-full text-ink focus-visible:outline-2 focus-visible:outline-accent',
-    icon('back'),
-  )
+  const back = element('a', 'glass grid h-11 w-11 shrink-0 place-items-center rounded-full text-ink', icon('back'))
   back.href = volverA
   back.dataset.link = ''
   back.setAttribute('aria-label', 'Volver al panel')
 
   const titulo = element('span', '', nombre)
-  const footer = element('div', '', escuadronResumen({ nombre, miembros: miembros.length, plazas }))
   const layout = (body) =>
-    appLayout({
-      active: 'configuracion',
-      kicker: titulo,
-      title: 'Configuración',
-      leading: back,
-      trailing: [alertasBoton(), accountMenu({ nombre: usuario?.nombre, onLogout: acciones.cerrarSesion })],
-      sidebarFooter: footer,
-      body,
-      detail: true,
-    })
+    appLayout({ active: 'configuracion', kicker: titulo, title: 'Configuración', leading: back, body, detail: true })
 
   if (!usuario?.esAdministrador) return layout(soloAdministrador({ miembros, volverA }))
 
-  const limites = limitesPlazas(miembros.length)
-  let guardado = { nombre, visibilidad, plazas: Math.min(Math.max(plazas, limites.minimo), limites.maximo) }
+  const limitesIniciales = limitesPlazas(miembros.length)
+  let guardado = {
+    nombre,
+    visibilidad,
+    plazas: Math.min(Math.max(plazas, limitesIniciales.minimo), limitesIniciales.maximo),
+  }
   let actual = { ...guardado }
   let guardando = false
   let recienGuardado = false
 
-  const nombreCampo = labeledField({
-    label: 'Nombre del escuadrón',
-    id: 'nombre-escuadron',
-    name: 'nombre',
-    type: 'text',
-    placeholder: 'Ej. Gym Bros',
-    autocomplete: 'off',
+  // General
+
+  const cabeceraAvatar = element('div')
+  const cabeceraNombre = element('p', 'truncate text-[1.125rem] font-black text-[#1d1d1f]')
+  const cabeceraEstado = element('p', 'text-[0.875rem] font-semibold text-[#6e6e73]')
+  const cabecera = element(
+    'div',
+    'flex items-center gap-3.5 px-5 py-4',
+    cabeceraAvatar,
+    element('div', 'min-w-0', cabeceraNombre, cabeceraEstado),
+  )
+
+  const nombreInput = element(
+    'input',
+    [
+      'h-12 w-full min-w-0 rounded-xl border-2 border-transparent bg-[#f2f2f7] ps-3 pe-16',
+      'font-semibold text-[#1d1d1f] outline-none focus:border-accent aria-invalid:border-red-600 disabled:opacity-60',
+    ].join(' '),
+  )
+  nombreInput.id = 'nombre-escuadron'
+  nombreInput.name = 'nombre'
+  nombreInput.maxLength = NAME_MAX_LENGTH
+  nombreInput.autocomplete = 'off'
+  nombreInput.placeholder = 'Ej. Gym Bros'
+  nombreInput.value = nombre
+  nombreInput.setAttribute('aria-label', 'Nombre del escuadrón')
+  const contador = element(
+    'span',
+    'pointer-events-none absolute inset-y-0 end-3 flex items-center text-xs font-bold text-[#6e6e73]',
+  )
+  const nombreError = element('p', 'mt-1.5 hidden text-[0.8125rem] font-bold text-red-700')
+  nombreError.id = 'nombre-escuadron-error'
+  nombreError.setAttribute('role', 'alert')
+  const nombreFila = fila({
+    inicio: chip('pencil', CHIPS.morado),
+    titulo: 'Nombre',
+    descripcion: 'Cómo os ven los demás',
+    control: element('div', controlClass, element('div', 'relative', nombreInput, contador), nombreError),
   })
-  nombreCampo.wrapper.querySelector('label').className = labelClass
-  nombreCampo.input.maxLength = NAME_MAX_LENGTH
-  nombreCampo.input.value = nombre
-  const nombreCard = card(
-    'col-span-2',
-    cardChip('pencil', 'bg-accent/10 text-accent'),
-    nombreCampo.wrapper,
-    element('div', 'mt-2', cardNote('Lo ven todos los miembros en su panel.')),
-  )
 
-  const opciones = VISIBILIDADES.map(opcionVisibilidad)
-  const visibilidadSet = element(
-    'fieldset',
-    'min-w-0',
-    element('legend', labelClass, 'Visibilidad'),
-    element('div', 'mt-2 grid gap-2.5 sm:grid-cols-2', opciones.map(({ label }) => label)),
+  const visibilidadRadios = []
+  const segmento = element(
+    'div',
+    'grid grid-cols-2 rounded-full bg-[#f2f2f7] p-1',
+    Object.entries(VISIBILIDADES).map(([valor, opcion]) => {
+      const radio = element('input', 'peer sr-only')
+      radio.type = 'radio'
+      radio.name = 'visibilidad'
+      radio.value = valor
+      visibilidadRadios.push(radio)
+      return element(
+        'label',
+        [
+          'flex min-h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full text-[0.9375rem] font-bold text-[#1d1d1f]',
+          'has-checked:bg-white has-checked:text-accent has-checked:shadow-sm',
+          'has-focus-visible:outline-2 has-focus-visible:outline-accent',
+        ].join(' '),
+        radio,
+        icon(opcion.icono, 'h-4 w-4 shrink-0'),
+        opcion.titulo,
+      )
+    }),
   )
-  const visibilidadCard = card('col-span-2', visibilidadSet)
+  const visibilidadSet = element('fieldset', controlClass, element('legend', 'sr-only', 'Visibilidad'), segmento)
+  const visibilidadFila = fila({
+    inicio: chip('globe', CHIPS.verde),
+    titulo: 'Visibilidad',
+    descripcion: '',
+    control: visibilidadSet,
+  })
+  const visibilidadDescripcion = visibilidadFila.querySelectorAll('p')[1]
 
-  const limiteLabel = cardLabel('Límite de miembros', { icon: 'users' })
-  limiteLabel.id = 'limite-miembros-etiqueta'
-  const valor = element('output', 'text-[1.875rem] leading-tight font-black tabular-nums')
-  valor.setAttribute('aria-labelledby', limiteLabel.id)
-  valor.setAttribute('aria-live', 'polite')
+  const plazasValor = element('output', 'min-w-8 text-center text-[1.125rem] font-black tabular-nums text-[#1d1d1f]')
+  plazasValor.setAttribute('aria-live', 'polite')
+  plazasValor.setAttribute('aria-label', 'Plazas')
   const menos = button(pasoClass, () => cambiarPlazas(-1), icon('minus'))
   menos.setAttribute('aria-label', 'Quitar una plaza')
   const mas = button(pasoClass, () => cambiarPlazas(1), icon('plus'))
   mas.setAttribute('aria-label', 'Añadir una plaza')
-  const barras = element('div')
-  const libresNota = cardNote('')
-  const limiteCard = card(
-    'col-span-2',
-    limiteLabel,
-    element(
+  const plazasFila = fila({
+    inicio: chip('users', CHIPS.azul),
+    titulo: 'Plazas',
+    descripcion: '',
+    control: element(
       'div',
-      'flex items-center justify-between gap-3',
-      element('p', 'flex items-baseline gap-1.5', valor, element('span', 'font-extrabold text-ink-muted', 'miembros')),
-      element('div', 'flex gap-2', menos, mas),
+      `${controlClass} flex justify-start lg:justify-end`,
+      element('div', 'flex items-center gap-2 rounded-full bg-[#f2f2f7] p-0.5', menos, plazasValor, mas),
     ),
-    barras,
-    element('div', 'mt-2', libresNota, cardNote(rangoTexto(limites, miembros.length))),
+  })
+  const plazasDescripcion = plazasFila.querySelectorAll('p')[1]
+
+  const estado = element('p', 'text-[0.875rem] font-semibold text-[#6e6e73] lg:me-auto')
+  estado.setAttribute('role', 'status')
+  const descartar = button(
+    `${pillClass('secondary')} border border-black/10 shadow-none disabled:opacity-50`,
+    descartarCambios,
+    'Descartar',
   )
+  const guardar = element('button', `${pillClass('primary')} disabled:opacity-50`)
+  guardar.type = 'submit'
+  const pie = element(
+    'div',
+    'flex flex-col gap-3 border-t border-black/5 px-5 py-4 lg:flex-row lg:items-center',
+    estado,
+    element('div', 'grid grid-cols-2 gap-2 lg:flex', descartar, guardar),
+  )
+  const alerta = formAlert()
+  alerta.classList.add('mx-5', 'mb-1')
+
+  const general = element(
+    'form',
+    '',
+    element(
+      'section',
+      cardClass,
+      cabecera,
+      element('div', 'border-t border-black/5', nombreFila, visibilidadFila, plazasFila),
+      pie,
+    ),
+  )
+  general.noValidate = true
+
+  // Miembros
 
   let codigo = escuadron.codigo ?? ''
-  const codigoTexto = element('p', 'mt-1 text-[1.5rem] font-black tracking-[0.2em] select-all', codigo)
-  const codigoEstado = element('p', 'mt-2 hidden text-[0.8125rem] font-bold text-ink-muted')
+  const codigoTexto = element('span', 'font-black tracking-[0.15em] text-[#1d1d1f] select-all')
+  const codigoEstado = element('p', 'hidden px-5 pb-4 text-[0.875rem] font-semibold text-[#6e6e73]')
   codigoEstado.setAttribute('role', 'status')
   const avisarCodigo = (texto) => {
     codigoEstado.textContent = texto
     codigoEstado.classList.remove('hidden')
   }
   const copiar = button(
-    pillButtonClass,
+    moradoClass,
     async () => {
       try {
         await navigator.clipboard.writeText(codigo)
-        avisarCodigo('Código copiado.')
+        avisarCodigo('Código copiado. Pásaselo a tus amigos.')
       } catch {
         avisarCodigo('No se ha podido copiar. Cópialo a mano.')
       }
     },
     icon('copy', 'h-4 w-4 shrink-0'),
-    'Copiar',
+    'Copiar código',
   )
   const generar = button(
-    pillButtonClass,
+    grisClass,
     acciones.generarCodigo &&
       (async () => {
         generar.disabled = true
@@ -262,70 +332,120 @@ export function configuracionEscuadronScreen({ escuadron, miembros = [], accione
     icon('refresh', 'h-4 w-4 shrink-0'),
     'Generar otro',
   )
-  const codigoCard = card(
-    'col-span-2 flex flex-col',
-    cardChip('userPlus', 'bg-success/10 text-success'),
-    cardLabel('Código de invitación'),
-    codigoTexto,
-    cardNote('Si generas otro, el actual deja de servir.'),
-    element('div', 'mt-3 flex flex-wrap gap-2 lg:mt-auto lg:pt-3', copiar, generar),
-    codigoEstado,
-  )
+  const invitarFila = fila({
+    inicio: chip('userPlus', CHIPS.morado),
+    titulo: 'Invitar',
+    descripcion: '',
+    control: element('div', 'flex flex-wrap gap-2 lg:ms-auto', copiar, generar),
+  })
+  invitarFila.querySelectorAll('p')[1].append('Código ', codigoTexto)
 
-  const miembrosTotal = element('span', 'font-bold')
-  const miembrosCard = card(
-    'col-span-2 lg:col-span-3',
-    element(
-      'h2',
-      'mb-1 flex items-center justify-between text-[0.8125rem] font-extrabold text-ink-muted',
-      'Miembros',
-      miembrosTotal,
-    ),
-    element(
-      'ul',
-      'lg:mt-2 lg:grid lg:grid-cols-3 lg:gap-3',
-      miembros.map((miembro) => miembroFila(miembro, acciones.expulsar)),
-    ),
-  )
+  const miembrosTitulo = seccionTitulo('')
+  const miembrosLista = element('div')
 
-  const eliminarCard = card(
-    'col-span-2 flex flex-col lg:col-span-1',
-    cardChip('trash', 'bg-red-50 text-red-700'),
-    cardLabel('Eliminar escuadrón'),
-    element('p', 'mt-1 pe-10 font-extrabold', 'Se borran la racha, los hábitos y las pruebas de todos.'),
-    button(`mt-3 self-start lg:mt-auto ${peligroClass}`, acciones.eliminar, icon('trash', 'h-4 w-4 shrink-0'), 'Eliminar'),
-  )
+  function miembroFila(miembro, indice) {
+    const expulsar =
+      !miembro.esAdministrador &&
+      button(grisClass, acciones.expulsar && (() => expulsarMiembro(miembro, expulsar)), 'Expulsar')
+    return fila({
+      inicio: element(
+        'span',
+        `grid h-11 w-11 shrink-0 place-items-center rounded-full font-black text-white ${AVATARES[indice % AVATARES.length]}`,
+        iniciales(miembro.nombre),
+      ),
+      titulo: miembro.nombre,
+      descripcion: [miembro.esAdministrador ? 'Administrador' : 'Miembro', miembro.esUsuario && 'Tú']
+        .filter(Boolean)
+        .join(' · '),
+      control: expulsar && element('div', 'lg:ms-auto', expulsar),
+    })
+  }
 
-  const estado = element(
-    'p',
-    'w-full px-3 pt-1 text-center text-[0.8125rem] font-bold text-ink-muted lg:w-auto lg:flex-1 lg:pt-0 lg:text-start lg:text-[0.9375rem]',
-  )
-  estado.setAttribute('role', 'status')
-  const descartar = button(`${pillClass('secondary')} flex-1 disabled:opacity-50 lg:flex-none`, descartarCambios, 'Descartar')
-  const guardar = element('button', `${pillClass('primary')} flex-1 disabled:opacity-50 lg:flex-none`)
-  guardar.type = 'submit'
-  const barra = element(
+  function plazaLibreFila() {
+    return fila({
+      inicio: element('span', 'h-11 w-11 shrink-0 rounded-full border-2 border-dashed border-black/15'),
+      titulo: 'Plaza libre',
+      descripcion: 'Entra quien use el código',
+    })
+  }
+
+  async function expulsarMiembro(miembro, boton) {
+    if (boton.dataset.confirmar !== 'true') {
+      boton.dataset.confirmar = 'true'
+      boton.className = rojoClass
+      boton.textContent = `¿Expulsar a ${miembro.nombre}?`
+      return
+    }
+    boton.disabled = true
+    try {
+      await acciones.expulsar(miembro)
+      miembros = miembros.filter((otro) => otro !== miembro)
+      sync()
+    } catch {
+      boton.disabled = false
+      avisarCodigo(`No se ha podido expulsar a ${miembro.nombre}. Inténtalo de nuevo.`)
+    }
+  }
+
+  const eliminarDescripcion = 'Se borran la racha y las fotos de todos. No se puede deshacer.'
+  const eliminar = button(rojoClass, acciones.eliminar && eliminarEscuadron, icon('trash', 'h-4 w-4 shrink-0'), 'Eliminar')
+  const eliminarFila = fila({
+    inicio: chip('trash', CHIPS.rojo),
+    titulo: 'Eliminar escuadrón',
+    descripcion: eliminarDescripcion,
+    control: element('div', 'lg:ms-auto', eliminar),
+  })
+
+  async function eliminarEscuadron() {
+    if (eliminar.dataset.confirmar !== 'true') {
+      eliminar.dataset.confirmar = 'true'
+      eliminar.replaceChildren(icon('trash', 'h-4 w-4 shrink-0'), 'Sí, eliminar')
+      eliminarFila.querySelectorAll('p')[1].textContent = 'Pulsa otra vez para confirmar. Se perderá todo.'
+      return
+    }
+    eliminar.disabled = true
+    try {
+      await acciones.eliminar()
+    } catch {
+      eliminar.disabled = false
+      eliminarFila.querySelectorAll('p')[1].textContent = 'No se ha podido eliminar. Inténtalo de nuevo.'
+    }
+  }
+
+  const miembrosPanel = element(
     'div',
-    'glass sticky bottom-4 z-10 col-span-2 flex flex-wrap items-center gap-2 rounded-[1.75rem] p-1.5 lg:col-span-4 lg:flex-nowrap lg:rounded-full',
-    estado,
-    descartar,
-    guardar,
+    'space-y-4',
+    element(
+      'div',
+      '',
+      miembrosTitulo,
+      element('section', cardClass, invitarFila, codigoEstado, element('div', 'border-t border-black/5', miembrosLista)),
+    ),
+    element('section', cardClass, eliminarFila),
   )
-  const alerta = formAlert()
-  alerta.classList.add('col-span-2', 'lg:col-span-4')
 
-  const form = element(
-    'form',
-    'mt-4 grid grid-cols-2 gap-3 px-4 lg:mt-6 lg:grid-cols-4 lg:gap-4 lg:px-0',
-    nombreCard,
-    visibilidadCard,
-    limiteCard,
-    codigoCard,
-    miembrosCard,
-    eliminarCard,
-    barra,
+  // Pestañas
+
+  const paneles = { general, miembros: miembrosPanel }
+  for (const [id, panel] of Object.entries(paneles)) {
+    panel.id = `panel-${id}`
+    panel.setAttribute('role', 'tabpanel')
+    panel.setAttribute('aria-labelledby', `pestana-${id}`)
+  }
+  const tabs = pestanas(
+    [
+      { id: 'general', titulo: 'General' },
+      { id: 'miembros', titulo: 'Miembros' },
+    ],
+    mostrar,
   )
-  form.noValidate = true
+
+  function mostrar(id) {
+    tabs.marcar(id)
+    for (const [clave, panel] of Object.entries(paneles)) panel.hidden = clave !== id
+  }
+
+  // Estado
 
   function hayCambios() {
     return (
@@ -336,34 +456,42 @@ export function configuracionEscuadronScreen({ escuadron, miembros = [], accione
   }
 
   function sync() {
+    const limites = limitesPlazas(miembros.length)
     const cambios = hayCambios()
-    const libres = actual.plazas - miembros.length
-    nombreCampo.input.disabled = guardando
-    for (const { radio } of opciones) radio.checked = radio.value === actual.visibilidad
+
+    titulo.textContent = guardado.nombre
+    cabeceraAvatar.replaceChildren(squadAvatar({ nombre: guardado.nombre }))
+    cabeceraNombre.textContent = guardado.nombre
+    cabeceraEstado.textContent = `${VISIBILIDADES[guardado.visibilidad].titulo} · ${miembros.length} de ${guardado.plazas} miembros`
+
+    nombreInput.disabled = guardando
+    contador.textContent = `${nombreInput.value.length}/${NAME_MAX_LENGTH}`
+    for (const radio of visibilidadRadios) radio.checked = radio.value === actual.visibilidad
     visibilidadSet.disabled = guardando
-    valor.textContent = String(actual.plazas)
+    visibilidadDescripcion.textContent = VISIBILIDADES[actual.visibilidad].descripcion
+    plazasValor.textContent = String(actual.plazas)
+    plazasDescripcion.textContent = plazasTexto(miembros.length, actual.plazas)
     menos.disabled = guardando || actual.plazas <= limites.minimo
     mas.disabled = guardando || actual.plazas >= limites.maximo
-    barras.replaceChildren(
-      progressBars([...Array(miembros.length).fill('bg-accent'), ...Array(Math.max(libres, 0)).fill('bg-fill')]),
-    )
-    libresNota.textContent = libres > 0 ? plazasLibres(libres) : 'Escuadrón completo: nadie más podrá unirse.'
-    libresNota.classList.toggle('text-ink-muted', libres > 0)
-    libresNota.classList.toggle('text-accent', libres <= 0)
-    miembrosTotal.textContent = `${miembros.length} de ${actual.plazas} miembros`
-    titulo.textContent = guardado.nombre
-    footer.replaceChildren(escuadronResumen({ nombre: guardado.nombre, miembros: miembros.length, plazas: guardado.plazas }))
+
     estado.textContent = guardando
       ? 'Guardando los cambios…'
       : cambios
-        ? 'Tienes cambios sin guardar.'
+        ? 'Tienes cambios sin guardar'
         : recienGuardado
-          ? 'Cambios guardados.'
-          : 'Sin cambios.'
+          ? 'Cambios guardados'
+          : 'Sin cambios'
     descartar.disabled = guardando || !cambios
     guardar.disabled = guardando || !cambios || typeof acciones.guardar !== 'function'
-    guardar.textContent = guardando ? 'Guardando…' : 'Guardar'
-    form.setAttribute('aria-busy', String(guardando))
+    guardar.textContent = guardando ? 'Guardando…' : 'Guardar cambios'
+    general.setAttribute('aria-busy', String(guardando))
+
+    codigoTexto.textContent = codigo
+    miembrosTitulo.textContent = `Miembros · ${miembros.length} de ${guardado.plazas}`
+    miembrosLista.replaceChildren(
+      ...miembros.map(miembroFila),
+      ...Array.from({ length: Math.max(guardado.plazas - miembros.length, 0) }, plazaLibreFila),
+    )
   }
 
   function editar(cambio) {
@@ -374,28 +502,39 @@ export function configuracionEscuadronScreen({ escuadron, miembros = [], accione
   }
 
   function cambiarPlazas(paso) {
-    editar({ plazas: Math.min(Math.max(actual.plazas + paso, limites.minimo), limites.maximo) })
+    const { minimo, maximo } = limitesPlazas(miembros.length)
+    editar({ plazas: Math.min(Math.max(actual.plazas + paso, minimo), maximo) })
+  }
+
+  function limpiarErrorNombre() {
+    nombreError.textContent = ''
+    nombreError.classList.add('hidden')
+    nombreInput.removeAttribute('aria-invalid')
+    nombreInput.removeAttribute('aria-describedby')
   }
 
   function descartarCambios() {
-    nombreCampo.input.value = guardado.nombre
-    clearFieldError(nombreCampo.input, nombreCampo.error)
+    nombreInput.value = guardado.nombre
+    limpiarErrorNombre()
     editar(guardado)
   }
 
-  nombreCampo.input.addEventListener('input', () => {
-    clearFieldError(nombreCampo.input, nombreCampo.error)
-    editar({ nombre: nombreCampo.input.value })
+  nombreInput.addEventListener('input', () => {
+    limpiarErrorNombre()
+    editar({ nombre: nombreInput.value })
   })
   visibilidadSet.addEventListener('change', (event) => editar({ visibilidad: event.target.value }))
 
-  form.addEventListener('submit', async (event) => {
+  general.addEventListener('submit', async (event) => {
     event.preventDefault()
     if (guardar.disabled) return
     const resultado = validateSquadName(actual.nombre)
     if (!resultado.ok) {
-      setFieldError(nombreCampo.input, nombreCampo.error, resultado.error)
-      nombreCampo.input.focus()
+      nombreError.textContent = resultado.error
+      nombreError.classList.remove('hidden')
+      nombreInput.setAttribute('aria-invalid', 'true')
+      nombreInput.setAttribute('aria-describedby', nombreError.id)
+      nombreInput.focus()
       return
     }
     clearFormAlert(alerta)
@@ -405,16 +544,17 @@ export function configuracionEscuadronScreen({ escuadron, miembros = [], accione
       await acciones.guardar({ ...actual, nombre: resultado.name })
       guardado = { ...actual, nombre: resultado.name }
       actual = { ...guardado }
-      nombreCampo.input.value = guardado.nombre
+      nombreInput.value = guardado.nombre
       recienGuardado = true
     } catch (error) {
-      showFormAlert(alerta, error.message, barra)
+      showFormAlert(alerta, error.message, pie)
     } finally {
       guardando = false
       sync()
     }
   })
 
+  mostrar('general')
   sync()
-  return layout(form)
+  return layout(element('div', 'mt-4 space-y-4 px-4 lg:mt-6 lg:px-0', tabs.lista, general, miembrosPanel))
 }
