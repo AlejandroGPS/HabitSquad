@@ -128,10 +128,27 @@ def test_registration_is_included_in_openapi_schema(api_client):
     assert response.status_code == 200
     assert "/api/auth/register/" in response.data["paths"]
     operation = response.data["paths"]["/api/auth/register/"]["post"]
-    assert operation["description"] == (
-        "Registra una cuenta con email y contraseña. "
-        "La respuesta 201 devuelve id, email y date_joined, sin tokens. "
-        "La sesión JWT se obtiene con POST /api/auth/token/."
-    )
+    assert "nickname" in operation["description"]
+    assert "contraseña" in operation["description"].lower()
+    assert "docs/REGISTRO.md" in operation["description"]
     assert "content" in operation["responses"]["201"]
     assert set(operation["responses"]) == {"201", "400", "429"}
+
+    request_schema = operation["requestBody"]["content"]["application/json"]["schema"]
+    # Spectacular may inline or $ref the request component
+    if "$ref" in request_schema:
+        ref_name = request_schema["$ref"].rsplit("/", 1)[-1]
+        props = response.data["components"]["schemas"][ref_name]["properties"]
+    else:
+        props = request_schema["properties"]
+    assert {"email", "password", "password_confirm", "nickname"} <= set(props)
+
+    response_201 = operation["responses"]["201"]["content"]["application/json"][
+        "schema"
+    ]
+    if "$ref" in response_201:
+        ref_name = response_201["$ref"].rsplit("/", 1)[-1]
+        resp_props = response.data["components"]["schemas"][ref_name]["properties"]
+    else:
+        resp_props = response_201["properties"]
+    assert {"id", "email", "nickname", "date_joined"} <= set(resp_props)
