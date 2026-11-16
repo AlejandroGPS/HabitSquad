@@ -25,19 +25,24 @@ que se haya renovado correctamente.
 
 ## Registro desde la aplicación
 
-La pantalla **Registrarme** está en `/registro`. El usuario escribe su correo y
-una contraseña. La aplicación comprueba el formato en el navegador y envía
-`POST /api/auth/register/`.
+La pantalla **Registrarme** está en `/registro`. El usuario escribe correo,
+contraseña, repetición de contraseña y un **nickname** único. La aplicación
+comprueba el formato en el navegador y envía `POST /api/auth/register/`.
 
-El alta devuelve `201` y pide verificar el correo. El enlace recibido abre
-`/verify-email`. Una vez confirmada la dirección, el usuario puede iniciar
-sesión con el mismo correo y la misma contraseña. La aplicación guarda los
-tokens en `localStorage` con la clave `habitsquad.session` y abre la pantalla
-principal (`/`). La ruta `/menu` se conserva por compatibilidad.
+El contrato detallado del endpoint (campos, unicidad de nickname, confirmación
+de contraseña, respuestas y errores) está en [REGISTRO.md](REGISTRO.md).
 
-Un `400` muestra el aviso del campo (`email`
-o `password`), por ejemplo si el correo ya existe. Un `429` indica que se ha
-superado el límite de cinco registros anónimos por hora.
+El alta devuelve `201` (incluye `nickname` entre los campos públicos) y pide
+verificar el correo. El enlace recibido abre `/verify-email`. Una vez confirmada
+la dirección, el usuario puede iniciar sesión con el mismo correo y la misma
+contraseña. La aplicación guarda los tokens en `localStorage` con la clave
+`habitsquad.session` y abre la pantalla principal (`/`). La ruta `/menu` se
+conserva por compatibilidad.
+
+Un `400` muestra el aviso del campo (`email`, `password`, `password_confirm` o
+`nickname`), por ejemplo si el correo o el nickname ya existen o si las
+contraseñas no coinciden. Un `429` indica que se ha superado el límite de cinco
+registros anónimos por hora.
 
 Para verlo: con el backend en el puerto 8000 y el frontend de Vite, abre
 `/registro` y crea una cuenta. Abre el enlace que muestra la consola de Django,
