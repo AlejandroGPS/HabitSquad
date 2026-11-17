@@ -42,9 +42,11 @@ export function cardNote(text) {
 }
 
 export function progressBars(colors, className = 'mt-2') {
-  return element(
+  const bars = element(
     'div',
     `${className} flex gap-1`,
     ...colors.map((color) => element('span', `h-2.5 flex-1 rounded-full ${color}`)),
   )
+  bars.dataset.barras = ''
+  return bars
 }

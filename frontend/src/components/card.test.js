@@ -51,4 +51,5 @@ it('progressBars crea una barra por color', () => {
   expect([...bars.children].map((bar) => bar.classList.contains('flex-1'))).toEqual([true, true])
   expect(bars.lastChild.classList.contains('bg-b')).toBe(true)
   expect(bars.classList.contains('flex-1')).toBe(true)
+  expect(bars.hasAttribute('data-barras')).toBe(true)
 })
