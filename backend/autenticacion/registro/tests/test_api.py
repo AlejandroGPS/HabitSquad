@@ -7,6 +7,17 @@ from rest_framework.test import APIClient
 from usuarios.models import CustomUser
 
 
+def _registration_payload(**overrides):
+    payload = {
+        "email": "Person@Example.com",
+        "password": "S0mething!Secure-497",
+        "password_confirm": "S0mething!Secure-497",
+        "nickname": "HabitHero",
+    }
+    payload.update(overrides)
+    return payload
+
+
 @pytest.fixture
 def api_client():
     return APIClient()
@@ -23,21 +34,22 @@ def clear_throttle_cache():
 def test_register_creates_user_and_returns_public_fields(api_client):
     response = api_client.post(
         reverse("autenticacion:register"),
-        {
-            "email": "Person@Example.com",
-            "password": "S0mething!Secure-497",
-        },
+        _registration_payload(),
         format="json",
     )
 
     user = CustomUser.objects.get(email="person@example.com")
     assert response.status_code == 201
-    assert set(response.data) == {"id", "email", "date_joined"}
+    assert set(response.data) == {"id", "email", "nickname", "date_joined"}
     assert response.data["id"] == user.pk
     assert response.data["email"] == "person@example.com"
+    assert response.data["nickname"] == "HabitHero"
     assert parse_datetime(response.data["date_joined"]) == user.date_joined
+    assert user.nickname == "HabitHero"
+    assert user.email_verified is False
     assert user.check_password("S0mething!Secure-497")
     assert "password" not in response.data
+    assert "password_confirm" not in response.data
 
 
 @pytest.mark.django_db
@@ -45,14 +57,17 @@ def test_register_rejects_duplicate_email_case_insensitively(api_client):
     CustomUser.objects.create_user(
         email="person@example.com",
         password="S0mething!Secure-497",
+        nickname="ExistingUser",
     )
 
     response = api_client.post(
         reverse("autenticacion:register"),
-        {
-            "email": "PERSON@EXAMPLE.COM",
-            "password": "Another!Secure-Password-51",
-        },
+        _registration_payload(
+            email="PERSON@EXAMPLE.COM",
+            password="Another!Secure-Password-51",
+            password_confirm="Another!Secure-Password-51",
+            nickname="NewHero",
+        ),
         format="json",
     )
 
@@ -75,7 +90,12 @@ def test_register_rejects_duplicate_email_case_insensitively(api_client):
 def test_register_rejects_invalid_input(api_client, email, password):
     response = api_client.post(
         reverse("autenticacion:register"),
-        {"email": email, "password": password},
+        _registration_payload(
+            email=email,
+            password=password,
+            password_confirm=password,
+            nickname="ValidNick",
+        ),
         format="json",
     )
 
@@ -92,7 +112,12 @@ def test_register_rejects_missing_fields(api_client):
     )
 
     assert response.status_code == 400
-    assert set(response.data) == {"email", "password"}
+    assert set(response.data) == {
+        "email",
+        "password",
+        "password_confirm",
+        "nickname",
+    }
 
 
 @pytest.mark.django_db
@@ -102,10 +127,10 @@ def test_register_is_limited_to_five_requests_per_hour(api_client):
     responses = [
         api_client.post(
             url,
-            {
-                "email": f"person{index}@example.com",
-                "password": "S0mething!Secure-497",
-            },
+            _registration_payload(
+                email=f"person{index}@example.com",
+                nickname=f"HabitHero{index}",
+            ),
             format="json",
             REMOTE_ADDR="192.0.2.10",
         )
