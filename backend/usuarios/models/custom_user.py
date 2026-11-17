@@ -86,6 +86,8 @@ class CustomUser(AbstractUser):
     REQUIRED_FIELDS: ClassVar[list[str]] = []
 
     class Meta:
+        verbose_name = "user"
+        verbose_name_plural = "users"
         constraints: ClassVar[list] = [
             models.UniqueConstraint(
                 Lower("nickname"),
