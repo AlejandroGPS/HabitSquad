@@ -92,12 +92,12 @@ describe('sesión', () => {
     expect(home.view().querySelector('h1').textContent).toBe('Cumple tu hábito. Que no caiga la racha.')
   })
 
-  it('con sesión el inicio muestra la pantalla de la app', () => {
+  it('con sesión el inicio muestra el selector de escuadrón', () => {
     saveSession({ access: 'access-token', refresh: 'refresh-token' })
     const home = routes.find((route) => route.path === '/')
 
     expect(guard(home)).toBeNull()
-    expect(home.view().querySelector('h1').textContent).toBe('HabitSquad')
+    expect(home.view().querySelector('h1').textContent).toBe('Mis escuadrones')
   })
 
   it('con sesión, /presentacion sigue mostrando la portada', () => {
