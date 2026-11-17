@@ -20,7 +20,8 @@ function miembro() {
     'div',
     'flex items-center gap-3 py-1.5 lg:rounded-xl lg:bg-[#f2f2f7] lg:p-3',
     hueco('h-10 w-10 shrink-0', 'rounded-xl'),
-    element('div', 'flex-1', hueco('h-3.5 w-20'), hueco('mt-2 h-3 w-32 max-w-full')),
+    element('div', 'min-w-0 flex-1', hueco('h-3.5 w-28 max-w-full'), hueco('mt-2 h-3 w-32 max-w-full')),
+    hueco('h-11 w-20 shrink-0'),
   )
 }
 
@@ -41,7 +42,12 @@ export function panelCargando() {
       hueco('h-3.5 w-24'),
       element(
         'div',
-        'mt-4 flex flex-1 flex-col justify-between gap-2',
+        'mt-3 flex gap-1 ps-14',
+        ...Array.from({ length: 3 }, () => element('span', 'flex-1', hueco('mx-auto h-3 w-5'))),
+      ),
+      element(
+        'div',
+        'mt-2 flex flex-1 flex-col justify-between gap-2',
         ...Array.from({ length: 7 }, () =>
           element('div', 'flex items-center gap-3', hueco('h-3 w-8'), hueco('h-2.5 flex-1')),
         ),
@@ -58,10 +64,10 @@ export function panelCargando() {
     tarjeta(
       'col-span-2 lg:col-span-3',
       element('div', 'mb-1 flex justify-between', hueco('h-3.5 w-16'), hueco('h-3.5 w-24')),
-      element('div', 'lg:mt-2 lg:grid lg:grid-cols-3 lg:gap-3', miembro(), miembro(), miembro()),
+      element('div', 'lg:mt-2 lg:grid lg:gap-3 xl:grid-cols-2', miembro(), miembro(), miembro()),
     ),
     tarjeta(
-      'hidden flex-col lg:flex',
+      'col-span-2 flex flex-col lg:col-span-1',
       chip(),
       hueco('h-3.5 w-12'),
       hueco('mt-2 h-7 w-32', 'rounded-lg'),

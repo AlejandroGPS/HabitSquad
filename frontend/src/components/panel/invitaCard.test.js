@@ -47,7 +47,52 @@ describe('invitaCard', () => {
     )
   })
 
-  it('solo se ve en web por defecto', () => {
-    expect(invitaCard().classList.contains('hidden')).toBe(true)
+  it('se ve también en móvil, a todo el ancho', () => {
+    const card = invitaCard()
+
+    expect(card.classList.contains('hidden')).toBe(false)
+    expect(card.classList.contains('col-span-2')).toBe(true)
+    expect(card.classList.contains('lg:col-span-1')).toBe(true)
+  })
+})
+
+describe('invitaCard: compartir', () => {
+  const compartir = (card) => [...card.querySelectorAll('button')].find((button) => button.textContent === 'Compartir')
+
+  it('comparte el enlace para unirse con el código ya puesto', async () => {
+    const share = vi.fn().mockResolvedValue()
+    vi.stubGlobal('navigator', { share })
+    const card = invitaCard({ codigo: 'K7P2QX', libres: 2, nombre: 'Lectores' })
+
+    expect(compartir(card).classList.contains('lg:hidden')).toBe(true)
+    compartir(card).click()
+
+    await vi.waitFor(() => expect(share).toHaveBeenCalledWith({
+      title: 'HabitSquad',
+      text: 'Únete a «Lectores» en HabitSquad con el código K7P2QX.',
+      url: `${window.location.origin}/escuadrones/unirse?codigo=K7P2QX`,
+    }))
+  })
+
+  it('no avisa si se cierra el menú de compartir, pero sí si falla', async () => {
+    const share = vi.fn().mockRejectedValueOnce(new DOMException('', 'AbortError')).mockRejectedValueOnce(new Error())
+    vi.stubGlobal('navigator', { share })
+    const card = invitaCard({ codigo: 'K7P2QX', libres: 2 })
+    const status = card.querySelector('[role="status"]')
+
+    compartir(card).click()
+    await vi.waitFor(() => expect(share).toHaveBeenCalledOnce())
+    expect(status.classList.contains('hidden')).toBe(true)
+
+    compartir(card).click()
+    await vi.waitFor(() => expect(status.textContent).toBe('No se ha podido compartir. Copia el código.'))
+    expect(status.classList.contains('hidden')).toBe(false)
+  })
+
+  it('no ofrece compartir si el navegador no puede o si el escuadrón está lleno', () => {
+    expect(compartir(invitaCard({ codigo: 'K7P2QX', libres: 2 }))).toBeUndefined()
+
+    vi.stubGlobal('navigator', { share: vi.fn() })
+    expect(compartir(invitaCard({ codigo: 'K7P2QX', libres: 0 }))).toBeUndefined()
   })
 })

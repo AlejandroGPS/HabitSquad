@@ -1,9 +1,11 @@
 import { ApiError, getDailyHabit, getSquad, logout } from '../api.js'
 import { appLayout } from '../components/appLayout.js'
 import { accountMenu } from '../components/accountMenu.js'
+import { squadAvatar } from '../components/avatar.js'
 import { element } from '../components/dom.js'
 import {
   cierreCard,
+  escuadronResumen,
   habitoCard,
   hoyCard,
   invitaCard,
@@ -15,6 +17,7 @@ import {
 } from '../components/panel/index.js'
 import { habitText } from './habitoDiario.js'
 
+const PLAZAS = 5
 const ANCHO_COMPLETO = 'col-span-2 lg:col-span-4'
 const REJILLA = 'mt-4 grid grid-cols-2 gap-3 px-4 lg:mt-6 lg:grid-cols-4 lg:gap-4 lg:px-0'
 
@@ -50,14 +53,16 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
     try {
       const squad = await api.getSquad(id)
       const ownHabit = await api.getDailyHabit(id)
-      const miembros = squad.miembros.map((miembro) => ({
-        nombre: miembro.nombre || `Miembro ${miembro.usuario_id}`,
-        esUsuario: miembro.es_usuario,
-        habito: habitText(miembro.habito),
-        estado: miembro.prueba_hoy?.estado,
-        pruebaId: miembro.prueba_hoy?.id,
-        semana: miembro.semana,
-      }))
+      const miembros = squad.miembros
+        .map((miembro) => ({
+          nombre: miembro.nombre || `Miembro ${miembro.usuario_id}`,
+          esUsuario: miembro.es_usuario,
+          habito: habitText(miembro.habito),
+          estado: miembro.prueba_hoy?.estado,
+          pruebaId: miembro.prueba_hoy?.id,
+          semana: miembro.semana,
+        }))
+        .sort((a, b) => Number(b.esUsuario) - Number(a.esUsuario))
       const racha = squad.racha ?? 0
       const momento = ahora()
       const abrirPrueba = ({ pruebaId }) => navigate(`/escuadrones/prueba?escuadron=${id}&registro=${pruebaId}`)
@@ -65,7 +70,7 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
       const tarjetas = [
         rachaCard({ racha }),
         hoyCard({ miembros }),
-        cierreCard({ ahora: momento }),
+        cierreCard({ ahora }),
         semanaCard({ miembros, ahora: momento }),
         habitoCard({
           habito: habitText(ownHabit),
@@ -73,8 +78,8 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
           onSubirPrueba: () => navigate(`/prueba?escuadron=${id}`),
           onVerPrueba: pruebaPropia ? () => abrirPrueba({ pruebaId: pruebaPropia }) : undefined,
         }),
-        miembrosCard({ miembros, onVerFoto: abrirPrueba, onVotar: abrirPrueba }),
-        invitaCard({ codigo: squad.codigo_invitacion, libres: 5 - squad.miembros.length }),
+        miembrosCard({ miembros, plazas: PLAZAS, onVerFoto: abrirPrueba, onVotar: abrirPrueba }),
+        invitaCard({ codigo: squad.codigo_invitacion, libres: PLAZAS - miembros.length, nombre: squad.nombre }),
       ]
       for (const [orden, tarjeta] of tarjetas.entries()) {
         tarjeta.classList.add('entrada')
@@ -82,6 +87,8 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
       }
       const content = element('div', REJILLA, back, ...tarjetas)
       root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Escuadrón', title: squad.nombre, body: content,
+        leading: squadAvatar({ nombre: squad.nombre }),
+        sidebarFooter: escuadronResumen({ nombre: squad.nombre, miembros: miembros.length, plazas: PLAZAS }),
         trailing: [rachaChip({ racha }), accountMenu({ onLogout: async () => { await logout(); navigate('/login') } })] }))
       for (const link of root.querySelectorAll('a[href="/habito"]')) {
         link.href = `/habito?escuadron=${id}`

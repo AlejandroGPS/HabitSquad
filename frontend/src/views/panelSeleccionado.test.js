@@ -96,17 +96,25 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     expect(view.textContent).toContain('Leer')
     expect(view.textContent).toContain('3 de 5 miembros')
     const items = [...view.querySelectorAll('li')].map((item) => item.textContent)
-    expect(items[0]).toContain('Tú')
-    expect(items[0]).toContain('Leer · Sin prueba')
-    expect(items[1]).toContain('Laura')
-    expect(items[1]).toContain('Correr 5 km · Pendiente')
-    expect(items[2]).toContain('Miembro 3')
-    expect(items[2]).toContain('Sin hábito · Cumplido')
+    expect(items[0]).toContain('TúSin pruebaLeer')
+    expect(items[1]).toContain('LauraPendienteCorrer 5 km')
+    expect(items[2]).toContain('Miembro 3CumplidoSin hábito')
     expect(view.textContent).toContain('ABC123')
     expect(view.textContent).toContain('Quedan 2 plazas')
     for (const link of view.querySelectorAll('a[href^="/habito"]')) {
       expect(link.getAttribute('href')).toBe('/habito?escuadron=7')
     }
+  })
+
+  it('pone al usuario el primero y el escuadrón en la cabecera y en la barra lateral', async () => {
+    api.getSquad.mockResolvedValue({ ...squad, miembros: [squad.miembros[1], squad.miembros[2], squad.miembros[0]] })
+    const view = mount()
+    await loaded(view)
+
+    expect([...view.querySelectorAll('li p span:first-child')].map((nombre) => nombre.textContent))
+      .toEqual(['Tú', 'Laura', 'Miembro 3'])
+    expect(view.querySelector('header span').textContent).toBe('L')
+    expect(view.querySelector('aside').textContent).toContain('Lectores3 de 5 miembros')
   })
 
   it('pinta el resumen: racha, cumplidos de hoy, cierre y semana de cada miembro', async () => {

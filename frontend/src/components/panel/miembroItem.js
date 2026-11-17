@@ -28,12 +28,17 @@ export function miembroItem(miembro, acciones = {}) {
     element(
       'div',
       'min-w-0 flex-1',
-      element('p', 'font-extrabold', miembro.esUsuario ? 'Tú' : miembro.nombre),
       element(
         'p',
-        'truncate text-[0.8125rem] font-bold text-ink-muted lg:overflow-visible lg:whitespace-normal',
-        `${miembro.habito ?? 'Sin hábito'} · ${estado.texto}`,
+        'flex flex-wrap items-center gap-x-2 gap-y-0.5',
+        element('span', 'min-w-0 truncate font-extrabold', miembro.esUsuario ? 'Tú' : miembro.nombre),
+        element(
+          'span',
+          `shrink-0 rounded-full px-2 py-0.5 text-[0.75rem] font-extrabold whitespace-nowrap ${estado.etiqueta}`,
+          estado.texto,
+        ),
       ),
+      element('p', 'truncate text-[0.8125rem] font-bold text-ink-muted', miembro.habito ?? 'Sin hábito'),
     ),
     boton && button(`${pillButtonClass} lg:px-3.5`, boton.handler && (() => boton.handler(miembro)), boton.texto),
   )

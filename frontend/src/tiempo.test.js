@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { semanaActual, tiempoRestante } from './tiempo.js'
+import { minutosRestantes, semanaActual, tiempoRestante } from './tiempo.js'
 
 const AHORA = new Date(2026, 9, 25, 20, 18)
+
+describe('minutosRestantes', () => {
+  it('cuenta los minutos hasta el cierre, redondeando hacia arriba', () => {
+    expect(minutosRestantes(AHORA, '23:59')).toBe(221)
+    expect(minutosRestantes(new Date(2026, 9, 25, 23, 58, 30), '23:59')).toBe(1)
+  })
+
+  it('devuelve null si ya ha pasado la hora de cierre', () => {
+    expect(minutosRestantes(new Date(2026, 9, 25, 23, 59), '23:59')).toBeNull()
+  })
+})
 
 describe('tiempoRestante', () => {
   it('da las horas y minutos que faltan hasta el cierre', () => {

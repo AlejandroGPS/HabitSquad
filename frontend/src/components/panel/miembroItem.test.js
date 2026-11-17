@@ -2,19 +2,28 @@ import { describe, expect, it, vi } from 'vitest'
 import { miembroItem } from './miembroItem.js'
 
 describe('miembroItem', () => {
-  it('muestra el nombre, el hábito y el estado escrito', () => {
+  it('muestra el nombre, el estado escrito y el hábito', () => {
     expect(miembroItem({ nombre: 'Carlos', habito: 'Gimnasio', estado: 'cumplido' }).textContent).toBe(
-      'Carlos' + 'Gimnasio · Cumplido' + 'Ver foto',
+      'Carlos' + 'Cumplido' + 'Gimnasio' + 'Ver foto',
     )
     expect(miembroItem({ nombre: 'Laura', habito: 'Leer', estado: 'pendiente' }).textContent).toBe(
-      'L' + 'Laura' + 'Leer · Pendiente' + 'Votar',
+      'L' + 'Laura' + 'Pendiente' + 'Leer' + 'Votar',
     )
+  })
+
+  it('pinta el estado como una etiqueta del color de cada estado', () => {
+    const etiqueta = (estado) => [...miembroItem({ nombre: 'Laura', estado }).querySelectorAll('span')].at(-1)
+
+    expect(etiqueta('cumplido').classList.contains('text-[#248a3d]')).toBe(true)
+    expect(etiqueta('pendiente').classList.contains('text-[#c93400]')).toBe(true)
+    expect(etiqueta('no_cumplido').classList.contains('text-red-700')).toBe(true)
+    expect(etiqueta(undefined).classList.contains('text-ink-muted')).toBe(true)
   })
 
   it('muestra al usuario como "Tú" y solo le deja ver su propia prueba, no votarla', () => {
     const item = miembroItem({ nombre: 'Alejandro', habito: 'Leer', estado: 'pendiente', esUsuario: true })
 
-    expect(item.textContent).toBe('ATúLeer · PendienteVer foto')
+    expect(item.textContent).toBe('ATúPendienteLeerVer foto')
     expect(item.querySelectorAll('button')).toHaveLength(1)
     expect(item.querySelector('button').textContent).toBe('Ver foto')
   })
@@ -28,7 +37,7 @@ describe('miembroItem', () => {
   it('trata a un miembro sin estado ni hábito como sin prueba', () => {
     const item = miembroItem({ nombre: 'Marta' })
 
-    expect(item.textContent).toBe('MMartaSin hábito · Sin prueba')
+    expect(item.textContent).toBe('MMartaSin pruebaSin hábito')
     expect(item.querySelector('button')).toBeNull()
   })
 

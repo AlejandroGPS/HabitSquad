@@ -1,11 +1,16 @@
 const DIAS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
-export function tiempoRestante(ahora, cierre) {
+export function minutosRestantes(ahora, cierre) {
   const [horas, minutos] = cierre.split(':').map(Number)
   const limite = new Date(ahora)
   limite.setHours(horas, minutos, 0, 0)
   if (limite <= ahora) return null
-  const restante = Math.ceil((limite - ahora) / 60000)
+  return Math.ceil((limite - ahora) / 60000)
+}
+
+export function tiempoRestante(ahora, cierre) {
+  const restante = minutosRestantes(ahora, cierre)
+  if (restante === null) return null
   const hh = String(Math.floor(restante / 60)).padStart(2, '0')
   const mm = String(restante % 60).padStart(2, '0')
   return `${hh}:${mm} h`

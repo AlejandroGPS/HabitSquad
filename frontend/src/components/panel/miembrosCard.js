@@ -19,7 +19,7 @@ export function miembrosCard({
     ),
     element(
       'ul',
-      'lg:mt-2 lg:grid lg:grid-cols-3 lg:gap-3',
+      'lg:mt-2 lg:grid lg:gap-3 xl:grid-cols-2',
       ...miembros.map((miembro) => miembroItem(miembro, { onVerFoto, onVotar })),
     ),
   )

@@ -37,6 +37,18 @@ describe('semanaCard', () => {
     expect(colores(dias[0]).every((color) => color.includes('bg-[#e5e5ea]'))).toBe(true)
   })
 
+  it('pone encima de cada columna de barras quién es', () => {
+    const card = semanaCard({
+      miembros: [{ nombre: 'Ana', esUsuario: true }, { nombre: 'Laura Gómez' }, { nombre: 'Sergio' }],
+      ahora: AHORA,
+    })
+    const quienes = [...card.querySelector('.ps-14').children]
+
+    expect(quienes.map((quien) => quien.textContent)).toEqual(['Tú', 'L', 'S'])
+    expect(quienes.map((quien) => quien.title)).toEqual(['Tú', 'Laura Gómez', 'Sergio'])
+    expect(filas(card)[0].nextSibling.children).toHaveLength(3)
+  })
+
   it('solo se ve en web por defecto y usa hoy si no se pasa la fecha', () => {
     vi.useFakeTimers()
     vi.setSystemTime(AHORA)
