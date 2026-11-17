@@ -49,6 +49,7 @@ describe('panel del escuadrón: carga de datos y estados', () => {
       window.history.replaceState({}, '', url)
       const view = mount()
       expect(view.querySelector('[role="status"]').textContent).toBe('Selecciona un escuadrón desde Mis escuadrones.')
+      expect(view.querySelector('.hueco')).toBeNull()
       expect(api.getSquad).not.toHaveBeenCalled()
       expect(api.getDailyHabit).not.toHaveBeenCalled()
       expect(retry(view).hidden).toBe(true)
@@ -66,6 +67,26 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     pending.resolve(squad)
     await loaded(view)
     expect(view.textContent).not.toContain('Cargando escuadrón…')
+  })
+
+  it('mientras carga pinta las tarjetas vacías y el aviso queda para lectores de pantalla', async () => {
+    const pending = deferred()
+    api.getSquad.mockReturnValue(pending.promise)
+    const view = mount()
+    expect(view.querySelector('[role="status"]').classList.contains('sr-only')).toBe(true)
+    expect(view.querySelectorAll('main [aria-hidden="true"]:has(.hueco)')).toHaveLength(7)
+    pending.resolve(squad)
+    await loaded(view)
+    expect(view.querySelector('.hueco')).toBeNull()
+  })
+
+  it('las tarjetas cargadas entran una detrás de otra', async () => {
+    const view = mount()
+    await loaded(view)
+    const tarjetas = [...view.querySelectorAll('.entrada')]
+    expect(tarjetas).toHaveLength(7)
+    expect(tarjetas.map((tarjeta) => tarjeta.style.getPropertyValue('--orden'))).toEqual(['0', '1', '2', '3', '4', '5', '6'])
+    expect(view.querySelector('a[href="/"]').classList.contains('entrada')).toBe(false)
   })
 
   it('pinta el escuadrón, el hábito propio, los miembros y el código de invitación', async () => {
@@ -159,6 +180,7 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     await vi.waitFor(() => expect(view.querySelector('[role="alert"]').textContent)
       .toBe('Este escuadrón no está disponible para tu cuenta. Vuelve a Mis escuadrones.'))
     expect(view.querySelector('[role="status"]').textContent).toBe('')
+    expect(view.querySelector('.hueco')).toBeNull()
     expect(retry(view).hidden).toBe(false)
   })
 
@@ -190,6 +212,7 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     retry(view).click()
     expect(view.querySelector('[role="alert"]').textContent).toBe('')
     expect(view.querySelector('[role="status"]').textContent).toBe('Cargando escuadrón…')
+    expect(view.querySelector('.hueco')).not.toBeNull()
     expect(retry(view).hidden).toBe(true)
     retry(view).click()
     expect(api.getSquad).toHaveBeenCalledTimes(2)
