@@ -96,12 +96,12 @@ export function habitoDiarioScreen({ navigate, api = { getSquad, getDailyHabit, 
   const save = element('button', 'flex min-h-[3.25rem] w-full items-center justify-center rounded-full bg-accent px-6 text-[1.0625rem] font-extrabold text-white disabled:opacity-50', 'Guardar hábito')
   save.type = 'submit'
   const back = element('a', 'glass grid h-11 w-11 shrink-0 place-items-center rounded-full text-ink')
-  back.href = '/'
+  back.href = '/escuadrones'
   back.dataset.link = ''
   back.setAttribute('aria-label', 'Volver al panel')
   back.append(icon('back'))
   const chooseSquad = element('a', 'inline-flex min-h-11 items-center font-bold text-accent', 'Ir a Mis escuadrones')
-  chooseSquad.href = '/'
+  chooseSquad.href = '/escuadrones'
   chooseSquad.dataset.link = ''
   chooseSquad.hidden = true
   const notices = element('div', 'mb-4 space-y-2', status, error, retry, chooseSquad)

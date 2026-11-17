@@ -47,7 +47,7 @@ describe('routes', () => {
     (path, route) => {
       const element = route.view()
       const heading = element.querySelector('h1').textContent
-      expect(heading).toBe(['/', '/presentacion'].includes(path) ? 'Cumple tu hábito. Que no caiga la racha.' : route.title)
+      expect(heading).toBe(path === '/' ? 'Cumple tu hábito. Que no caiga la racha.' : route.title)
     },
   )
 
@@ -92,30 +92,22 @@ describe('sesión', () => {
     expect(home.view().querySelector('h1').textContent).toBe('Cumple tu hábito. Que no caiga la racha.')
   })
 
-  it('con sesión el inicio muestra el selector de escuadrón', () => {
+  it('con sesión el inicio sigue mostrando la presentación', () => {
     saveSession({ access: 'access-token', refresh: 'refresh-token' })
     const home = routes.find((route) => route.path === '/')
 
     expect(guard(home)).toBeNull()
-    expect(home.view().querySelector('h1').textContent).toBe('Mis escuadrones')
+    expect(home.view().querySelector('h1').textContent).toBe('Cumple tu hábito. Que no caiga la racha.')
   })
 
-  it('con sesión, /presentacion sigue mostrando la portada', () => {
-    saveSession({ access: 'access-token', refresh: 'refresh-token' })
-    const presentacion = routes.find((route) => route.path === '/presentacion')
-
-    expect(guard(presentacion)).toBeNull()
-    expect(presentacion.view().querySelector('#como-funciona')).not.toBeNull()
-  })
-
-  it('con sesión, /login y /registro llevan al inicio', () => {
+  it('con sesión, /login y /registro llevan al selector', () => {
     saveSession({ access: 'access-token', refresh: 'refresh-token' })
 
     const loginRoute = routes.find((route) => route.path === '/login')
     const registroRoute = routes.find((route) => route.path === '/registro')
 
-    expect(guard(loginRoute)).toBe('/')
-    expect(guard(registroRoute)).toBe('/')
+    expect(guard(loginRoute)).toBe('/escuadrones')
+    expect(guard(registroRoute)).toBe('/escuadrones')
   })
 
   it('con sesión las rutas privadas no redirigen', () => {
@@ -125,7 +117,7 @@ describe('sesión', () => {
     expect(guard(privateRoute)).toBeNull()
   })
 
-  it('un login correcto guarda los tokens y abre el inicio', async () => {
+  it('un login correcto guarda los tokens y abre el selector', async () => {
     login.mockImplementation(async () => {
       saveSession({ access: 'access-token', refresh: 'refresh-token' })
     })
@@ -143,7 +135,7 @@ describe('sesión', () => {
         password: 'secreta',
       })
       expect(hasSession()).toBe(true)
-      expect(navigate).toHaveBeenCalledWith('/')
+      expect(navigate).toHaveBeenCalledWith('/escuadrones')
     })
   })
 
@@ -311,7 +303,7 @@ describe('sesión', () => {
   it('cerrar sesión llama a logout y vuelve a /login', async () => {
     saveSession({ access: 'access-token', refresh: 'refresh-token' })
     logout.mockResolvedValue(undefined)
-    const { element, navigate } = mount('/')
+    const { element, navigate } = mount('/escuadrones')
 
     const logoutButton = [...element.querySelectorAll('button')].find(
       (button) => button.textContent === 'Cerrar sesión',

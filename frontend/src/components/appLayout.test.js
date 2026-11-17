@@ -44,7 +44,7 @@ describe('appLayout', () => {
     const [escuadron, racha] = sidebarNav.children
 
     expect(escuadron.tagName).toBe('A')
-    expect(escuadron.getAttribute('href')).toBe('/')
+    expect(escuadron.getAttribute('href')).toBe('/escuadrones')
     expect(escuadron.hasAttribute('data-link')).toBe(true)
     expect(racha.tagName).toBe('SPAN')
     expect(racha.getAttribute('aria-disabled')).toBe('true')

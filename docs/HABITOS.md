@@ -31,7 +31,7 @@ conserva el formulario para reintentar. Las peticiones utilizan `authFetch`,
 incluida su renovación de JWT y gestión de sesión caducada.
 
 Se accede desde «Mi hábito» en la navegación y desde «Elegir mi hábito» o
-«Cambiar hábito» en el panel. El inicio y `/menu` muestran primero el selector recuperado
+«Cambiar hábito» en el panel. `/escuadrones` muestra primero el selector recuperado
 de la rama `feature/selector-escuadron`, ahora con los escuadrones reales de
 `GET /api/escuadrones/`. El panel `/escuadrones/panel?id=ID` consulta su detalle
 y el hábito propio; el guardado vuelve a ese mismo panel solo tras la

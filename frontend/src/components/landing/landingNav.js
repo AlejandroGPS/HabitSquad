@@ -68,7 +68,7 @@ function marcaCompacta(className) {
 }
 
 // `secciones` solo se pasa en la portada. Fuera de ella, `cuenta` sustituye a los enlaces de la derecha.
-// Con sesión, `/` es el selector de escuadrón, así que la portada se pasa en `portada`.
+// La portada vive en `/`. Fuera de ella, `portada` antepone esa ruta a los anclajes.
 export function landingNav({ secciones = [], cuenta, conSecciones = true, portada = '/' } = {}) {
   const enPortada = secciones.length > 0
   const claseMarca =

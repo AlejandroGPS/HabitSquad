@@ -23,13 +23,13 @@ describe('selectorEscuadronScreen', () => {
 
   it('usa la barra de la portada con sus secciones y el menú de cuenta', () => {
     const nav = mount({ loadSquads: pendiente }).querySelector('header nav[aria-label="Principal"]')
-    const secciones = [...nav.querySelectorAll('a[href^="/presentacion#"]')]
+    const secciones = [...nav.querySelectorAll('a[href^="/#"]')]
 
     expect(nav.querySelector('a[aria-label="HabitSquad"]').getAttribute('href')).toBe('/')
     expect(secciones.map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
-      ['Cómo funciona', '/presentacion#como-funciona'],
-      ['Tu escuadrón', '/presentacion#tu-escuadron'],
-      ['Tengo un código', '/presentacion#tengo-codigo'],
+      ['Cómo funciona', '/#como-funciona'],
+      ['Tu escuadrón', '/#tu-escuadron'],
+      ['Tengo un código', '/#tengo-codigo'],
     ])
     expect(nav.querySelector('[aria-label="Tu cuenta"]')).not.toBeNull()
     expect(nav.querySelector('a[href="/login"], a[href="/registro"]')).toBeNull()
@@ -131,6 +131,7 @@ describe('selector recuperado conectado al backend', () => {
     vi.unstubAllGlobals()
   })
   function start() {
+    window.history.replaceState({}, '', '/escuadrones')
     router = createRouter({ root, routes, notFound, guard })
     router.start()
   }
@@ -160,7 +161,7 @@ describe('selector recuperado conectado al backend', () => {
     const back = [...root.querySelectorAll('a')].find((link) => link.textContent === '← Mis escuadrones')
     expect(back).toBeDefined()
     back.click()
-    expect(window.location.pathname).toBe('/')
+    expect(window.location.pathname).toBe('/escuadrones')
   }
   it.each([
     { first: squads[0], second: squads[1] },
@@ -288,21 +289,21 @@ describe('selector recuperado conectado al backend', () => {
     ;[...root.querySelectorAll('button')].find((button) => button.textContent === 'Reintentar').click()
     await vi.waitFor(() => expect(root.querySelectorAll('a[aria-label^="Abrir panel"]')).toHaveLength(2))
   })
-  it('con sesión, las secciones de la barra abren la presentación y el logo vuelve al selector', async () => {
+  it('con sesión, las secciones de la barra y el logo abren la presentación', async () => {
     start()
     await vi.waitFor(() => expect(root.textContent).toContain('Todavía no perteneces'))
     ;[...root.querySelectorAll('header a')].find((link) => link.textContent === 'Cómo funciona').click()
-    expect(window.location.pathname).toBe('/presentacion')
+    expect(window.location.pathname).toBe('/')
     expect(window.location.hash).toBe('#como-funciona')
     expect(root.querySelector('#como-funciona')).not.toBeNull()
 
     root.querySelector('header a[aria-label="HabitSquad"]').click()
     expect(window.location.pathname).toBe('/')
-    await vi.waitFor(() => expect(root.querySelector('h1').textContent).toBe('Mis escuadrones'))
+    expect(root.querySelector('h1').textContent).toBe('Cumple tu hábito. Que no caiga la racha.')
   })
-  it('protege el selector /menu y el panel sin sesión', () => {
+  it('protege el selector /escuadrones y el panel sin sesión', () => {
     clearSession()
-    expect(guard(routes.find((route) => route.path === '/menu'))).toBe('/login')
+    expect(guard(routes.find((route) => route.path === '/escuadrones'))).toBe('/login')
     expect(guard(routes.find((route) => route.path === '/escuadrones/panel'))).toBe('/login')
   })
 })

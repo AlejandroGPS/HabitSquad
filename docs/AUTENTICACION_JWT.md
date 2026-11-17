@@ -32,8 +32,8 @@ una contraseña. La aplicación comprueba el formato en el navegador y envía
 El alta devuelve `201` y pide verificar el correo. El enlace recibido abre
 `/verify-email`. Una vez confirmada la dirección, el usuario puede iniciar
 sesión con el mismo correo y la misma contraseña. La aplicación guarda los
-tokens en `localStorage` con la clave `habitsquad.session` y abre la pantalla
-principal (`/`). La ruta `/menu` se conserva por compatibilidad.
+tokens en `localStorage` con la clave `habitsquad.session` y abre el selector
+(`/escuadrones`). La presentación está en `/`.
 
 Un `400` muestra el aviso del campo (`email`
 o `password`), por ejemplo si el correo ya existe. Un `429` indica que se ha

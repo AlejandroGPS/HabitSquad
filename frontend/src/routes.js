@@ -121,7 +121,7 @@ function joinSquadErrorMessage(error) {
 // Solo rutas internas: evita que ?siguiente= mande al usuario a otra web tras iniciar sesión.
 export function destinoTrasAcceso() {
   const destino = new URLSearchParams(window.location.search).get('siguiente') ?? ''
-  return /^\/(?![/\\])/.test(destino) ? destino : '/'
+  return /^\/(?![/\\])/.test(destino) ? destino : '/escuadrones'
 }
 
 function selectorEscuadron(navigate) {
@@ -136,11 +136,6 @@ function selectorEscuadron(navigate) {
 export const routes = [
   {
     path: '/',
-    title: 'HabitSquad',
-    view: ({ navigate } = {}) => (hasSession() ? selectorEscuadron(navigate) : presentacionScreen({ navigate })),
-  },
-  {
-    path: '/presentacion',
     title: 'HabitSquad',
     view: ({ navigate } = {}) => presentacionScreen({ navigate }),
   },
@@ -274,7 +269,7 @@ export const routes = [
     view: ({ navigate } = {}) => pruebaDiaScreen({ navigate }),
   },
   {
-    path: '/menu',
+    path: '/escuadrones',
     title: 'Mis escuadrones',
     private: true,
     view: ({ navigate } = {}) => selectorEscuadron(navigate),
@@ -317,7 +312,7 @@ export function guard(route) {
     const destino = `${window.location.pathname}${window.location.search}`
     return destino === '/' ? '/login' : `/login?siguiente=${encodeURIComponent(destino)}`
   }
-  if (route.guestOnly && hasSession()) return '/'
+  if (route.guestOnly && hasSession()) return '/escuadrones'
   return null
 }
 

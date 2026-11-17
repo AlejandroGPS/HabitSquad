@@ -19,7 +19,7 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
   const root = element('div')
   const body = element('div', 'mt-5 px-4 lg:px-0')
   const back = element('a', 'inline-flex min-h-11 items-center font-bold text-accent', '← Mis escuadrones')
-  back.href = '/'
+  back.href = '/escuadrones'
   back.dataset.link = ''
   const status = element('p', 'mt-3 font-semibold text-ink-muted')
   status.setAttribute('role', 'status')
