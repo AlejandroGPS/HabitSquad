@@ -77,6 +77,36 @@ def test_register_rejects_duplicate_email_case_insensitively(api_client):
 
 
 @pytest.mark.parametrize(
+    "duplicate_nickname",
+    ["HabitHero", "habithero"],
+)
+@pytest.mark.django_db
+def test_register_rejects_duplicate_nickname_case_insensitively(
+    api_client,
+    duplicate_nickname,
+):
+    CustomUser.objects.create_user(
+        email="owner@example.com",
+        password="S0mething!Secure-497",
+        nickname="HabitHero",
+    )
+
+    response = api_client.post(
+        reverse("autenticacion:register"),
+        _registration_payload(
+            email="otro@example.com",
+            nickname=duplicate_nickname,
+        ),
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert response.data["nickname"] == ["Ya existe una cuenta con este nickname."]
+    assert CustomUser.objects.count() == 1
+    assert not CustomUser.objects.filter(email="otro@example.com").exists()
+
+
+@pytest.mark.parametrize(
     ("email", "password"),
     [
         ("not-an-email", "S0mething!Secure-497"),
