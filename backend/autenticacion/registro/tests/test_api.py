@@ -50,6 +50,8 @@ def test_register_creates_user_and_returns_public_fields(api_client):
     assert user.check_password("S0mething!Secure-497")
     assert "password" not in response.data
     assert "password_confirm" not in response.data
+    assert "access" not in response.data
+    assert "refresh" not in response.data
 
 
 @pytest.mark.django_db
@@ -132,6 +134,20 @@ def test_register_rejects_missing_password_confirm(api_client):
 
     assert response.status_code == 400
     assert "password_confirm" in response.data
+    assert CustomUser.objects.count() == 0
+
+
+@pytest.mark.parametrize("blank_nickname", ["", "   "])
+@pytest.mark.django_db
+def test_register_rejects_blank_nickname(api_client, blank_nickname):
+    response = api_client.post(
+        reverse("autenticacion:register"),
+        _registration_payload(nickname=blank_nickname),
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "nickname" in response.data
     assert CustomUser.objects.count() == 0
 
 
