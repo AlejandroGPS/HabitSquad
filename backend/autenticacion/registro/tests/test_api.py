@@ -2,8 +2,10 @@ import pytest
 from django.core.cache import cache
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
+from rest_framework import serializers
 from rest_framework.test import APIClient
 
+from autenticacion.registro.api.serializers import UserRegistrationSerializer
 from usuarios.models import CustomUser
 
 
@@ -151,6 +153,13 @@ def test_register_rejects_blank_nickname(api_client, blank_nickname):
     assert CustomUser.objects.count() == 0
 
 
+def test_validate_nickname_rejects_whitespace_only_value():
+    serializer = UserRegistrationSerializer()
+
+    with pytest.raises(serializers.ValidationError, match="blanco"):
+        serializer.validate_nickname("   ")
+
+
 @pytest.mark.parametrize(
     ("email", "password"),
     [
@@ -235,20 +244,15 @@ def test_registration_is_included_in_openapi_schema(api_client):
     assert set(operation["responses"]) == {"201", "400", "429"}
 
     request_schema = operation["requestBody"]["content"]["application/json"]["schema"]
-    # Spectacular may inline or $ref the request component
-    if "$ref" in request_schema:
-        ref_name = request_schema["$ref"].rsplit("/", 1)[-1]
-        props = response.data["components"]["schemas"][ref_name]["properties"]
-    else:
-        props = request_schema["properties"]
+    assert "$ref" in request_schema
+    request_ref = request_schema["$ref"].rsplit("/", 1)[-1]
+    props = response.data["components"]["schemas"][request_ref]["properties"]
     assert {"email", "password", "password_confirm", "nickname"} <= set(props)
 
     response_201 = operation["responses"]["201"]["content"]["application/json"][
         "schema"
     ]
-    if "$ref" in response_201:
-        ref_name = response_201["$ref"].rsplit("/", 1)[-1]
-        resp_props = response.data["components"]["schemas"][ref_name]["properties"]
-    else:
-        resp_props = response_201["properties"]
+    assert "$ref" in response_201
+    response_ref = response_201["$ref"].rsplit("/", 1)[-1]
+    resp_props = response.data["components"]["schemas"][response_ref]["properties"]
     assert {"id", "email", "nickname", "date_joined"} <= set(resp_props)
