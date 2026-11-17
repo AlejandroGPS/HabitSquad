@@ -1,14 +1,115 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiError } from '../api.js'
 import { createRouter } from '../router.js'
 import { guard, notFound, routes } from '../routes.js'
 import { clearSession, saveSession } from '../session.js'
-import { menuScreen } from './menu.js'
+import { selectorEscuadronScreen } from './selectorEscuadron.js'
 
 const squads = [
   { id: 7, nombre: 'Lectores', codigo_invitacion: 'ABC123', miembros: [{ usuario_id: 1, habito: null }] },
   { id: 9, nombre: 'Deportistas', codigo_invitacion: 'DEF456', miembros: [{ usuario_id: 1, habito: null }, { usuario_id: 2, habito: null }] },
 ]
 const response = (status, data) => ({ ok: status >= 200 && status < 300, status, json: async () => data })
+
+describe('selectorEscuadronScreen', () => {
+  const pendiente = () => new Promise(() => {})
+  function mount(options = {}) {
+    const view = selectorEscuadronScreen(options)
+    document.body.replaceChildren(view)
+    return view
+  }
+  const tarjetas = (view) => view.querySelectorAll('a[aria-label^="Abrir panel"]')
+  afterEach(() => { document.body.replaceChildren() })
+
+  it('usa la barra de la portada con sus secciones y el menú de cuenta', () => {
+    const nav = mount({ loadSquads: pendiente }).querySelector('header nav[aria-label="Principal"]')
+    const secciones = [...nav.querySelectorAll('a[href^="/presentacion#"]')]
+
+    expect(nav.querySelector('a[aria-label="HabitSquad"]').getAttribute('href')).toBe('/')
+    expect(secciones.map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
+      ['Cómo funciona', '/presentacion#como-funciona'],
+      ['Tu escuadrón', '/presentacion#tu-escuadron'],
+      ['Tengo un código', '/presentacion#tengo-codigo'],
+    ])
+    expect(nav.querySelector('[aria-label="Tu cuenta"]')).not.toBeNull()
+    expect(nav.querySelector('a[href="/login"], a[href="/registro"]')).toBeNull()
+  })
+
+  it('mientras carga saluda, avisa del estado y no muestra escuadrones', () => {
+    const view = mount({ loadSquads: pendiente })
+
+    expect(view.querySelectorAll('h1')).toHaveLength(1)
+    expect(view.querySelector('h1').textContent).toBe('Mis escuadrones')
+    expect(view.textContent).toContain('¡Hola! ¿Con quién sumamos racha hoy?')
+    expect(view.querySelector('[role="status"]').textContent).toBe('Cargando tus escuadrones…')
+    expect(view.querySelector('main section').getAttribute('aria-busy')).toBe('true')
+    expect(tarjetas(view)).toHaveLength(0)
+  })
+
+  it('pinta una tarjeta por escuadrón y al final la de crear o unirse', async () => {
+    const view = mount({ loadSquads: async () => squads })
+    await vi.waitFor(() => expect(tarjetas(view)).toHaveLength(2))
+
+    expect([...tarjetas(view)].map((link) => link.getAttribute('href'))).toEqual([
+      '/escuadrones/panel?id=7',
+      '/escuadrones/panel?id=9',
+    ])
+    expect(view.querySelector('[role="status"]').textContent).toBe('Tienes 2 escuadrones. Elige uno para ver cómo va el día.')
+    expect(view.querySelector('main section').getAttribute('aria-busy')).toBe('false')
+    expect([...view.querySelectorAll('main li')].at(-1).querySelector('h2').textContent).toBe('¿Una racha más?')
+  })
+
+  it('con un solo escuadrón el resumen va en singular', async () => {
+    const view = mount({ loadSquads: async () => squads.slice(0, 1) })
+
+    await vi.waitFor(() => expect(view.querySelector('[role="status"]').textContent).toBe('Tienes 1 escuadrón. Ábrelo para ver cómo va el día.'))
+  })
+
+  it('sin escuadrones cambia el saludo e invita a crear o unirse', async () => {
+    const view = mount({ loadSquads: async () => [] })
+    await vi.waitFor(() => expect(view.querySelector('[role="status"]').textContent).toContain('Todavía no perteneces'))
+
+    expect(view.textContent).toContain('¡Vamos a por tu primer escuadrón!')
+    expect([...view.querySelectorAll('main h2')].map((titulo) => titulo.textContent)).toEqual([
+      'Crea tu escuadrón',
+      'Únete con un código',
+    ])
+  })
+
+  it('si falla la carga muestra el error y permite reintentar', async () => {
+    const loadSquads = vi.fn().mockRejectedValueOnce(new TypeError('offline')).mockResolvedValueOnce(squads)
+    const view = mount({ loadSquads })
+    await vi.waitFor(() => expect(view.querySelector('[role="alert"]').textContent).toContain('No se han podido cargar'))
+    const retry = [...view.querySelectorAll('button')].find((button) => button.textContent === 'Reintentar')
+
+    expect(retry.hidden).toBe(false)
+    retry.click()
+    await vi.waitFor(() => expect(tarjetas(view)).toHaveLength(2))
+    expect(view.querySelector('[role="alert"]').textContent).toBe('')
+    expect(retry.hidden).toBe(true)
+  })
+
+  it('avisa de la sesión caducada cuando la API responde 401', async () => {
+    const view = mount({ loadSquads: async () => { throw new ApiError(401) } })
+
+    await vi.waitFor(() => expect(view.querySelector('[role="alert"]').textContent).toBe('Tu sesión ha caducado. Vuelve a iniciar sesión.'))
+  })
+
+  it('cierra la sesión desde el menú de cuenta y bloquea el botón mientras termina', async () => {
+    let finish
+    const onLogout = vi.fn(() => new Promise((resolve) => { finish = resolve }))
+    const view = mount({ onLogout, loadSquads: async () => [] })
+    view.querySelector('[aria-label="Tu cuenta"]').click()
+    const button = [...view.querySelectorAll('button')].find((item) => item.textContent === 'Cerrar sesión')
+
+    button.click()
+    button.click()
+    expect(onLogout).toHaveBeenCalledTimes(1)
+    expect(button.disabled).toBe(true)
+    finish()
+    await vi.waitFor(() => expect(button.disabled).toBe(false))
+  })
+})
 
 describe('selector recuperado conectado al backend', () => {
   let router
@@ -187,22 +288,21 @@ describe('selector recuperado conectado al backend', () => {
     ;[...root.querySelectorAll('button')].find((button) => button.textContent === 'Reintentar').click()
     await vi.waitFor(() => expect(root.querySelectorAll('a[aria-label^="Abrir panel"]')).toHaveLength(2))
   })
+  it('con sesión, las secciones de la barra abren la presentación y el logo vuelve al selector', async () => {
+    start()
+    await vi.waitFor(() => expect(root.textContent).toContain('Todavía no perteneces'))
+    ;[...root.querySelectorAll('header a')].find((link) => link.textContent === 'Cómo funciona').click()
+    expect(window.location.pathname).toBe('/presentacion')
+    expect(window.location.hash).toBe('#como-funciona')
+    expect(root.querySelector('#como-funciona')).not.toBeNull()
+
+    root.querySelector('header a[aria-label="HabitSquad"]').click()
+    expect(window.location.pathname).toBe('/')
+    await vi.waitFor(() => expect(root.querySelector('h1').textContent).toBe('Mis escuadrones'))
+  })
   it('protege el selector /menu y el panel sin sesión', () => {
     clearSession()
     expect(guard(routes.find((route) => route.path === '/menu'))).toBe('/login')
     expect(guard(routes.find((route) => route.path === '/escuadrones/panel'))).toBe('/login')
-  })
-  it('mantiene el botón de cierre bloqueado durante el cierre de sesión', async () => {
-    let finish
-    const onLogout = vi.fn(() => new Promise((resolve) => { finish = resolve }))
-    const view = menuScreen({ onLogout })
-    root.append(view)
-    const button = [...view.querySelectorAll('button')].find((item) => item.textContent === 'Cerrar sesión')
-    button.click()
-    button.click()
-    expect(onLogout).toHaveBeenCalledTimes(1)
-    expect(button.disabled).toBe(true)
-    finish()
-    await vi.waitFor(() => expect(button.disabled).toBe(false))
   })
 })

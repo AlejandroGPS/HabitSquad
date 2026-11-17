@@ -13,7 +13,6 @@ import {
 import { hasSession } from './session.js'
 import { loginScreen, registroScreen } from './views/acceso.js'
 import { crearEscuadronScreen } from './views/crearEscuadron.js'
-import { menuScreen } from './views/menu.js'
 import { habitoDiarioScreen } from './views/habitoDiario.js'
 import { panelSeleccionadoScreen } from './views/panelSeleccionado.js'
 import { presentacionScreen } from './views/presentacion.js'
@@ -21,6 +20,7 @@ import { pruebaDiaScreen } from './views/pruebaDia.js'
 import { recuperarContrasenaScreen, reenviarVerificacionScreen } from './views/recuperarContrasena.js'
 import { restablecerContrasenaScreen } from './views/restablecerContrasena.js'
 import { screen } from './views/screen.js'
+import { selectorEscuadronScreen } from './views/selectorEscuadron.js'
 import { unirseEscuadronScreen } from './views/unirseEscuadron.js'
 import { verificarCorreoScreen } from './views/verificarCorreo.js'
 import { votarPruebaScreen } from './views/votarPrueba.js'
@@ -124,17 +124,25 @@ export function destinoTrasAcceso() {
   return /^\/(?![/\\])/.test(destino) ? destino : '/'
 }
 
+function selectorEscuadron(navigate) {
+  return selectorEscuadronScreen({
+    onLogout: async () => {
+      await logout()
+      navigate('/login')
+    },
+  })
+}
+
 export const routes = [
   {
     path: '/',
     title: 'HabitSquad',
-    view: ({ navigate } = {}) =>
-      hasSession()
-        ? menuScreen({ title: 'HabitSquad', onLogout: async () => {
-          await logout()
-          navigate('/login')
-        } })
-        : presentacionScreen({ navigate }),
+    view: ({ navigate } = {}) => (hasSession() ? selectorEscuadron(navigate) : presentacionScreen({ navigate })),
+  },
+  {
+    path: '/presentacion',
+    title: 'HabitSquad',
+    view: ({ navigate } = {}) => presentacionScreen({ navigate }),
   },
   {
     path: '/escuadrones/prueba',
@@ -267,12 +275,9 @@ export const routes = [
   },
   {
     path: '/menu',
-    title: 'Menú principal',
+    title: 'Mis escuadrones',
     private: true,
-    view: ({ navigate } = {}) => menuScreen({ onLogout: async () => {
-      await logout()
-      navigate('/login')
-    } }),
+    view: ({ navigate } = {}) => selectorEscuadron(navigate),
   },
   {
     path: '/escuadrones/nuevo',
