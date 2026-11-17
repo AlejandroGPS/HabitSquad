@@ -106,6 +106,35 @@ def test_register_rejects_duplicate_nickname_case_insensitively(
     assert not CustomUser.objects.filter(email="otro@example.com").exists()
 
 
+@pytest.mark.django_db
+def test_register_rejects_password_confirm_mismatch(api_client):
+    response = api_client.post(
+        reverse("autenticacion:register"),
+        _registration_payload(password_confirm="otra"),
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert response.data["password_confirm"] == ["Las contraseñas no coinciden."]
+    assert CustomUser.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_register_rejects_missing_password_confirm(api_client):
+    payload = _registration_payload()
+    del payload["password_confirm"]
+
+    response = api_client.post(
+        reverse("autenticacion:register"),
+        payload,
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "password_confirm" in response.data
+    assert CustomUser.objects.count() == 0
+
+
 @pytest.mark.parametrize(
     ("email", "password"),
     [
