@@ -63,7 +63,6 @@ def test_create_user_falls_back_to_user_nickname_when_email_local_part_is_empty(
     assert other.nickname == "user1"
 
 
-
 @pytest.mark.django_db
 def test_user_string_representation_is_email():
     user = CustomUser.objects.create_user(

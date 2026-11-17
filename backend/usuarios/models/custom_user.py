@@ -27,7 +27,9 @@ class CustomUserManager(BaseUserManager):
     def _default_nickname_for_email(self, email):
         local_part = email.split("@", 1)[0]
         base = "".join(
-            character for character in local_part if character.isalnum() or character in "_-"
+            character
+            for character in local_part
+            if character.isalnum() or character in "_-"
         )[:40]
         if not base:
             base = "user"
@@ -84,7 +86,7 @@ class CustomUser(AbstractUser):
     REQUIRED_FIELDS: ClassVar[list[str]] = []
 
     class Meta:
-        constraints = [
+        constraints: ClassVar[list] = [
             models.UniqueConstraint(
                 Lower("nickname"),
                 name="usuarios_customuser_nickname_ci_uniq",

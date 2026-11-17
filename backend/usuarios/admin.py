@@ -7,7 +7,14 @@ from .models import CustomUser
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
     ordering = ("email",)
-    list_display = ("email", "nickname", "first_name", "last_name", "is_staff", "is_active")
+    list_display = (
+        "email",
+        "nickname",
+        "first_name",
+        "last_name",
+        "is_staff",
+        "is_active",
+    )
     search_fields = ("email", "nickname", "first_name", "last_name")
     fieldsets = (
         (None, {"fields": ("email", "password")}),
@@ -42,4 +49,3 @@ class CustomUserAdmin(UserAdmin):
             },
         ),
     )
-
