@@ -53,10 +53,19 @@ class ErrorValidacionRegistroSerializer(serializers.Serializer):
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, trim_whitespace=False)
+    password_confirm = serializers.CharField(write_only=True, trim_whitespace=False)
+    nickname = serializers.CharField()
 
     class Meta:
         model = CustomUser
-        fields = ("id", "email", "password", "date_joined")
+        fields = (
+            "id",
+            "email",
+            "password",
+            "password_confirm",
+            "nickname",
+            "date_joined",
+        )
         read_only_fields = ("id", "date_joined")
 
     def validate_email(self, value):
@@ -65,12 +74,27 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Ya existe una cuenta con este email.")
         return normalized_email
 
+    def validate_nickname(self, value):
+        nickname = value.strip()
+        if not nickname:
+            raise serializers.ValidationError("Este campo no puede estar en blanco.")
+        if CustomUser.objects.filter(nickname__iexact=nickname).exists():
+            raise serializers.ValidationError(
+                "Ya existe una cuenta con este nickname."
+            )
+        return nickname
+
     def validate(self, attrs):
+        if attrs["password"] != attrs["password_confirm"]:
+            raise serializers.ValidationError(
+                {"password_confirm": "Las contraseñas no coinciden."}
+            )
         validate_password(
             attrs["password"],
-            user=CustomUser(email=attrs["email"]),
+            user=CustomUser(email=attrs["email"], nickname=attrs["nickname"]),
         )
         return attrs
 
     def create(self, validated_data):
+        validated_data.pop("password_confirm")
         return create_registered_user(**validated_data)
