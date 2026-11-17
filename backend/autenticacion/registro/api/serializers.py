@@ -79,9 +79,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         if not nickname:
             raise serializers.ValidationError("Este campo no puede estar en blanco.")
         if CustomUser.objects.filter(nickname__iexact=nickname).exists():
-            raise serializers.ValidationError(
-                "Ya existe una cuenta con este nickname."
-            )
+            raise serializers.ValidationError("Ya existe una cuenta con este nickname.")
         return nickname
 
     def validate(self, attrs):
