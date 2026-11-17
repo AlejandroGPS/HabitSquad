@@ -47,7 +47,7 @@ describe('routes', () => {
     (path, route) => {
       const element = route.view()
       const heading = element.querySelector('h1').textContent
-      expect(heading).toBe(path === '/' ? 'Cumple tu hábito. Que no caiga la racha.' : route.title)
+      expect(heading).toBe(['/', '/presentacion'].includes(path) ? 'Cumple tu hábito. Que no caiga la racha.' : route.title)
     },
   )
 
@@ -98,6 +98,14 @@ describe('sesión', () => {
 
     expect(guard(home)).toBeNull()
     expect(home.view().querySelector('h1').textContent).toBe('HabitSquad')
+  })
+
+  it('con sesión, /presentacion sigue mostrando la portada', () => {
+    saveSession({ access: 'access-token', refresh: 'refresh-token' })
+    const presentacion = routes.find((route) => route.path === '/presentacion')
+
+    expect(guard(presentacion)).toBeNull()
+    expect(presentacion.view().querySelector('#como-funciona')).not.toBeNull()
   })
 
   it('con sesión, /login y /registro llevan al inicio', () => {

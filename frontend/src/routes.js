@@ -137,6 +137,11 @@ export const routes = [
         : presentacionScreen({ navigate }),
   },
   {
+    path: '/presentacion',
+    title: 'HabitSquad',
+    view: ({ navigate } = {}) => presentacionScreen({ navigate }),
+  },
+  {
     path: '/escuadrones/prueba',
     title: 'Validar prueba',
     private: true,
