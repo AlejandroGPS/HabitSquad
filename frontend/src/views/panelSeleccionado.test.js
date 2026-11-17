@@ -42,6 +42,7 @@ describe('panel del escuadrón: carga de datos y estados', () => {
   const button = (view, text) => [...view.querySelectorAll('button')].find((item) => item.textContent.includes(text))
   const retry = (view) => button(view, 'Reintentar')
   const loaded = (view) => vi.waitFor(() => expect(view.querySelector('h1').textContent).toBe('Lectores'))
+  const miembros = (view) => [...view.querySelectorAll('section')].find((item) => item.querySelector('h2')?.textContent.startsWith('Miembros'))
 
   it.each([['/escuadrones/panel'], ['/escuadrones/panel?id=abc'], ['/escuadrones/panel?id=0'], ['/escuadrones/panel?id=-3']])(
     'con la URL %s pide elegir un escuadrón sin llamar a la API',
@@ -74,7 +75,7 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     api.getSquad.mockReturnValue(pending.promise)
     const view = mount()
     expect(view.querySelector('[role="status"]').classList.contains('sr-only')).toBe(true)
-    expect(view.querySelectorAll('main [aria-hidden="true"]:has(.hueco)')).toHaveLength(7)
+    expect(view.querySelectorAll('main [aria-hidden="true"]:has(.hueco)')).toHaveLength(6)
     pending.resolve(squad)
     await loaded(view)
     expect(view.querySelector('.hueco')).toBeNull()
@@ -84,8 +85,8 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     const view = mount()
     await loaded(view)
     const tarjetas = [...view.querySelectorAll('.entrada')]
-    expect(tarjetas).toHaveLength(7)
-    expect(tarjetas.map((tarjeta) => tarjeta.style.getPropertyValue('--orden'))).toEqual(['0', '1', '2', '3', '4', '5', '6'])
+    expect(tarjetas).toHaveLength(6)
+    expect(tarjetas.map((tarjeta) => tarjeta.style.getPropertyValue('--orden'))).toEqual(['0', '1', '2', '3', '4', '5'])
     expect(view.querySelector('a[href="/"]').classList.contains('entrada')).toBe(false)
   })
 
@@ -95,7 +96,7 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     expect(api.getDailyHabit).toHaveBeenCalledWith('7')
     expect(view.textContent).toContain('Leer')
     expect(view.textContent).toContain('3 de 5 miembros')
-    const items = [...view.querySelectorAll('li')].map((item) => item.textContent)
+    const items = [...miembros(view).querySelectorAll('li')].map((item) => item.textContent)
     expect(items[0]).toContain('TúSin pruebaLeer')
     expect(items[1]).toContain('LauraPendienteCorrer 5 km')
     expect(items[2]).toContain('Miembro 3CumplidoSin hábito')
@@ -111,7 +112,7 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     const view = mount()
     await loaded(view)
 
-    expect([...view.querySelectorAll('li p span:first-child')].map((nombre) => nombre.textContent))
+    expect([...miembros(view).querySelectorAll('li p span:first-child')].map((nombre) => nombre.textContent))
       .toEqual(['Tú', 'Laura', 'Miembro 3'])
     expect(view.querySelector('header span').textContent).toBe('L')
     expect(view.querySelector('aside').textContent).toContain('Lectores3 de 5 miembros')
@@ -135,17 +136,20 @@ describe('panel del escuadrón: carga de datos y estados', () => {
 
     const tarjeta = (titulo) => [...view.querySelectorAll('section')].find((item) => item.textContent.startsWith(titulo))
     expect(view.textContent).toContain('4días seguidos')
-    expect(view.textContent).toContain('1/3')
-    expect(view.textContent).toContain('23:59')
-    expect(view.textContent).toContain('Quedan 03:29 h')
+    expect(tarjeta('1/3').textContent).toContain('1 de 3 han cumplidoFaltan 2: tú y Laura.')
+    expect(tarjeta('1/3').textContent).toContain('Cierra en3 h 29 mina las 23:59')
+    expect(view.querySelector('[role="img"]').getAttribute('aria-label'))
+      .toBe('Tu semana: L 9 cumplido, M 10 no cumplido, X 11 sin prueba')
 
-    const filas = [...tarjeta('Esta semana').querySelectorAll('.flex.items-center.gap-3')]
-    expect(filas.map((fila) => fila.querySelector('span').textContent)).toEqual(['L 9', 'M 10', 'X 11', 'J 12', 'V 13', 'S 14', 'D 15'])
-    const barras = (fila) => [...fila.querySelectorAll('.rounded-full')].map((barra) => barra.className.split(' ').at(-1))
-    expect(barras(filas[0])).toEqual(['bg-[#248a3d]', 'bg-[#248a3d]', 'bg-[#e5e5ea]'])
-    expect(barras(filas[1])).toEqual(['bg-red-600', 'bg-[#248a3d]', 'bg-[#e5e5ea]'])
-    expect(barras(filas[2])).toEqual(['bg-[#e5e5ea]', 'bg-[#c93400]', 'bg-[#248a3d]'])
-    expect(barras(filas[6])).toEqual(['bg-[#e5e5ea]', 'bg-[#e5e5ea]', 'bg-[#e5e5ea]'])
+    const estaSemana = tarjeta('Esta semana')
+    expect(estaSemana.textContent).toContain('L9M10X11J12V13S14D15')
+    const filas = [...estaSemana.querySelectorAll('[data-barras]')]
+    expect(filas.map((celdas) => celdas.previousSibling.textContent)).toEqual(['Tú', 'Laura', 'Miembro 3'])
+    const colores = (celdas) => [...celdas.children].slice(0, 3).map((celda) => celda.className.split(' ').at(-1))
+    expect(colores(filas[0])).toEqual(['bg-[#248a3d]', 'bg-red-600', 'bg-[#e5e5ea]'])
+    expect(colores(filas[1])).toEqual(['bg-[#248a3d]', 'bg-[#248a3d]', 'bg-[#c93400]'])
+    expect(colores(filas[2])).toEqual(['bg-[#e5e5ea]', 'bg-[#e5e5ea]', 'bg-[#248a3d]'])
+    expect([...filas[0].children].slice(3).every((celda) => celda.classList.contains('border-dashed'))).toBe(true)
   })
 
   it('sin racha ni semana del servidor empieza en cero y pinta solo hoy', async () => {
@@ -153,7 +157,7 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     document.body.replaceChildren(view)
     await loaded(view)
     expect(view.textContent).toContain('0días seguidos')
-    expect(view.textContent).toContain('El día ya ha cerrado')
+    expect(view.textContent).toContain('Cierra enCerradoa las 23:59')
   })
 
   it('sin hábito propio invita a elegirlo y lleva a la pantalla del hábito', async () => {

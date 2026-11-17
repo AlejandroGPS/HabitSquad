@@ -8,6 +8,13 @@ export function minutosRestantes(ahora, cierre) {
   return Math.ceil((limite - ahora) / 60000)
 }
 
+export function duracion(minutos) {
+  const horas = Math.floor(minutos / 60)
+  const resto = minutos % 60
+  if (!horas) return `${resto} min`
+  return resto ? `${horas} h ${resto} min` : `${horas} h`
+}
+
 export function tiempoRestante(ahora, cierre) {
   const restante = minutosRestantes(ahora, cierre)
   if (restante === null) return null

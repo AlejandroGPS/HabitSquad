@@ -59,9 +59,10 @@ describe('panelEscuadronScreen', () => {
     const screen = mount({ escuadron: { ...ESCUADRON, plazas: 4, cierre: '22:00' } })
 
     expect(card(screen, 'Racha').textContent).toContain('12días seguidos')
-    expect(card(screen, 'Hoy').textContent).toBe('Hoy1/3')
-    expect(card(screen, 'Cierra').textContent).toBe('Cierra22:00Quedan 01:42 h')
+    expect(card(screen, '1/3').textContent).toContain('1 de 3 han cumplido')
+    expect(card(screen, '1/3').textContent).toContain('Cierra en1 h 42 mina las 22:00')
     expect(card(screen, 'Esta semana')).toBeDefined()
+    expect(card(screen, 'Mi hábito').textContent).toContain('Tu semana')
     expect(card(screen, 'Mi hábito').textContent).toContain('Leer un libroSube una foto antes de las 22:00')
     expect(card(screen, 'Miembros').querySelector('h2').textContent).toBe('Miembros3 de 4 miembros')
     expect(card(screen, 'Invita').textContent).toContain('K7P2QXQueda 1 plaza')
@@ -102,8 +103,8 @@ describe('panelEscuadronScreen', () => {
     document.body.replaceChildren(screen)
 
     expect(card(screen, 'Racha').textContent).toContain('0días seguidos')
-    expect(card(screen, 'Hoy').textContent).toBe('Hoy0/0')
-    expect(card(screen, 'Cierra').textContent).toBe('Cierra23:59Quedan 03:41 h')
+    expect(card(screen, '0/0').textContent).toContain('Aún no hay nadie en el escuadrón')
+    expect(card(screen, '0/0').textContent).toContain('Cierra en3 h 41 mina las 23:59')
     expect(card(screen, 'Invita').textContent).toContain('Quedan 5 plazas')
     expect(card(screen, 'Mi hábito').textContent).toContain('Aún no has elegido tu hábito')
     expect(screen.querySelector('[aria-label="Tu cuenta"]').textContent).toBe('?')

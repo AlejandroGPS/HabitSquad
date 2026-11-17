@@ -4,7 +4,6 @@ import { accountMenu } from '../components/accountMenu.js'
 import { squadAvatar } from '../components/avatar.js'
 import { element } from '../components/dom.js'
 import {
-  cierreCard,
   escuadronResumen,
   habitoCard,
   hoyCard,
@@ -14,6 +13,7 @@ import {
   rachaCard,
   rachaChip,
   semanaCard,
+  semanaDe,
 } from '../components/panel/index.js'
 import { habitText } from './habitoDiario.js'
 
@@ -66,20 +66,21 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
       const racha = squad.racha ?? 0
       const momento = ahora()
       const abrirPrueba = ({ pruebaId }) => navigate(`/escuadrones/prueba?escuadron=${id}&registro=${pruebaId}`)
-      const pruebaPropia = miembros.find(({ esUsuario }) => esUsuario)?.pruebaId
+      const usuario = miembros.find(({ esUsuario }) => esUsuario)
+      const pruebaPropia = usuario?.pruebaId
       const tarjetas = [
+        hoyCard({ miembros, ahora }),
         rachaCard({ racha }),
-        hoyCard({ miembros }),
-        cierreCard({ ahora }),
-        semanaCard({ miembros, ahora: momento }),
         habitoCard({
           habito: habitText(ownHabit),
+          semana: usuario && semanaDe(usuario, momento),
           onElegirHabito: () => navigate(`/habito?escuadron=${id}`),
           onSubirPrueba: () => navigate(`/prueba?escuadron=${id}`),
           onVerPrueba: pruebaPropia ? () => abrirPrueba({ pruebaId: pruebaPropia }) : undefined,
         }),
+        semanaCard({ miembros, ahora: momento }),
         miembrosCard({ miembros, plazas: PLAZAS, onVerFoto: abrirPrueba, onVotar: abrirPrueba }),
-        invitaCard({ codigo: squad.codigo_invitacion, libres: PLAZAS - miembros.length, nombre: squad.nombre }),
+        invitaCard({ codigo: squad.codigo_invitacion, libres: PLAZAS - miembros.length, plazas: PLAZAS, nombre: squad.nombre }),
       ]
       for (const [orden, tarjeta] of tarjetas.entries()) {
         tarjeta.classList.add('entrada')

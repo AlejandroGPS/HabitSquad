@@ -27,6 +27,11 @@ export const ESTADOS = {
 
 export const BARRA_VACIA = ESTADOS['sin-prueba'].barra
 
+// Sin datos de la semana, el día de hoy usa el estado de la prueba de hoy.
+export function estadoDelDia(miembro, indice, hoy) {
+  return miembro.semana?.[indice]?.estado ?? (hoy ? miembro.estado : null) ?? 'sin-prueba'
+}
+
 export function conEstado(miembros) {
   return miembros.map((miembro) => ({ ...miembro, estado: miembro.estado ?? 'sin-prueba' }))
 }

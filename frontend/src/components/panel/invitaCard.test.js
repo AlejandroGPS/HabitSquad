@@ -47,6 +47,12 @@ describe('invitaCard', () => {
     )
   })
 
+  it('pinta un punto por plaza y rellena los ocupados', () => {
+    const puntos = [...invitaCard({ codigo: 'K7P2QX', libres: 2, plazas: 5 }).querySelectorAll('.h-2\\.5')]
+
+    expect(puntos.map((punto) => punto.classList.contains('bg-accent'))).toEqual([true, true, true, false, false])
+  })
+
   it('se ve también en móvil, a todo el ancho', () => {
     const card = invitaCard()
 

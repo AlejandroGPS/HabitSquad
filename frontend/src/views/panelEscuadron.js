@@ -4,7 +4,6 @@ import { squadAvatar } from '../components/avatar.js'
 import { element } from '../components/dom.js'
 import {
   alertasBoton,
-  cierreCard,
   escuadronResumen,
   habitoCard,
   hoyCard,
@@ -13,6 +12,7 @@ import {
   rachaCard,
   rachaChip,
   semanaCard,
+  semanaDe,
 } from '../components/panel/index.js'
 
 export function panelEscuadronScreen({ escuadron, miembros = [], ahora = new Date(), acciones = {} }) {
@@ -22,18 +22,18 @@ export function panelEscuadronScreen({ escuadron, miembros = [], ahora = new Dat
   const body = element(
     'div',
     'mt-4 grid grid-cols-2 gap-3 px-4 lg:mt-6 lg:grid-cols-4 lg:gap-4 lg:px-0',
+    hoyCard({ miembros, cierre, ahora }),
     rachaCard({ racha }),
-    hoyCard({ miembros }),
-    cierreCard({ cierre, ahora }),
-    semanaCard({ miembros, ahora }),
     habitoCard({
       habito: usuario?.habito,
       cierre,
+      semana: usuario && semanaDe(usuario, ahora),
       onSubirPrueba: acciones.subirPrueba,
       onElegirHabito: acciones.elegirHabito,
     }),
+    semanaCard({ miembros, ahora }),
     miembrosCard({ miembros, plazas, onVerFoto: acciones.verFoto, onVotar: acciones.votar }),
-    invitaCard({ codigo, libres: plazas - miembros.length }),
+    invitaCard({ codigo, libres: plazas - miembros.length, plazas, nombre }),
   )
 
   return appLayout({

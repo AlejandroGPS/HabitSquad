@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { minutosRestantes, semanaActual, tiempoRestante } from './tiempo.js'
+import { duracion, minutosRestantes, semanaActual, tiempoRestante } from './tiempo.js'
 
 const AHORA = new Date(2026, 9, 25, 20, 18)
 
@@ -11,6 +11,15 @@ describe('minutosRestantes', () => {
 
   it('devuelve null si ya ha pasado la hora de cierre', () => {
     expect(minutosRestantes(new Date(2026, 9, 25, 23, 59), '23:59')).toBeNull()
+  })
+})
+
+describe('duracion', () => {
+  it('escribe horas y minutos sin ceros de relleno', () => {
+    expect(duracion(221)).toBe('3 h 41 min')
+    expect(duracion(120)).toBe('2 h')
+    expect(duracion(49)).toBe('49 min')
+    expect(duracion(1)).toBe('1 min')
   })
 })
 

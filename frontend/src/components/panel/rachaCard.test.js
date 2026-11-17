@@ -7,7 +7,8 @@ describe('rachaCard', () => {
 
     expect(card.textContent).toBe('Racha12días seguidos')
     expect(card.querySelector('img').alt).toBe('')
-    expect(card.classList.contains('row-span-2')).toBe(true)
+    expect(card.classList.contains('col-span-2')).toBe(true)
+    expect(card.classList.contains('lg:col-span-1')).toBe(true)
   })
 
   it('usa el singular con un día', () => {
@@ -15,9 +16,9 @@ describe('rachaCard', () => {
   })
 
   it('empieza en 0 sin datos y acepta otra colocación', () => {
-    const card = rachaCard({ className: 'col-span-2' })
+    const card = rachaCard({ className: 'row-span-2' })
 
     expect(rachaCard().textContent).toContain('0días seguidos')
-    expect(card.classList.contains('col-span-2')).toBe(true)
+    expect(card.classList.contains('row-span-2')).toBe(true)
   })
 })

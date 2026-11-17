@@ -32,6 +32,30 @@ describe('habitoCard', () => {
     expect(onElegirHabito).toHaveBeenCalledOnce()
   })
 
+  it('enseña la semana del usuario: hecho, fallado, sin prueba y lo que aún no ha llegado', () => {
+    const semana = [
+      { letra: 'L', numero: 19, estado: 'cumplido' },
+      { letra: 'M', numero: 20, estado: 'no_cumplido' },
+      { letra: 'X', numero: 21, estado: 'sin-prueba', hoy: true },
+      { letra: 'J', numero: 22, futuro: true },
+    ]
+    const card = habitoCard({ habito: 'Leer', semana })
+    const fila = card.querySelector('[role="img"]')
+    const puntos = [...fila.children].map((dia) => dia.lastChild)
+
+    expect(fila.getAttribute('aria-label')).toBe('Tu semana: L 19 cumplido, M 20 no cumplido, X 21 sin prueba')
+    expect(fila.textContent).toBe('LMXJ')
+    expect(puntos[0].classList.contains('bg-white')).toBe(true)
+    expect(puntos[0].querySelector('svg')).not.toBeNull()
+    expect(puntos[2].classList.contains('ring-2')).toBe(true)
+    expect(puntos[3].classList.contains('border-dashed')).toBe(true)
+  })
+
+  it('no enseña la semana si el usuario aún no tiene hábito', () => {
+    expect(habitoCard({ semana: [{ letra: 'L', numero: 19, estado: 'cumplido' }] }).querySelector('[role="img"]')).toBeNull()
+    expect(habitoCard({ habito: 'Leer', semana: [] }).textContent).not.toContain('Tu semana')
+  })
+
   it('ocupa dos columnas por defecto', () => {
     expect(habitoCard().classList.contains('col-span-2')).toBe(true)
   })

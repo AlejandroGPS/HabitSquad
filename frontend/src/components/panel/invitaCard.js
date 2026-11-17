@@ -11,7 +11,24 @@ function enlaceInvitacion(codigo) {
   return new URL(`/escuadrones/unirse?codigo=${encodeURIComponent(codigo)}`, window.location.origin).href
 }
 
-export function invitaCard({ codigo = '', libres = 0, nombre, className = 'col-span-2 flex lg:col-span-1' } = {}) {
+function puntos(plazas, libres) {
+  const ocupadas = Math.max(0, plazas - libres)
+  return element(
+    'div',
+    'mt-2 flex gap-1.5',
+    ...Array.from({ length: plazas }, (_, indice) =>
+      element('span', `h-2.5 w-2.5 rounded-full ${indice < ocupadas ? 'bg-accent' : 'bg-accent/20'}`),
+    ),
+  )
+}
+
+export function invitaCard({
+  codigo = '',
+  libres = 0,
+  plazas = 5,
+  nombre,
+  className = 'col-span-2 flex lg:col-span-1',
+} = {}) {
   const status = element('p', 'mt-2 hidden text-[0.8125rem] font-bold text-ink-muted')
   status.setAttribute('role', 'status')
 
@@ -42,7 +59,7 @@ export function invitaCard({ codigo = '', libres = 0, nombre, className = 'col-s
   }
 
   const nota = cardNote(plazasLibres(libres))
-  nota.classList.add('mb-3')
+  nota.classList.add('mt-1.5', 'mb-4')
   // El menú de compartir del sistema es cosa del móvil; en web basta con copiar.
   const puedeCompartir = libres > 0 && typeof navigator.share === 'function'
 
@@ -51,6 +68,7 @@ export function invitaCard({ codigo = '', libres = 0, nombre, className = 'col-s
     cardChip('users', 'bg-[#e6f2ff] text-[#0066cc]'),
     cardLabel('Invita'),
     element('p', 'mt-1 text-[1.5rem] font-black tracking-[0.2em] select-all', codigo),
+    puntos(plazas, libres),
     nota,
     element(
       'div',

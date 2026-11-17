@@ -5,28 +5,28 @@ describe('panelCargando', () => {
   it('pinta una tarjeta vacía por cada tarjeta del panel', () => {
     const tarjetas = panelCargando()
 
-    expect(tarjetas).toHaveLength(7)
+    expect(tarjetas).toHaveLength(6)
     expect(tarjetas.every((tarjeta) => tarjeta.getAttribute('aria-hidden') === 'true')).toBe(true)
     expect(tarjetas.every((tarjeta) => tarjeta.textContent === '' && tarjeta.querySelector('.hueco'))).toBe(true)
   })
 
   it('ocupa los mismos huecos de la rejilla que el panel cargado', () => {
-    const [racha, , , semana, habito, miembros, invita] = panelCargando()
+    const [hoy, racha, habito, semana, miembros, invita] = panelCargando()
+    const clases = (tarjeta, ...nombres) => nombres.every((nombre) => tarjeta.classList.contains(nombre))
 
-    expect(racha.classList.contains('row-span-2')).toBe(true)
-    expect(habito.classList.contains('col-span-2')).toBe(true)
-    expect(miembros.classList.contains('lg:col-span-3')).toBe(true)
-    expect(semana.classList.contains('hidden')).toBe(true)
-    expect(semana.classList.contains('lg:flex')).toBe(true)
-    expect(invita.classList.contains('hidden')).toBe(false)
-    expect(invita.classList.contains('col-span-2')).toBe(true)
-    expect(invita.classList.contains('lg:col-span-1')).toBe(true)
+    expect(clases(hoy, 'col-span-2', 'lg:col-span-3')).toBe(true)
+    expect(clases(racha, 'col-span-2', 'lg:col-span-1')).toBe(true)
+    expect(clases(habito, 'col-span-2')).toBe(true)
+    expect(clases(semana, 'hidden', 'lg:flex', 'lg:col-span-2')).toBe(true)
+    expect(clases(miembros, 'col-span-2', 'lg:col-span-3')).toBe(true)
+    expect(clases(invita, 'col-span-2', 'lg:col-span-1')).toBe(true)
   })
 
-  it('reserva una fila por día en la semana y tres miembros', () => {
-    const [, , , semana, , miembros] = panelCargando()
+  it('reserva la semana del usuario, tres filas en la semana del escuadrón y tres miembros', () => {
+    const [, , habito, semana, miembros] = panelCargando()
 
-    expect(semana.querySelectorAll('.items-center')).toHaveLength(7)
+    expect(habito.querySelectorAll('.h-7.w-7')).toHaveLength(7)
+    expect(semana.querySelectorAll('.grid-cols-7')).toHaveLength(4)
     expect(miembros.querySelectorAll('.h-10.w-10')).toHaveLength(3)
   })
 })
