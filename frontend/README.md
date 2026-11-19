@@ -38,7 +38,11 @@ crear elementos y lanzar eventos.
 
 ## Registro y sesión
 
-`/registro` envía el correo y la contraseña a `POST /api/auth/register/`. Tras
+`/registro` envía el correo, el nickname, la contraseña y su confirmación
+(`email`, `nickname`, `password`, `password_confirm`) a `POST /api/auth/register/`.
+El nickname se recorta y ambas contraseñas deben coincidir exactamente. Los
+errores del backend se muestran junto a cada campo. Tras crear la cuenta se
+pide verificar el correo, según el contrato de `docs/REGISTRO.md`. Tras
 verificar el correo, `/login` pide `POST /api/auth/token/` y guarda la sesión
 en `localStorage` con la clave `habitsquad.session`.
 

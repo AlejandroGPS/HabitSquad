@@ -49,13 +49,16 @@ describe('api', () => {
     const userData = {
       id: 7,
       email: 'persona@example.com',
+      nickname: 'HabitHero',
       date_joined: '2026-10-17T12:00:00Z',
     }
     fetchMock.mockResolvedValue(jsonResponse(201, userData))
 
     const result = await register({
       email: 'persona@example.com',
+      nickname: 'HabitHero',
       password: 'S0mething!Secure-497',
+      password_confirm: 'S0mething!Secure-497',
     })
 
     expect(fetchMock).toHaveBeenCalledWith('/api/auth/register/', {
@@ -63,10 +66,14 @@ describe('api', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: 'persona@example.com',
+        nickname: 'HabitHero',
         password: 'S0mething!Secure-497',
+        password_confirm: 'S0mething!Secure-497',
       }),
     })
     expect(result).toEqual(userData)
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(hasSession()).toBe(false)
   })
 
   it('envía el token y ambas contraseñas al confirmar la recuperación', async () => {
