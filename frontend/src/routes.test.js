@@ -37,6 +37,12 @@ function fillLogin(element, { email, password }) {
   element.querySelector('input[name="password"]').value = password
 }
 
+function fillRegistration(element, { nickname = '  HabitHero  ', ...credentials }) {
+  fillLogin(element, credentials)
+  element.querySelector('[name="nickname"]').value = nickname
+  element.querySelector('[name="password_confirm"]').value = credentials.password
+}
+
 function submit(element) {
   element.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true }))
 }
@@ -159,7 +165,7 @@ describe('sesión', () => {
     register.mockResolvedValue({ id: 1, email: 'persona@example.com' })
     const { element, navigate } = mount('/registro')
 
-    fillLogin(element, {
+    fillRegistration(element, {
       email: ' Persona@Example.com ',
       password: 'S0mething!Secure-497',
     })
@@ -168,7 +174,9 @@ describe('sesión', () => {
     await vi.waitFor(() => {
       expect(register).toHaveBeenCalledWith({
         email: 'persona@example.com',
+        nickname: 'HabitHero',
         password: 'S0mething!Secure-497',
+        password_confirm: 'S0mething!Secure-497',
       })
       expect(element.querySelector('[role="status"]').textContent).toContain('Cuenta creada')
     })
@@ -250,7 +258,7 @@ describe('sesión', () => {
     )
     const { element, navigate } = mount('/registro')
 
-    fillLogin(element, {
+    fillRegistration(element, {
       email: 'persona@example.com',
       password: 'S0mething!Secure-497',
     })
@@ -269,7 +277,7 @@ describe('sesión', () => {
     register.mockRejectedValue(new ApiError(429, { detail: 'throttled' }))
     const { element, navigate } = mount('/registro')
 
-    fillLogin(element, {
+    fillRegistration(element, {
       email: 'persona@example.com',
       password: 'S0mething!Secure-497',
     })

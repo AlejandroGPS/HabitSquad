@@ -45,10 +45,10 @@ function firstMessage(value) {
 
 function registerErrorMessage(error) {
   if (error instanceof ApiError && error.status === 400) {
-    const emailError = firstMessage(error.data?.email)
-    if (emailError) return emailError
-    const passwordError = firstMessage(error.data?.password)
-    if (passwordError) return passwordError
+    for (const name of ['email', 'nickname', 'password', 'password_confirm', 'non_field_errors']) {
+      const message = firstMessage(error.data?.[name])
+      if (message) return message
+    }
     const detail = firstMessage(error.data?.detail)
     if (detail) return detail
   }

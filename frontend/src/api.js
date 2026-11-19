@@ -34,8 +34,8 @@ function expireSession() {
   window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
 }
 
-export async function register({ email, password }) {
-  return await postJson('/api/auth/register/', { email, password })
+export async function register({ email, nickname, password, password_confirm }) {
+  return await postJson('/api/auth/register/', { email, nickname, password, password_confirm })
 }
 
 export async function login({ email, password }) {

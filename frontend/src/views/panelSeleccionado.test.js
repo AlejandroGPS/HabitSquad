@@ -49,6 +49,9 @@ describe('panel del escuadrón: carga de datos y estados', () => {
       window.history.replaceState({}, '', url)
       const view = mount()
       expect(view.querySelector('[role="status"]').textContent).toBe('Selecciona un escuadrón desde Mis escuadrones.')
+      const back = [...view.querySelectorAll('a')].find((link) => link.textContent === '← Mis escuadrones')
+      expect(back.getAttribute('href')).toBe('/escuadrones')
+      expect(back.hasAttribute('data-link')).toBe(true)
       expect(view.querySelector('.hueco')).toBeNull()
       expect(api.getSquad).not.toHaveBeenCalled()
       expect(api.getDailyHabit).not.toHaveBeenCalled()
@@ -86,7 +89,7 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     const tarjetas = [...view.querySelectorAll('.entrada')]
     expect(tarjetas).toHaveLength(7)
     expect(tarjetas.map((tarjeta) => tarjeta.style.getPropertyValue('--orden'))).toEqual(['0', '1', '2', '3', '4', '5', '6'])
-    expect(view.querySelector('a[href="/"]').classList.contains('entrada')).toBe(false)
+    expect(view.querySelector('a[href="/escuadrones"]').classList.contains('entrada')).toBe(false)
   })
 
   it('pinta el escuadrón, el hábito propio, los miembros y el código de invitación', async () => {
