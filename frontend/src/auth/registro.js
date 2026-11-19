@@ -1,7 +1,7 @@
 import { loginWithPassword } from './login.js'
 
 const REGISTER_URL = '/api/auth/register/'
-export const MENU_PATH = '/menu'
+export const MENU_PATH = '/escuadrones'
 
 export const REGISTER_MESSAGES = {
   limited: 'Has superado el número de registros. Prueba más tarde.',

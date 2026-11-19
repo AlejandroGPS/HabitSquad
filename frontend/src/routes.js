@@ -13,7 +13,6 @@ import {
 import { hasSession } from './session.js'
 import { loginScreen, registroScreen } from './views/acceso.js'
 import { crearEscuadronScreen } from './views/crearEscuadron.js'
-import { menuScreen } from './views/menu.js'
 import { habitoDiarioScreen } from './views/habitoDiario.js'
 import { panelSeleccionadoScreen } from './views/panelSeleccionado.js'
 import { presentacionScreen } from './views/presentacion.js'
@@ -21,6 +20,7 @@ import { pruebaDiaScreen } from './views/pruebaDia.js'
 import { recuperarContrasenaScreen, reenviarVerificacionScreen } from './views/recuperarContrasena.js'
 import { restablecerContrasenaScreen } from './views/restablecerContrasena.js'
 import { screen } from './views/screen.js'
+import { selectorEscuadronScreen } from './views/selectorEscuadron.js'
 import { unirseEscuadronScreen } from './views/unirseEscuadron.js'
 import { verificarCorreoScreen } from './views/verificarCorreo.js'
 import { votarPruebaScreen } from './views/votarPrueba.js'
@@ -121,20 +121,23 @@ function joinSquadErrorMessage(error) {
 // Solo rutas internas: evita que ?siguiente= mande al usuario a otra web tras iniciar sesión.
 export function destinoTrasAcceso() {
   const destino = new URLSearchParams(window.location.search).get('siguiente') ?? ''
-  return /^\/(?![/\\])/.test(destino) ? destino : '/'
+  return /^\/(?![/\\])/.test(destino) ? destino : '/escuadrones'
+}
+
+function selectorEscuadron(navigate) {
+  return selectorEscuadronScreen({
+    onLogout: async () => {
+      await logout()
+      navigate('/login')
+    },
+  })
 }
 
 export const routes = [
   {
     path: '/',
     title: 'HabitSquad',
-    view: ({ navigate } = {}) =>
-      hasSession()
-        ? menuScreen({ title: 'HabitSquad', onLogout: async () => {
-          await logout()
-          navigate('/login')
-        } })
-        : presentacionScreen({ navigate }),
+    view: ({ navigate } = {}) => presentacionScreen({ navigate }),
   },
   {
     path: '/escuadrones/prueba',
@@ -266,13 +269,10 @@ export const routes = [
     view: ({ navigate } = {}) => pruebaDiaScreen({ navigate }),
   },
   {
-    path: '/menu',
-    title: 'Menú principal',
+    path: '/escuadrones',
+    title: 'Mis escuadrones',
     private: true,
-    view: ({ navigate } = {}) => menuScreen({ onLogout: async () => {
-      await logout()
-      navigate('/login')
-    } }),
+    view: ({ navigate } = {}) => selectorEscuadron(navigate),
   },
   {
     path: '/escuadrones/nuevo',
@@ -312,7 +312,7 @@ export function guard(route) {
     const destino = `${window.location.pathname}${window.location.search}`
     return destino === '/' ? '/login' : `/login?siguiente=${encodeURIComponent(destino)}`
   }
-  if (route.guestOnly && hasSession()) return '/'
+  if (route.guestOnly && hasSession()) return '/escuadrones'
   return null
 }
 

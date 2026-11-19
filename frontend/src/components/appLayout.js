@@ -3,7 +3,7 @@ import { element } from './dom.js'
 import { icon } from './icons.js'
 
 export const APP_NAV = [
-  { id: 'escuadron', label: 'Escuadrón', icon: 'users', href: '/' },
+  { id: 'escuadron', label: 'Escuadrón', icon: 'users', href: '/escuadrones' },
   { id: 'racha', label: 'Racha', icon: 'flame' },
   { id: 'alertas', label: 'Alertas', icon: 'bell' },
   { id: 'habito', label: 'Mi hábito', icon: 'book', href: '/habito', webOnly: true },

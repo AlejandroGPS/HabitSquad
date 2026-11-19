@@ -61,7 +61,7 @@ En la aplicación, **Registrarme** (`/registro`) crea la cuenta con correo y
 contraseña mediante `POST /api/auth/register/`. Esa respuesta no incluye
 tokens. Tras el alta, el usuario abre el enlace del correo y verifica su
 dirección en `/verify-email`. Después puede iniciar sesión con las mismas
-credenciales. La ruta `/menu` se conserva por compatibilidad.
+credenciales. El selector de escuadrones está en `/escuadrones`.
 
 El contrato de esos endpoints está en OpenAPI (`/api/schema/` y `/api/docs/`
 con el backend en marcha). El detalle de la sesión y la prueba manual están en

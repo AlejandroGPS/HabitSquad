@@ -42,8 +42,8 @@ crear elementos y lanzar eventos.
 verificar el correo, `/login` pide `POST /api/auth/token/` y guarda la sesión
 en `localStorage` con la clave `habitsquad.session`.
 
-A continuación la aplicación abre `/`. La ruta `/menu` se conserva por
-compatibilidad. En desarrollo, Vite reenvía `/api` a
+A continuación la aplicación abre `/escuadrones`, «Mis escuadrones». La presentación
+está en `/`. En desarrollo, Vite reenvía `/api` a
 `http://127.0.0.1:8000`. El contrato de la API está en
 OpenAPI y el recorrido de la sesión, en `docs/AUTENTICACION_JWT.md`.
 
