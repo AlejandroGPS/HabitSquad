@@ -22,7 +22,7 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
   const id = new URLSearchParams(window.location.search).get('id')
   const root = element('div')
   const back = element('a', `${ANCHO_COMPLETO} inline-flex min-h-11 items-center font-bold text-accent`, '← Mis escuadrones')
-  back.href = '/'
+  back.href = '/escuadrones'
   back.dataset.link = ''
   const status = element('p', `${ANCHO_COMPLETO} font-semibold text-ink-muted empty:hidden`)
   status.setAttribute('role', 'status')
