@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from usuarios.perfil.services import serialize_perfil
+
 from .serializers import (
     ErrorDetallePerfilSerializer,
     ErrorValidacionPerfilSerializer,
@@ -70,9 +72,7 @@ class PerfilDetailView(APIView):
         ],
     )
     def get(self, request, *args, **kwargs):
-        return Response(
-            _RESPUESTA_NO_IMPLEMENTADA, status=status.HTTP_501_NOT_IMPLEMENTED
-        )
+        return Response(serialize_perfil(request.user), status=status.HTTP_200_OK)
 
     @extend_schema(
         operation_id="actualizarPerfil",
