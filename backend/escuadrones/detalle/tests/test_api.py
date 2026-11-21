@@ -184,3 +184,15 @@ def test_squad_detail_is_documented_in_openapi_schema(api_client):
     assert operation["summary"] == "Consultar detalle de un escuadrón"
     assert operation["tags"] == ["Escuadrones"]
     assert set(operation["responses"]) == {"200", "401", "403", "404"}
+    assert "docs/HABITOS.md" in operation["description"]
+    assert "nickname" in operation["description"].lower()
+
+    schemas = response.data["components"]["schemas"]
+    member_schema = schemas.get("MembresiaConPrueba") or schemas.get(
+        "MembresiaConPruebaSerializer"
+    )
+    assert member_schema is not None
+    props = member_schema["properties"]
+    assert "nickname" in props
+    assert "foto_url" in props
+    assert "nombre" not in props
