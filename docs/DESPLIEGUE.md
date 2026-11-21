@@ -37,15 +37,21 @@ az vm start -g habitsquad-rg -n habitsquad-vm
 | Servicio | Imagen | Función |
 | --- | --- | --- |
 | `db` | `postgres:18.6-alpine` | Base de datos, con los datos en el volumen `postgres-data`. |
+| `redis` | `redis:8.1.0-alpine` | Capa compartida de Channels y broker del worker Q2. |
 | `api` | `backend/Dockerfile` | Django sobre uvicorn (ASGI). Al arrancar aplica las migraciones y ejecuta `collectstatic`. |
+| `worker` | `backend/Dockerfile` | Programa el cierre diario y ejecuta el cluster de Django Q2. |
 | `web` | `frontend/Dockerfile` | Build de Vite servido por Caddy, con HTTPS. |
 
 Caddy reparte las peticiones según el `Caddyfile`:
 
-- `/api/` y `/admin/` van a Django.
+- `/api/`, `/admin/` y `/ws/` van a Django; el proxy conserva las conexiones WebSocket.
 - `/static/` sirve los estáticos de Django.
 - El resto sirve el frontend; si la ruta no es un archivo, responde con
   `index.html` para que funcione el enrutador del cliente.
+
+La API y el worker comparten `REDIS_URL`. El worker espera a que la API aplique
+las migraciones, crea el horario idempotente y ejecuta Q2. Channels usa Redis
+para enviar los eventos del panel entre procesos.
 
 ## Variables de entorno
 

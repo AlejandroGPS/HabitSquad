@@ -1,7 +1,7 @@
 {$SITE_ADDRESS} {
 	encode zstd gzip
 
-	@django path /api /api/* /admin /admin/*
+	@django path /api /api/* /admin /admin/* /ws/*
 	handle @django {
 		reverse_proxy api:8000
 	}

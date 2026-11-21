@@ -27,6 +27,10 @@ la resolución comprobada con Python 3.12.x.
 | djangorestframework-simplejwt | 5.5.1 | Autenticación JWT. |
 | drf-spectacular | 0.30.0 | Generación de documentación OpenAPI. |
 | cloudinary | 1.47.0 | Cliente de Cloudinary para subir y firmar fotos. |
+| channels | 4.3.2 | Enrutamiento ASGI y conexiones WebSocket de Django. |
+| channels-redis | 4.3.0 | Capa de canales compartida mediante Redis. |
+| django-q2 | 1.11.1 | Worker y programación de tareas periódicas. |
+| django-picklefield | 3.4.0 | Campo persistente requerido por Django Q2. |
 | django-cloudinary-storage | 0.3.0 | Integración de Cloudinary como almacenamiento de ficheros en Django. |
 | pytest | 9.1.1 | Ejecución de pruebas. |
 | pytest-django | 4.14.0 | Integración de pytest con Django. |
@@ -53,8 +57,10 @@ transitivas que resolvió pip:
 | iniconfig | 2.3.1 |
 | jsonschema | 4.26.0 |
 | jsonschema-specifications | 2025.9.1 |
+| msgpack | 1.2.4 |
 | packaging | 26.3 |
 | pluggy | 1.6.0 |
+| redis | 8.1.0 |
 | referencing | 0.37.0 |
 | requests | 2.34.2 |
 | rpds-py | 2026.9.1 |
@@ -76,10 +82,10 @@ transitivas que resolvió pip:
 | click | 8.5.0 | Dependencia de uvicorn. |
 | h11 | 0.16.0 | Dependencia de uvicorn. |
 
-Las dependencias de otras áreas previstas por la arquitectura —como Channels,
-Redis, Django Q2 y Web Push— se incorporarán cuando se trabaje en las fases
-correspondientes, con sus versiones y cambios documentados. Cloudinary ya está
-incluido para el almacenamiento de las fotos de prueba diaria.
+Web Push se incorporará cuando se trabaje esa fase, con sus versiones y cambios
+documentados. Channels usa `channels-redis` para distribuir eventos entre
+procesos; Django Q2 usa Redis como broker. Cloudinary ya está incluido para el
+almacenamiento de las fotos de prueba diaria.
 
 ### Instalación local
 
@@ -130,6 +136,7 @@ despliegue está descrito en [DESPLIEGUE.md](DESPLIEGUE.md).
 | node (solo para el build) | 22.23.3-alpine |
 | caddy | 2.11.7-alpine |
 | postgres | 18.6-alpine |
+| redis | 8.1.0-alpine |
 
 ## Frontend
 

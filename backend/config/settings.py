@@ -73,6 +73,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "cloudinary_storage",
     "cloudinary",
+    "channels",
+    "django_q",
     "rest_framework",
     "drf_spectacular",
     "rest_framework_simplejwt.token_blacklist",
@@ -199,6 +201,25 @@ REST_FRAMEWORK = {
         "anon": "5/hour",
         "login": "5/hour",
     },
+}
+
+ASGI_APPLICATION = "config.asgi.application"
+REDIS_URL = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379/0")
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [REDIS_URL]},
+    },
+}
+Q_CLUSTER = {
+    "name": "habitsquad",
+    "workers": 1,
+    "timeout": 300,
+    "retry": 360,
+    "queue_limit": 25,
+    "redis": REDIS_URL,
+    "time_zone": TIME_ZONE,
+    "catch_up": False,
 }
 
 SIMPLE_JWT = {
