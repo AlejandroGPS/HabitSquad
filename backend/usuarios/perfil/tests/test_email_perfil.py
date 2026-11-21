@@ -1,6 +1,7 @@
 import pytest
 from django.contrib.auth.tokens import default_token_generator
 from django.core import mail
+from django.core.cache import cache
 from django.test import override_settings
 from django.urls import reverse
 from django.utils.encoding import force_bytes
@@ -10,6 +11,15 @@ from usuarios.models import CustomUser
 
 from .conftest import CURRENT_PASSWORD
 
+NEW_EMAIL = "nuevo@example.com"
+
+
+@pytest.fixture(autouse=True)
+def clear_throttle_cache():
+    cache.clear()
+    yield
+    cache.clear()
+
 
 def _uid_token(user):
     return {
@@ -18,12 +28,22 @@ def _uid_token(user):
     }
 
 
+def _login(api_client, *, email, password=CURRENT_PASSWORD):
+    return api_client.post(
+        reverse("autenticacion:token"),
+        {"email": email, "password": password},
+        format="json",
+    )
+
+
 @pytest.mark.django_db
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     PROFILE_EMAIL_CHANGE_FRONTEND_URL="http://frontend.test/perfil/confirmar-email",
 )
-def test_solicitar_cambio_email_guarda_pendiente_y_envia_correo(auth_client, user):
+def test_solicitar_cambio_email_guarda_pendiente_y_login_sigue_con_anterior(
+    auth_client, api_client, user
+):
     response = auth_client.post(
         reverse("perfil:email"),
         {"email": " Nuevo@Example.com "},
@@ -37,30 +57,42 @@ def test_solicitar_cambio_email_guarda_pendiente_y_envia_correo(auth_client, use
             "Si la dirección es válida, recibirás un enlace de "
             "verificación en el nuevo correo."
         ),
-        "email_pendiente": "nuevo@example.com",
+        "email_pendiente": NEW_EMAIL,
     }
     assert user.email == "perfil@example.com"
-    assert user.email_pendiente == "nuevo@example.com"
+    assert user.email_pendiente == NEW_EMAIL
     assert len(mail.outbox) == 1
-    assert mail.outbox[0].to == ["nuevo@example.com"]
+    assert mail.outbox[0].to == [NEW_EMAIL]
     assert "http://frontend.test/perfil/confirmar-email?uid=" in mail.outbox[0].body
     assert "&token=" in mail.outbox[0].body
 
+    login_actual = _login(api_client, email="perfil@example.com")
+    login_pendiente = _login(api_client, email=NEW_EMAIL)
+
+    assert login_actual.status_code == 200
+    assert {"access", "refresh"} <= set(login_actual.data)
+    assert login_pendiente.status_code == 401
+
 
 @pytest.mark.django_db
-def test_solicitar_cambio_email_rechaza_igual_al_actual(auth_client):
+def test_solicitar_cambio_email_rechaza_igual_al_actual(auth_client, user):
     response = auth_client.post(
         reverse("perfil:email"),
         {"email": "perfil@example.com"},
         format="json",
     )
 
+    user.refresh_from_db()
     assert response.status_code == 400
     assert response.data["email"] == ["El nuevo correo debe ser distinto al actual."]
+    assert user.email == "perfil@example.com"
+    assert user.email_pendiente is None
 
 
 @pytest.mark.django_db
-def test_solicitar_cambio_email_rechaza_ya_registrado(auth_client):
+def test_solicitar_cambio_email_rechaza_ya_registrado_y_conserva_actual(
+    auth_client, user
+):
     CustomUser.objects.create_user(
         email="ocupado@example.com",
         password=CURRENT_PASSWORD,
@@ -73,15 +105,18 @@ def test_solicitar_cambio_email_rechaza_ya_registrado(auth_client):
         format="json",
     )
 
+    user.refresh_from_db()
     assert response.status_code == 400
     assert response.data["email"] == ["Ya existe una cuenta con este email."]
+    assert user.email == "perfil@example.com"
+    assert user.email_pendiente is None
 
 
 @pytest.mark.django_db
 def test_solicitar_cambio_email_requiere_auth(api_client):
     response = api_client.post(
         reverse("perfil:email"),
-        {"email": "nuevo@example.com"},
+        {"email": NEW_EMAIL},
         format="json",
     )
 
@@ -92,8 +127,8 @@ def test_solicitar_cambio_email_requiere_auth(api_client):
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
 )
-def test_confirmar_cambio_email_actualiza_login_y_limpia_pendiente(api_client, user):
-    user.email_pendiente = "nuevo@example.com"
+def test_confirmar_cambio_email_sustituye_correo_y_login_usa_el_nuevo(api_client, user):
+    user.email_pendiente = NEW_EMAIL
     user.save(update_fields=["email_pendiente"])
     credentials = _uid_token(user)
 
@@ -107,9 +142,9 @@ def test_confirmar_cambio_email_actualiza_login_y_limpia_pendiente(api_client, u
     assert response.status_code == 200
     assert response.data == {
         "detail": "El correo se ha actualizado correctamente.",
-        "email": "nuevo@example.com",
+        "email": NEW_EMAIL,
     }
-    assert user.email == "nuevo@example.com"
+    assert user.email == NEW_EMAIL
     assert user.email_pendiente is None
 
     reuse = api_client.post(
@@ -122,10 +157,17 @@ def test_confirmar_cambio_email_actualiza_login_y_limpia_pendiente(api_client, u
         "detail": "El enlace de verificación no es válido o ha caducado."
     }
 
+    login_nuevo = _login(api_client, email=NEW_EMAIL)
+    login_anterior = _login(api_client, email="perfil@example.com")
+
+    assert login_nuevo.status_code == 200
+    assert {"access", "refresh"} <= set(login_nuevo.data)
+    assert login_anterior.status_code == 401
+
 
 @pytest.mark.django_db
 def test_confirmar_cambio_email_rechaza_token_invalido(api_client, user):
-    user.email_pendiente = "nuevo@example.com"
+    user.email_pendiente = NEW_EMAIL
     user.save(update_fields=["email_pendiente"])
 
     response = api_client.post(
@@ -143,7 +185,7 @@ def test_confirmar_cambio_email_rechaza_token_invalido(api_client, user):
         "detail": "El enlace de verificación no es válido o ha caducado."
     }
     assert user.email == "perfil@example.com"
-    assert user.email_pendiente == "nuevo@example.com"
+    assert user.email_pendiente == NEW_EMAIL
 
 
 @pytest.mark.django_db
@@ -154,7 +196,9 @@ def test_confirmar_cambio_email_sin_pendiente_devuelve_400(api_client, user):
         format="json",
     )
 
+    user.refresh_from_db()
     assert response.status_code == 400
     assert response.data == {
         "detail": "El enlace de verificación no es válido o ha caducado."
     }
+    assert user.email == "perfil@example.com"
