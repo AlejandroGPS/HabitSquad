@@ -75,6 +75,7 @@ EMAIL_HOST_USER=remitente@gmail.com
 EMAIL_HOST_PASSWORD=CONTRASENA_DE_APLICACION
 DEFAULT_FROM_EMAIL=remitente@gmail.com
 EMAIL_VERIFICATION_FRONTEND_URL=https://habitsquad.austriaeast.cloudapp.azure.com/verify-email
+PROFILE_EMAIL_CHANGE_FRONTEND_URL=https://habitsquad.austriaeast.cloudapp.azure.com/perfil/confirmar-email
 ```
 
 Si la versión con `/verify-email` ya está desplegada, recrea el contenedor de

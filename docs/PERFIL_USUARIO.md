@@ -314,7 +314,7 @@ Content-Type: application/json
 1. Se valida `uid` + `token` respecto al cambio pendiente.
 2. El nuevo email pasa a ser el de login; `email_pendiente` queda vacío.
 3. A partir de ese momento, `POST /api/auth/token/` debe usar el correo nuevo.
-4. Tokens inválidos, expirados o sin cambio pendiente pendiente → `400`.
+4. Tokens inválidos, expirados o sin cambio pendiente → `400`.
 
 ### Errores
 

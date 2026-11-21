@@ -33,6 +33,13 @@ def auth_client(api_client, user):
 
 
 @pytest.mark.django_db
+def test_get_perfil_requires_auth(api_client):
+    response = api_client.get(reverse("perfil:detalle"))
+
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
 def test_get_perfil_returns_public_fields_with_defaults(auth_client, user):
     response = auth_client.get(reverse("perfil:detalle"))
 
