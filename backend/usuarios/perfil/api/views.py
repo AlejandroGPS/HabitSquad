@@ -31,10 +31,6 @@ from .serializers import (
 
 _CONTRATO = "Contrato: docs/PERFIL_USUARIO.md."
 
-_RESPUESTA_NO_IMPLEMENTADA = {
-    "detail": "Endpoint de perfil documentado; implementación pendiente.",
-}
-
 
 class PerfilDetailView(APIView):
     authentication_classes = (JWTAuthentication,)
@@ -382,6 +378,13 @@ class PerfilPasswordChangeView(APIView):
         ],
     )
     def post(self, request, *args, **kwargs):
+        serializer = PerfilPasswordChangeRequestSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(
-            _RESPUESTA_NO_IMPLEMENTADA, status=status.HTTP_501_NOT_IMPLEMENTED
+            {"detail": "La contraseña se ha actualizado correctamente."},
+            status=status.HTTP_200_OK,
         )

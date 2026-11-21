@@ -1,9 +1,12 @@
 from datetime import datetime
 
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
 from usuarios.models import CustomUser
+from usuarios.perfil.services import cambiar_password
 
 
 @extend_schema_serializer(component_name="PerfilUsuario")
@@ -178,6 +181,30 @@ class PerfilPasswordChangeRequestSerializer(serializers.Serializer):
         trim_whitespace=False,
         help_text="Debe coincidir exactamente con password.",
     )
+
+    def validate(self, attrs):
+        user = self.context["request"].user
+        if not user.check_password(attrs["password_actual"]):
+            raise serializers.ValidationError(
+                {"password_actual": "La contraseña actual no es correcta."}
+            )
+        if attrs["password"] != attrs["password_confirm"]:
+            raise serializers.ValidationError(
+                {"password_confirm": "Las contraseñas no coinciden."}
+            )
+        try:
+            validate_password(attrs["password"], user=user)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(
+                {"password": list(error.messages)}
+            ) from error
+        return attrs
+
+    def save(self, **kwargs):
+        return cambiar_password(
+            user=self.context["request"].user,
+            password=self.validated_data["password"],
+        )
 
 
 @extend_schema_serializer(component_name="PerfilPasswordChangeResponse")
