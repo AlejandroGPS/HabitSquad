@@ -98,37 +98,28 @@ Requiere autenticación y pertenencia al escuadrón.
 
 `GET /api/escuadrones/{escuadron_id}/`
 
-Devuelve el escuadrón y el hábito de cada miembro. Solo pueden consultarlo los
-miembros del escuadrón.
+Devuelve el escuadrón y el estado de cada miembro para el panel. Solo pueden
+consultarlo los miembros del escuadrón (JWT). El nickname y la foto de perfil
+siguen el mismo criterio que en [PERFIL_USUARIO.md](PERFIL_USUARIO.md) y
+[PRUEBA_FOTO.md](PRUEBA_FOTO.md) (`foto_url` firmada o temporal, no permanente).
 
-```json
-{
-  "id": 1,
-  "nombre": "Madrugadores",
-  "codigo_invitacion": "X8K9QL",
-  "creador_id": 42,
-  "miembros": [
-    {
-      "usuario_id": 42,
-      "es_administrador": true,
-      "habito": null
-    },
-    {
-      "usuario_id": 7,
-      "es_administrador": false,
-      "habito": {
-        "id": 1,
-        "opcion": "otro",
-        "texto_personalizado": "Leer 20 páginas",
-        "creado_en": "2026-11-02T10:00:00Z",
-        "actualizado_en": "2026-11-02T10:05:00Z"
-      }
-    }
-  ]
-}
-```
+### Decisiones de diseño
 
-Un miembro sin hábito se representa con `"habito": null`.
+| Tema | Acuerdo |
+| --- | --- |
+| Endpoint | `GET /api/escuadrones/{escuadron_id}/` (sin ruta nueva) |
+| Auth | JWT (`Authorization: Bearer <access>`) + pertenencia al escuadrón |
+| Escuadrón | `id`, `nombre`, `codigo_invitacion`, `creador_id`, `racha` |
+| Miembro | `usuario_id`, `es_administrador`, `es_usuario`, `nickname`, `foto_url`, `habito`, `prueba_hoy`, `semana` |
+| Nickname | Nombre público del usuario (mismo campo que en perfil/registro) |
+| Foto | `foto_url`: URL firmada/temporal o `null` si no hay foto |
+| Nombre de display | El panel usa `nickname`. No se expone el antiguo campo `nombre` (`get_full_name`) |
+| Hábito | Objeto de hábito diario o `null` si el miembro aún no lo ha elegido |
+| Estado de hoy | `prueba_hoy`: `{ "id", "estado" }` con `estado` en `pendiente`, `cumplido`, `no_cumplido`; `null` = sin prueba hoy |
+| Semana | Lista de 7 días (lunes a domingo): `fecha` + `estado` o `null` si no hay registro ese día |
+| Racha | Entero: días seguidos en que todos los miembros elegibles cumplieron |
+| Invita | La API expone `codigo_invitacion`; copiar al portapapeles es cosa del cliente |
+| Errores | `401` sin JWT válido; `403` autenticado pero no miembro; `404` escuadrón inexistente |
 
 ## Errores del detalle del escuadrón
 
