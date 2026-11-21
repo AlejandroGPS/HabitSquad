@@ -212,3 +212,48 @@ export async function logout() {
     // Si el refresh ya caducó o no hay conexión, la sesión local queda cerrada igual.
   }
 }
+
+async function profileRequest(path = '', options = {}) {
+  const response = await authFetch(`/api/perfil/${path}`, options)
+  const data = await readJson(response)
+  if (!response.ok) throw new ApiError(response.status, data)
+  return data
+}
+
+export function getProfile() {
+  return profileRequest()
+}
+
+export function updateProfile(changes) {
+  return profileRequest('', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(changes),
+  })
+}
+
+export function uploadProfilePhoto(photo) {
+  const body = new FormData()
+  body.append('foto', photo)
+  return profileRequest('foto/', { method: 'POST', body })
+}
+
+export function requestProfileEmail(email) {
+  return profileRequest('email/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email.trim().toLowerCase() }),
+  })
+}
+
+export function confirmProfileEmail({ uid, token }) {
+  return postJson('/api/perfil/email/confirm/', { uid, token })
+}
+
+export function changeProfilePassword({ password_actual, password, password_confirm }) {
+  return profileRequest('password/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password_actual, password, password_confirm }),
+  })
+}

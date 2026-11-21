@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vista previa · Perfil HabitSquad</title>
+<div style="padding:10px 16px;background:#efeaff;color:#3f1fb3;font:700 14px system-ui;text-align:center">Vista previa con datos de ejemplo. Los cambios solo duran mientras esta página esté abierta.</div>
+<div id="app"></div>
+<script type="module">
+import '@fontsource-variable/nunito';
+import '/src/style.css';
+import { perfilScreen } from '/src/views/perfil.js';
+import { editarPerfilScreen } from '/src/views/editarPerfil.js';
+let profile = {id:1,nickname:'alegarcia',email:'alejandro@example.com',email_pendiente:null,foto_url:null,hora_aviso:'20:00'};
+const api = {
+ getProfile: async()=>({...profile}),
+ updateProfile: async changes => {profile={...profile,...changes};return {...profile}},
+ uploadProfilePhoto: async photo => {profile.foto_url=URL.createObjectURL(photo);return {foto_url:profile.foto_url}},
+ requestProfileEmail: async email => {profile.email_pendiente=email.trim().toLowerCase();return {email_pendiente:profile.email_pendiente}},
+ changeProfilePassword: async()=>({}),
+ listSquads: async()=>[{id:7,nombre:'Los Inquebrantables'},{id:8,nombre:'Deportistas'}],
+ getSquad: async id=>({id,nombre:id===7?'Los Inquebrantables':'Deportistas',miembros:[{es_usuario:true,habito:{opcion:'otro',texto_personalizado:id===7?'Leer 20 páginas':'Correr 30 minutos'},prueba_hoy:{estado:id===7?'cumplido':'pendiente'}}]})
+};
+function render() {
+ const edit = new URLSearchParams(location.search).has('editar');
+ document.querySelector('#app').replaceChildren(edit ? editarPerfilScreen({api}) : perfilScreen({api,racha:12}));
+}
+document.addEventListener('click', event=>{
+ const link=event.target.closest('a[data-link]');
+ if(!link)return;
+ const target=new URL(link.href);
+ event.preventDefault();
+ if(target.pathname==='/perfil'||target.pathname==='/perfil/editar') {
+  history.pushState({},'',`/perfil-preview.html${target.pathname.endsWith('/editar')?'?editar':''}${target.hash}`);
+  window.scrollTo(0,0);render();
+ }
+});
+window.addEventListener('popstate',render);
+render();
+</script>
+</html>

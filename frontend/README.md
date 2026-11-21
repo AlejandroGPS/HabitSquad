@@ -190,3 +190,9 @@ HTTPS, así que se prueba con la versión desplegada.
 - `public/`: ficheros estáticos que se copian tal cual al build, incluidos los
   iconos de la PWA.
 - `vite.config.js`: configuración de Vite, Tailwind, la PWA y Vitest.
+
+## Perfil de usuario
+
+El menú de cuenta enlaza a `/perfil` y `/perfil/editar`. La integración, las
+pruebas y las dependencias pendientes del backend se describen en
+[PERFIL_USUARIO_FRONTEND.md](../docs/PERFIL_USUARIO_FRONTEND.md).
