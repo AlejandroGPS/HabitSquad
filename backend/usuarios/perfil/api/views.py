@@ -116,9 +116,13 @@ class PerfilDetailView(APIView):
         ],
     )
     def patch(self, request, *args, **kwargs):
-        return Response(
-            _RESPUESTA_NO_IMPLEMENTADA, status=status.HTTP_501_NOT_IMPLEMENTED
+        serializer = PerfilUsuarioUpdateSerializer(
+            data=request.data,
+            context={"request": request},
         )
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(serialize_perfil(user), status=status.HTTP_200_OK)
 
 
 class PerfilFotoUploadView(APIView):

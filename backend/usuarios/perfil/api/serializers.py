@@ -1,5 +1,9 @@
+from datetime import datetime
+
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
+
+from usuarios.models import CustomUser
 
 
 @extend_schema_serializer(component_name="PerfilUsuario")
@@ -30,6 +34,8 @@ class PerfilUsuarioSerializer(serializers.Serializer):
 class PerfilUsuarioUpdateSerializer(serializers.Serializer):
     nickname = serializers.CharField(
         required=False,
+        allow_blank=True,
+        trim_whitespace=False,
         help_text=(
             "Tras strip, no vacío y único (sin distinguir mayúsculas). "
             "Si está en uso por otro usuario, se rechaza."
@@ -39,6 +45,54 @@ class PerfilUsuarioUpdateSerializer(serializers.Serializer):
         required=False,
         help_text="Hora en formato HH:MM (24 h), por ejemplo 20:00 o 09:05.",
     )
+
+    def validate(self, attrs):
+        if (
+            "nickname" not in self.initial_data
+            and "hora_aviso" not in self.initial_data
+        ):
+            raise serializers.ValidationError("Debes enviar nickname y/o hora_aviso.")
+        return attrs
+
+    def validate_nickname(self, value):
+        nickname = value.strip()
+        if not nickname:
+            raise serializers.ValidationError("Este campo no puede estar en blanco.")
+
+        user = self.context["request"].user
+        if user.nickname.casefold() == nickname.casefold():
+            return nickname
+
+        if (
+            CustomUser.objects.filter(nickname__iexact=nickname)
+            .exclude(pk=user.pk)
+            .exists()
+        ):
+            raise serializers.ValidationError("Ya existe una cuenta con este nickname.")
+        return nickname
+
+    def validate_hora_aviso(self, value):
+        try:
+            return datetime.strptime(value, "%H:%M").time()
+        except (TypeError, ValueError) as error:
+            raise serializers.ValidationError(
+                "Indica la hora en formato HH:MM."
+            ) from error
+
+    def save(self, **kwargs):
+        user = self.context["request"].user
+        update_fields: list[str] = []
+
+        if "nickname" in self.validated_data:
+            user.nickname = self.validated_data["nickname"]
+            update_fields.append("nickname")
+        if "hora_aviso" in self.validated_data:
+            user.hora_aviso = self.validated_data["hora_aviso"]
+            update_fields.append("hora_aviso")
+
+        if update_fields:
+            user.save(update_fields=update_fields)
+        return user
 
 
 @extend_schema_serializer(component_name="PerfilFotoUpload")
