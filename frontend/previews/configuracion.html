@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Configuración del escuadrón · HabitSquad · Vista previa</title>
+  </head>
+  <body>
+    <script type="module">
+      import '@fontsource-variable/nunito'
+      import '/src/style.css'
+      import { configuracionEscuadronScreen } from '/src/views/configuracionEscuadron.js'
+      import { createMockSquadSettings } from '/src/mocks/configuracionEscuadron.js'
+
+      const esAdministrador = new URLSearchParams(location.search).get('rol') !== 'miembro'
+      document.body.append(configuracionEscuadronScreen({ api: createMockSquadSettings({ esAdministrador }) }))
+    </script>
+  </body>
+</html>

@@ -112,6 +112,19 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     }
   })
 
+  it('incluye Configuración en el menú del panel y en la cabecera móvil, conservando el escuadrón', async () => {
+    const view = mount()
+    await loaded(view)
+    const nav = view.querySelector('aside nav')
+    const settings = nav.querySelector('a[href="/escuadrones/configuracion?origen=7"]')
+    expect(settings.textContent).toBe('Configuración')
+    expect(settings.hasAttribute('data-link')).toBe(true)
+    expect(nav.querySelector('[aria-current="page"]').getAttribute('href')).toBe('/escuadrones/panel?id=7')
+    expect(nav.querySelector('a[href="/habito?escuadron=7"]')).not.toBeNull()
+    expect(view.querySelector('header a[aria-label="Configuración del escuadrón"]').getAttribute('href')).toBe(settings.getAttribute('href'))
+    expect(view.textContent).not.toContain('Configuración · demo')
+  })
+
   it('pinta el resumen: racha, cumplidos de hoy, cierre y semana de cada miembro', async () => {
     const dias = ['2026-11-09', '2026-11-10', '2026-11-11', '2026-11-12', '2026-11-13', '2026-11-14', '2026-11-15']
     const semana = (...estados) => dias.map((fecha, indice) => ({ fecha, estado: estados[indice] ?? null }))

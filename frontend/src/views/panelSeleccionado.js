@@ -14,6 +14,7 @@ import {
   semanaCard,
 } from '../components/panel/index.js'
 import { habitText } from './habitoDiario.js'
+import { squadNavigation, squadSettingsLink } from '../components/panel/navigation.js'
 
 const ANCHO_COMPLETO = 'col-span-2 lg:col-span-4'
 const REJILLA = 'mt-4 grid grid-cols-2 gap-3 px-4 lg:mt-6 lg:grid-cols-4 lg:gap-4 lg:px-0'
@@ -82,7 +83,8 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
       }
       const content = element('div', REJILLA, back, ...tarjetas)
       root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Escuadrón', title: squad.nombre, body: content,
-        trailing: [rachaChip({ racha }), accountMenu({ onLogout: async () => { await logout(); navigate('/login') } })] }))
+        navItems: squadNavigation(id),
+        trailing: [rachaChip({ racha }), squadSettingsLink(id), accountMenu({ onLogout: async () => { await logout(); navigate('/login') } })] }))
       for (const link of root.querySelectorAll('a[href="/habito"]')) {
         link.href = `/habito?escuadron=${id}`
       }
