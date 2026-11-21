@@ -202,3 +202,52 @@ def test_confirmar_cambio_email_sin_pendiente_devuelve_400(api_client, user):
         "detail": "El enlace de verificación no es válido o ha caducado."
     }
     assert user.email == "perfil@example.com"
+
+
+@pytest.mark.django_db
+def test_confirmar_cambio_email_rechaza_uid_invalido(api_client, user):
+    user.email_pendiente = NEW_EMAIL
+    user.save(update_fields=["email_pendiente"])
+
+    response = api_client.post(
+        reverse("perfil:email-confirm"),
+        {"uid": "uid-no-valido", "token": "token-cualquiera"},
+        format="json",
+    )
+
+    user.refresh_from_db()
+    assert response.status_code == 400
+    assert response.data == {
+        "detail": "El enlace de verificación no es válido o ha caducado."
+    }
+    assert user.email == "perfil@example.com"
+    assert user.email_pendiente == NEW_EMAIL
+
+
+@pytest.mark.django_db
+def test_confirmar_cambio_email_rechaza_si_otro_usuario_ya_tiene_el_correo(
+    api_client, user
+):
+    user.email_pendiente = NEW_EMAIL
+    user.save(update_fields=["email_pendiente"])
+    credentials = _uid_token(user)
+
+    CustomUser.objects.create_user(
+        email=NEW_EMAIL,
+        password=CURRENT_PASSWORD,
+        nickname="OtroUser",
+    )
+
+    response = api_client.post(
+        reverse("perfil:email-confirm"),
+        credentials,
+        format="json",
+    )
+
+    user.refresh_from_db()
+    assert response.status_code == 400
+    assert response.data == {
+        "detail": "El enlace de verificación no es válido o ha caducado."
+    }
+    assert user.email == "perfil@example.com"
+    assert user.email_pendiente == NEW_EMAIL
