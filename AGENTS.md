@@ -304,6 +304,7 @@ HabitSquad/
 ├── .github/workflows/ci.yml         # CI
 ├── .github/workflows/deploy.yml     # CD
 ├── docker-compose.yml
+├── docker-compose.dev.yml             # stack local con PostgreSQL, Redis, API ASGI y Q2
 ├── Caddyfile
 ├── .env.example                     # nombres de variables, sin valores reales
 └── README.md
@@ -384,6 +385,19 @@ Comportamiento por defecto relevante:
 - La zona horaria de la aplicación es `Europe/Madrid` (`TIME_ZONE`).
 
 ### Docker Compose (opcional, entorno tipo producción)
+
+Para trabajar localmente con WebSockets y el cierre programado, usa el stack
+de desarrollo desde la raíz (no requiere `.env`):
+
+```bash
+docker compose -f docker-compose.dev.yml up --build -d
+docker compose -f docker-compose.dev.yml ps
+docker compose -f docker-compose.dev.yml logs --tail 50 api redis worker
+```
+
+API y Redis deben estar `healthy`; el worker debe estar `running`. La guía
+`docs/SINCRONIZACION_TIEMPO_REAL.md` describe cómo comprobar el handshake y
+detener el stack.
 
 Desde la raíz:
 

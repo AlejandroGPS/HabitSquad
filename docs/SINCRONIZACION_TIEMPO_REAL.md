@@ -53,11 +53,38 @@ pendientes, para que sus clientes refresquen la racha al cambiar el día.
 
 ## Ejecución
 
-Para desarrollo local, `docker compose -f docker-compose.dev.yml up --build`
-inicia PostgreSQL, Redis, la API ASGI y el worker Q2 sin Caddy ni dominio
-público. La API queda disponible en `http://localhost:8000` y el WebSocket en
-`ws://localhost:8000/ws/escuadrones/{id}/`. El worker registra el horario de
-forma idempotente antes de ejecutar `qcluster`.
+Para desarrollo local, desde la raíz del repositorio:
+
+```bash
+docker compose -f docker-compose.dev.yml up --build -d
+docker compose -f docker-compose.dev.yml ps
+docker compose -f docker-compose.dev.yml logs --tail 50 api redis worker
+```
+
+Este Compose inicia PostgreSQL, Redis, la API ASGI y el worker Q2 sin Caddy ni
+dominio público. No requiere `.env`: define valores locales de desarrollo y
+expone Redis únicamente en `127.0.0.1:6379`. La API queda disponible en
+`http://localhost:8000` y el WebSocket en
+`ws://localhost:8000/ws/escuadrones/{id}/`. API y Redis deben figurar como
+`healthy`, y el worker como `running`. El worker registra el horario de forma
+idempotente antes de ejecutar `qcluster`.
+
+Para comprobar el handshake del WebSocket localmente con `curl`:
+
+```bash
+curl --http1.1 --max-time 3 -i \
+  -H 'Connection: Upgrade' \
+  -H 'Upgrade: websocket' \
+  -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+  -H 'Sec-WebSocket-Version: 13' \
+  http://localhost:8000/ws/escuadrones/1/
+```
+
+Debe responder `101 Switching Protocols`. El consumer cierra después la
+conexión si no recibe autenticación en cinco segundos; para validar la
+sincronización funcional, conecta un cliente con un JWT válido y una membresía
+del escuadrón. Para detener el entorno usa
+`docker compose -f docker-compose.dev.yml down`.
 
 En producción, `docker-compose.yml` añade Caddy, que envía `/api/`, `/admin/`
 y `/ws/` a la API.
