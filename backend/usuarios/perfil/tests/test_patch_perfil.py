@@ -1,30 +1,20 @@
 import pytest
 from django.urls import reverse
-from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from usuarios.models import CustomUser
 
-
-@pytest.fixture
-def api_client():
-    return APIClient()
+from .conftest import CURRENT_PASSWORD
 
 
-@pytest.fixture
-def user(db):
-    return CustomUser.objects.create_user(
-        email="perfil@example.com",
-        password="S0mething!Secure-497",
-        nickname="PerfilUser",
+@pytest.mark.django_db
+def test_patch_perfil_requires_auth(api_client):
+    response = api_client.patch(
+        reverse("perfil:detalle"),
+        {"nickname": "NuevoHero"},
+        format="json",
     )
 
-
-@pytest.fixture
-def auth_client(api_client, user):
-    token = RefreshToken.for_user(user).access_token
-    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
-    return api_client
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db
@@ -44,10 +34,26 @@ def test_patch_perfil_updates_nickname_and_hora_aviso(auth_client, user):
 
 
 @pytest.mark.django_db
+def test_patch_perfil_updates_only_hora_aviso(auth_client, user):
+    response = auth_client.patch(
+        reverse("perfil:detalle"),
+        {"hora_aviso": "09:05"},
+        format="json",
+    )
+
+    user.refresh_from_db()
+    assert response.status_code == 200
+    assert response.data["nickname"] == "PerfilUser"
+    assert response.data["hora_aviso"] == "09:05"
+    assert user.nickname == "PerfilUser"
+    assert user.hora_aviso.strftime("%H:%M") == "09:05"
+
+
+@pytest.mark.django_db
 def test_patch_perfil_rejects_duplicate_nickname_and_keeps_current(auth_client, user):
     CustomUser.objects.create_user(
         email="otro@example.com",
-        password="S0mething!Secure-497",
+        password=CURRENT_PASSWORD,
         nickname="HabitHero",
     )
 
@@ -95,6 +101,7 @@ def test_patch_perfil_rejects_empty_body(auth_client):
     response = auth_client.patch(reverse("perfil:detalle"), {}, format="json")
 
     assert response.status_code == 400
+    assert "nickname y/o hora_aviso" in str(response.data).lower()
 
 
 @pytest.mark.django_db
@@ -107,5 +114,5 @@ def test_patch_perfil_rejects_blank_nickname(auth_client, user):
 
     user.refresh_from_db()
     assert response.status_code == 400
-    assert "nickname" in response.data
+    assert response.data["nickname"] == ["Este campo no puede estar en blanco."]
     assert user.nickname == "PerfilUser"

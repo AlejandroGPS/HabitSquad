@@ -1,33 +1,9 @@
 import pytest
 from django.urls import reverse
-from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
 
-from usuarios.models import CustomUser
+from .conftest import CURRENT_PASSWORD
 
-CURRENT_PASSWORD = "S0mething!Secure-497"
 NEW_PASSWORD = "N3w!Secure-Password-88"
-
-
-@pytest.fixture
-def api_client():
-    return APIClient()
-
-
-@pytest.fixture
-def user(db):
-    return CustomUser.objects.create_user(
-        email="perfil@example.com",
-        password=CURRENT_PASSWORD,
-        nickname="PerfilUser",
-    )
-
-
-@pytest.fixture
-def auth_client(api_client, user):
-    token = RefreshToken.for_user(user).access_token
-    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
-    return api_client
 
 
 @pytest.mark.django_db

@@ -5,31 +5,10 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
-from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from usuarios.models import CustomUser
 
-
-@pytest.fixture
-def api_client():
-    return APIClient()
-
-
-@pytest.fixture
-def user(db):
-    return CustomUser.objects.create_user(
-        email="perfil@example.com",
-        password="S0mething!Secure-497",
-        nickname="PerfilUser",
-    )
-
-
-@pytest.fixture
-def auth_client(api_client, user):
-    token = RefreshToken.for_user(user).access_token
-    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
-    return api_client
+from .conftest import CURRENT_PASSWORD
 
 
 def _uid_token(user):
@@ -84,7 +63,7 @@ def test_solicitar_cambio_email_rechaza_igual_al_actual(auth_client):
 def test_solicitar_cambio_email_rechaza_ya_registrado(auth_client):
     CustomUser.objects.create_user(
         email="ocupado@example.com",
-        password="S0mething!Secure-497",
+        password=CURRENT_PASSWORD,
         nickname="OtroUser",
     )
 

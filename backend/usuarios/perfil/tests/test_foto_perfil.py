@@ -3,37 +3,14 @@ from unittest.mock import patch
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
-from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
 
-from usuarios.models import CustomUser
+from usuarios.perfil.services import guardar_foto_perfil
 
-SIGNED_URL = "https://res.cloudinary.com/demo/image/private/s--x--/v1/perfiles/mock.jpg"
+from .conftest import SIGNED_FOTO_URL
 
 
 def _foto(*, name="perfil.jpg", content=b"fake-image", content_type="image/jpeg"):
     return SimpleUploadedFile(name, content, content_type=content_type)
-
-
-@pytest.fixture
-def api_client():
-    return APIClient()
-
-
-@pytest.fixture
-def user(db):
-    return CustomUser.objects.create_user(
-        email="perfil@example.com",
-        password="S0mething!Secure-497",
-        nickname="PerfilUser",
-    )
-
-
-@pytest.fixture
-def auth_client(api_client, user):
-    token = RefreshToken.for_user(user).access_token
-    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
-    return api_client
 
 
 @pytest.mark.django_db
@@ -45,7 +22,7 @@ def test_post_foto_perfil_uploads_and_returns_signed_url(auth_client, user):
         ) as upload_mock,
         patch(
             "usuarios.perfil.services.photo.build_signed_foto_url",
-            return_value=SIGNED_URL,
+            return_value=SIGNED_FOTO_URL,
         ),
     ):
         response = auth_client.post(
@@ -56,7 +33,7 @@ def test_post_foto_perfil_uploads_and_returns_signed_url(auth_client, user):
 
     user.refresh_from_db()
     assert response.status_code == 200
-    assert response.data == {"foto_url": SIGNED_URL}
+    assert response.data == {"foto_url": SIGNED_FOTO_URL}
     assert user.foto_perfil_public_id == "perfiles/mock_foto_1"
     assert upload_mock.call_args.kwargs["folder"] == "perfiles"
     assert upload_mock.call_args.kwargs["type"] == "private"
@@ -74,7 +51,7 @@ def test_post_foto_perfil_replaces_previous_public_id(auth_client, user):
         ),
         patch(
             "usuarios.perfil.services.photo.build_signed_foto_url",
-            return_value=SIGNED_URL,
+            return_value=SIGNED_FOTO_URL,
         ),
     ):
         response = auth_client.post(
@@ -116,8 +93,6 @@ def test_post_foto_perfil_rejects_invalid_type_without_upload(auth_client, user)
 
 @pytest.mark.django_db
 def test_guardar_foto_perfil_raises_when_cloudinary_omits_public_id(user):
-    from usuarios.perfil.services import guardar_foto_perfil
-
     with (
         patch(
             "usuarios.perfil.services.photo.cloudinary.uploader.upload",
