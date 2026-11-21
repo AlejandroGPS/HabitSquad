@@ -119,6 +119,23 @@ La app `usuarios` contiene el modelo `CustomUser`, su configuración de
 administración y sus pruebas. El modelo usa un ID `BigAutoField`, email único
 normalizado a minúsculas como identificador y el manejo de contraseña hasheada
 de Django. La migración inicial se creó después de configurar `AUTH_USER_MODEL`.
+También guarda la foto de perfil (`foto_perfil_public_id`), el correo pendiente
+de confirmación (`email_pendiente`) y la hora de aviso (`hora_aviso`, por
+defecto `20:00`).
+
+## API de perfil
+
+Los endpoints autenticados bajo `/api/perfil/` permiten consultar y actualizar
+el perfil del usuario:
+
+- `GET /api/perfil/` y `PATCH /api/perfil/` (nickname y/o `hora_aviso`)
+- `POST /api/perfil/foto/` (multipart, campo `foto`)
+- `POST /api/perfil/email/` y `POST /api/perfil/email/confirm/`
+- `POST /api/perfil/password/`
+
+El contrato completo está en
+[docs/PERFIL_USUARIO.md](../docs/PERFIL_USUARIO.md). La implementación vive en
+`usuarios/perfil/` (`api/`, `services/`, `tests/`).
 
 ## Organización por funcionalidad
 
@@ -146,6 +163,10 @@ autenticacion/
 usuarios/
 ├── models/                     # Entidades persistentes compartidas
 ├── admin.py                   # Integración con Django Admin
+├── perfil/                     # Consulta y actualización del perfil
+│   ├── api/
+│   ├── services/
+│   └── tests/
 └── tests/                      # Pruebas del modelo de usuario
 
 escuadrones/

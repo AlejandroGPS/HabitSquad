@@ -59,6 +59,10 @@ EMAIL_VERIFICATION_FRONTEND_URL = os.environ.get(
     "EMAIL_VERIFICATION_FRONTEND_URL",
     "http://localhost:5173/verify-email",
 )
+PROFILE_EMAIL_CHANGE_FRONTEND_URL = os.environ.get(
+    "PROFILE_EMAIL_CHANGE_FRONTEND_URL",
+    "http://localhost:5173/perfil/confirmar-email",
+)
 PASSWORD_RESET_TIMEOUT = int(os.environ.get("PASSWORD_RESET_TIMEOUT", "3600"))
 
 
