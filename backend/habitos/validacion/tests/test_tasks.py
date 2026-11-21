@@ -78,11 +78,13 @@ def test_tarea_notifica_al_escuadron_aunque_no_haya_pruebas_pendientes(
     registro_pendiente_ayer,
 ):
     escuadron_id = registro_pendiente_ayer.habito.membresia.escuadron_id
+    registro_pendiente_ayer.estado = RegistroDiario.Estado.CUMPLIDO
+    registro_pendiente_ayer.save(update_fields=["estado"])
 
     with patch("habitos.validacion.tasks.programar_actualizacion_panel") as publicar:
         cerrados = cerrar_jornadas_pendientes()
 
-    assert cerrados == 1
+    assert cerrados == 0
     publicar.assert_called_once_with(
         escuadron_id=escuadron_id,
         motivo="cierre_diario",

@@ -112,7 +112,10 @@ def test_emitir_voto_no_no_cuenta_como_si(registro, voters):
 @pytest.mark.django_db
 def test_emitir_voto_mayoria_pasa_a_cumplido(registro, voters):
     emitir_voto(registro=registro, usuario=voters[0], voto="sí")
-    estado = emitir_voto(registro=registro, usuario=voters[1], voto="sí")
+    with patch(
+        "habitos.validacion.services.voting.programar_actualizacion_panel"
+    ) as publicar:
+        estado = emitir_voto(registro=registro, usuario=voters[1], voto="sí")
 
     assert estado["votos_si"] == 2
     assert estado["votantes_elegibles"] == 3
@@ -120,6 +123,11 @@ def test_emitir_voto_mayoria_pasa_a_cumplido(registro, voters):
     assert estado["estado"] == RegistroDiario.Estado.CUMPLIDO
     registro.refresh_from_db()
     assert registro.estado == RegistroDiario.Estado.CUMPLIDO
+    publicar.assert_called_once_with(
+        escuadron_id=registro.habito.membresia.escuadron_id,
+        motivo="voto_emitido",
+        registro_id=registro.pk,
+    )
 
 
 def test_mayoria_alcanzada_umbral_simple():
