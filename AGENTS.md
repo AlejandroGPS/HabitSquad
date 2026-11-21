@@ -219,7 +219,7 @@ Todas las rutas cuelgan de `/api/`. Salvo las marcadas como públicas, requieren
 
 **Atención:** `GET /api/escuadrones/` y `POST /api/escuadrones/` comparten ruta pero pertenecen a vistas distintas incluidas en `backend/escuadrones/urls.py` (selector y crear). Al añadir rutas, revisa el orden de `include()` y evita colisiones.
 
-Contratos detallados: `docs/REGISTRO.md`, `docs/AUTENTICACION_JWT.md`, `docs/RECUPERACION_CONTRASENA.md`, `docs/CREAR_ESCUADRON.md`, `docs/UNIRSE_ESCUADRON.md`, `docs/HABITOS.md`, `docs/PRUEBA_FOTO.md`, `docs/VALIDACION_HABITO.md`.
+Contratos detallados: `docs/REGISTRO.md`, `docs/AUTENTICACION_JWT.md`, `docs/RECUPERACION_CONTRASENA.md`, `docs/CREAR_ESCUADRON.md`, `docs/UNIRSE_ESCUADRON.md`, `docs/HABITOS.md`, `docs/PRUEBA_FOTO.md`, `docs/VALIDACION_HABITO.md`, `docs/SINCRONIZACION_TIEMPO_REAL.md`.
 
 ### 3.5 Frontend: SPA sin framework
 
@@ -650,6 +650,7 @@ Hechos comprobados en el checkout actual:
 2. **Tiempo real implementado; Web Push sigue pendiente.**
    - `docs/SINCRONIZACION_TIEMPO_REAL.md` describe el contrato WebSocket, la autenticación por JWT, los eventos y la tarea de cierre diario.
    - El cliente debe volver a consultar el detalle REST después del evento `panel.actualizado`; no se envía el detalle completo por WebSocket.
+   - Desfase conocido con la aceptación de PBI #10: `ResumenEscuadron.racha` suma el día actual en cuanto todos constan como `cumplido`; no espera a las 00:00. El enlace de T48 está pendiente de confirmar.
 
 3. **El límite de 5 miembros por escuadrón solo se muestra en el frontend.**
    - `frontend/src/views/panelSeleccionado.js` calcula `5 - miembros.length` y `miembrosCard` muestra «de 5 miembros».
