@@ -6,7 +6,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from usuarios.perfil.services import serialize_perfil
+from usuarios.perfil.services import (
+    FotoInvalidaError,
+    guardar_foto_perfil,
+    serialize_perfil,
+)
 
 from .serializers import (
     ErrorDetallePerfilSerializer,
@@ -175,9 +179,19 @@ class PerfilFotoUploadView(APIView):
         ],
     )
     def post(self, request, *args, **kwargs):
-        return Response(
-            _RESPUESTA_NO_IMPLEMENTADA, status=status.HTTP_501_NOT_IMPLEMENTED
-        )
+        serializer = PerfilFotoUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        foto = serializer.validated_data["foto"]
+
+        try:
+            foto_url = guardar_foto_perfil(user=request.user, foto=foto)
+        except FotoInvalidaError as error:
+            return Response(
+                {"foto": [str(error)]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response({"foto_url": foto_url}, status=status.HTTP_200_OK)
 
 
 class PerfilEmailChangeView(APIView):

@@ -27,7 +27,6 @@ def auth_client(api_client):
 @pytest.mark.parametrize(
     ("method", "url_name"),
     [
-        ("post", "perfil:foto"),
         ("post", "perfil:email"),
         ("post", "perfil:password"),
     ],
