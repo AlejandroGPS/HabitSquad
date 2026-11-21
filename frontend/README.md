@@ -197,6 +197,29 @@ El menú de cuenta enlaza a `/perfil` y `/perfil/editar`. La integración, las
 pruebas y las dependencias pendientes del backend se describen en
 [PERFIL_USUARIO_FRONTEND.md](../docs/PERFIL_USUARIO_FRONTEND.md).
 
+## Buscador de escuadrones (mock)
+
+`/escuadrones/buscar` se abre desde «Mis escuadrones» y requiere sesión, como
+el resto de pantallas de escuadrones. Permite buscar por nombre sin distinguir
+mayúsculas ni tildes y ordenar los resultados. Los escuadrones completos no
+permiten unirse.
+
+El listado y la ficha muestran la racha, la ocupación respecto a la capacidad
+y las plazas libres, sin identificar a los miembros ni mostrar una temática.
+La ficha permite confirmar la unión y elegir un hábito de ejemplo.
+Se puede cerrar con Escape, el fondo o «Ahora no».
+La unión y el hábito solo se guardan en memoria: sobreviven a la navegación
+y se reinician al recargar. No modifican los escuadrones reales ni sus paneles.
+El acceso con código y la creación enlazan a sus pantallas existentes.
+
+Los 12 ejemplos y el adaptador temporal están en
+`src/mocks/buscadorEscuadrones.js`. Para conectar la API, sustituir el objeto
+`api` de `buscarEscuadronesScreen({ api })`, que expone métodos asíncronos
+`list()`, `join(id)` y `saveHabit(id, text)`. Cada uno devuelve escuadrones con
+`id`, `nombre`, `categoria`, `habito`, `racha`, `color`, `capacidad`, `publico`,
+`unido`, `habitoPropio` y `miembros: [{ nickname, habito }]`. La vista no usa
+`fetch` ni los endpoints reales para estas operaciones.
+
 ## Configuración del escuadrón (mock)
 
 `/escuadrones/configuracion` requiere sesión. «Configuración» forma parte del

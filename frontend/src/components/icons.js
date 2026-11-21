@@ -10,6 +10,7 @@ const OUTLINE_PATHS = {
   minus: ['M5 12h14'],
   refresh: ['M20 8a8 8 0 1 0 0 8', 'M20 3v5h-5'],
   trash: ['M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7'],
+  search: ['M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13z', 'm16 16 5 5'],
   back: ['m15 18-6-6 6-6'],
   forward: ['m9 18 6-6-6-6'],
   dumbbell: ['M6 5v14M3 8v8M18 5v14M21 8v8M6 12h12'],

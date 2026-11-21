@@ -1,5 +1,7 @@
 import { ApiError, listSquads } from '../api.js'
 import { accountMenu } from '../components/accountMenu.js'
+import { pillLink } from '../components/buttons.js'
+import { icon } from '../components/icons.js'
 import { button, element } from '../components/dom.js'
 import { landingNav } from '../components/landing/landingNav.js'
 import { mascota } from '../components/mascota.js'
@@ -55,7 +57,8 @@ export function selectorEscuadronScreen({ onLogout, loadSquads = listSquads } = 
       mascota('h-20 w-auto drop-shadow-[0_14px_16px_rgb(60_30_140/0.22)] motion-safe:animate-bob'),
       bocadillo,
     ),
-    titulo,
+    element('div', 'flex flex-wrap items-end justify-between gap-4', titulo,
+      pillLink({ href: '/escuadrones/buscar', className: 'mt-6 text-base' }, icon('search'), 'Buscar escuadrones')),
     estado,
     element('div', 'mt-4 flex flex-col gap-1', error, reintentar),
     contenido,

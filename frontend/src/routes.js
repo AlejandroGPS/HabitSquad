@@ -15,6 +15,7 @@ import { hasSession } from './session.js'
 import { loginScreen, registroScreen } from './views/acceso.js'
 import { crearEscuadronScreen } from './views/crearEscuadron.js'
 import { configuracionEscuadronScreen } from './views/configuracionEscuadron.js'
+import { buscarEscuadronesScreen } from './views/buscarEscuadrones.js'
 import { habitoDiarioScreen } from './views/habitoDiario.js'
 import { panelSeleccionadoScreen } from './views/panelSeleccionado.js'
 import { presentacionScreen } from './views/presentacion.js'
@@ -139,6 +140,14 @@ function selectorEscuadron(navigate) {
 }
 
 export const routes = [
+  {
+    path: '/escuadrones/buscar',
+    title: 'Buscar escuadrones',
+    private: true,
+    view: ({ navigate } = {}) => buscarEscuadronesScreen({
+      onLogout: async () => { await logout(); navigate?.('/login') },
+    }),
+  },
   {
     path: '/perfil',
     title: 'Mi perfil',
