@@ -8,8 +8,10 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from usuarios.perfil.services import (
     FotoInvalidaError,
+    confirmar_cambio_email,
     guardar_foto_perfil,
     serialize_perfil,
+    solicitar_cambio_email,
 )
 
 from .serializers import (
@@ -247,8 +249,24 @@ class PerfilEmailChangeView(APIView):
         ],
     )
     def post(self, request, *args, **kwargs):
+        serializer = PerfilEmailChangeRequestSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        email_pendiente = solicitar_cambio_email(
+            user=request.user,
+            email=serializer.validated_data["email"],
+        )
         return Response(
-            _RESPUESTA_NO_IMPLEMENTADA, status=status.HTTP_501_NOT_IMPLEMENTED
+            {
+                "detail": (
+                    "Si la dirección es válida, recibirás un enlace de "
+                    "verificación en el nuevo correo."
+                ),
+                "email_pendiente": email_pendiente,
+            },
+            status=status.HTTP_200_OK,
         )
 
 
@@ -297,8 +315,23 @@ class PerfilEmailConfirmView(APIView):
         ],
     )
     def post(self, request, *args, **kwargs):
+        serializer = PerfilEmailConfirmRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = confirmar_cambio_email(
+            uid=serializer.validated_data["uid"],
+            token=serializer.validated_data["token"],
+        )
+        if user is None:
+            return Response(
+                {"detail": "El enlace de verificación no es válido o ha caducado."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return Response(
-            _RESPUESTA_NO_IMPLEMENTADA, status=status.HTTP_501_NOT_IMPLEMENTED
+            {
+                "detail": "El correo se ha actualizado correctamente.",
+                "email": user.email,
+            },
+            status=status.HTTP_200_OK,
         )
 
 

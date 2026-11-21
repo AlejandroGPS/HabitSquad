@@ -24,27 +24,8 @@ def auth_client(api_client):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize(
-    ("method", "url_name"),
-    [
-        ("post", "perfil:email"),
-        ("post", "perfil:password"),
-    ],
-)
-def test_protected_perfil_stubs_return_501(auth_client, method, url_name):
-    response = getattr(auth_client, method)(reverse(url_name), {}, format="json")
-
-    assert response.status_code == 501
-    assert "pendiente" in response.data["detail"].lower()
-
-
-@pytest.mark.django_db
-def test_email_confirm_stub_returns_501_without_auth(api_client):
-    response = api_client.post(
-        reverse("perfil:email-confirm"),
-        {"uid": "MQ", "token": "token"},
-        format="json",
-    )
+def test_password_perfil_stub_returns_501(auth_client):
+    response = auth_client.post(reverse("perfil:password"), {}, format="json")
 
     assert response.status_code == 501
     assert "pendiente" in response.data["detail"].lower()

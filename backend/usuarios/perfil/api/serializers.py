@@ -118,6 +118,21 @@ class PerfilEmailChangeRequestSerializer(serializers.Serializer):
         ),
     )
 
+    def validate_email(self, value):
+        normalized = CustomUser.objects.normalize_email(value)
+        user = self.context["request"].user
+        if normalized == user.email:
+            raise serializers.ValidationError(
+                "El nuevo correo debe ser distinto al actual."
+            )
+        if (
+            CustomUser.objects.filter(email__iexact=normalized)
+            .exclude(pk=user.pk)
+            .exists()
+        ):
+            raise serializers.ValidationError("Ya existe una cuenta con este email.")
+        return normalized
+
 
 @extend_schema_serializer(component_name="PerfilEmailChangeResponse")
 class PerfilEmailChangeResponseSerializer(serializers.Serializer):
