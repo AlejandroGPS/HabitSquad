@@ -1,6 +1,6 @@
 services:
   redis:
-    image: redis:8.1.0-alpine
+    image: redis:8.10.3-alpine
     restart: unless-stopped
     command: redis-server --appendonly yes
     volumes:
