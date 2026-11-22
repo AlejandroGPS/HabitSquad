@@ -27,7 +27,7 @@ Desde `backend/` con el entorno virtual activado:
 ```bash
 python manage.py migrate
 python manage.py check
-pytest --cov=usuarios --cov=autenticacion --cov=escuadrones --cov=habitos --cov-report=term-missing --cov-fail-under=100
+pytest --cov=usuarios --cov=autenticacion --cov=escuadrones --cov=habitos --cov=alertas --cov-report=term-missing --cov-fail-under=100
 ruff check .
 ruff format --check .
 python manage.py runserver

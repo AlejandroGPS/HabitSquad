@@ -1,6 +1,8 @@
 import pytest
 from django.test import override_settings
+from rest_framework import serializers
 
+from alertas.api.serializers import _campo_no_vacio
 from alertas.models import SuscripcionPush
 from alertas.services import (
     VapidNoConfiguradoError,
@@ -20,6 +22,17 @@ def user(db):
         password="S0mething!Secure-497",
         nickname="ServicioAlertas",
     )
+
+
+def test_campo_no_vacio_rechaza_valores_vacios():
+    with pytest.raises(serializers.ValidationError, match="no puede estar vacío"):
+        _campo_no_vacio("   ", "Este campo no puede estar vacío.")
+    with pytest.raises(serializers.ValidationError, match="no puede estar vacío"):
+        _campo_no_vacio(None, "Este campo no puede estar vacío.")
+
+
+def test_campo_no_vacio_acepta_texto_limpio():
+    assert _campo_no_vacio("  valor  ", "x") == "valor"
 
 
 @override_settings(VAPID_PUBLIC_KEY="")

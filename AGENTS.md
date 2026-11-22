@@ -20,7 +20,7 @@ Comandos mínimos de referencia:
 ```bash
 # Backend (desde backend/)
 python manage.py migrate
-pytest --cov=usuarios --cov=autenticacion --cov=escuadrones --cov=habitos --cov-report=term-missing --cov-fail-under=100
+pytest --cov=usuarios --cov=autenticacion --cov=escuadrones --cov=habitos --cov=alertas --cov-report=term-missing --cov-fail-under=100
 ruff check .
 ruff format --check .
 python manage.py check
@@ -433,7 +433,7 @@ Servicios: `db` (PostgreSQL), `api` (Django/uvicorn, aplica migraciones y `colle
 | `ruff check .` | Lint Python (E, F, I, UP, B, RUF). | Antes de commit/PR. |
 | `ruff format --check .` | Comprueba formato Ruff (línea 88). | Antes de commit/PR. |
 | `ruff format .` | Aplica el formato automáticamente. | Cuando `ruff format --check` falle. |
-| `pytest --cov=usuarios --cov=autenticacion --cov=escuadrones --cov=habitos --cov-report=term-missing --cov-fail-under=100` | Suite completa con cobertura y umbral del 100 %. Es el comando de CI. | Antes de PR y para validar una implementación completa. |
+| `pytest --cov=usuarios --cov=autenticacion --cov=escuadrones --cov=habitos --cov=alertas --cov-report=term-missing --cov-fail-under=100` | Suite completa con cobertura y umbral del 100 %. Es el comando de CI. | Antes de PR y para validar una implementación completa. |
 | `pytest ruta/al/test_file.py -q` | Ejecuta un archivo de tests concreto. | Iteración rápida. |
 | `pytest ruta/al/test_file.py::test_nombre -q` | Ejecuta un test concreto. | Depuración. |
 | `python manage.py spectacular --validate --file openapi-schema.yml` | Genera y valida el esquema OpenAPI. En CI se usa `/tmp/openapi-schema.yml`. | Tras cambiar serializers, vistas o contratos de API. |
@@ -524,7 +524,7 @@ No hay scripts de lint, formato, typecheck ni análisis estático en `frontend/p
   - Tests de servicios con `pytest.raises` para excepciones de dominio.
   - Tests de comandos con `call_command`.
   - Tests de esquema OpenAPI que comprueban rutas, `operationId`, respuestas y componentes.
-- **Cobertura:** la CI exige 100 % sobre `usuarios`, `autenticacion`, `escuadrones` y `habitos`. Cualquier rama nueva debe quedar cubierta o la CI fallará.
+- **Cobertura:** la CI exige 100 % sobre `usuarios`, `autenticacion`, `escuadrones`, `habitos` y `alertas`. Cualquier rama nueva debe quedar cubierta o la CI fallará.
 - **Cómo ejecutar:** ver sección 6. Para un test concreto: `pytest backend/habitos/validacion/tests/test_services.py::test_emitir_voto_mayoria_pasa_a_cumplido -q` (desde `backend/`, ajustando la ruta).
 
 ### Frontend
