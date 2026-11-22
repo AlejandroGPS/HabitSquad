@@ -274,6 +274,89 @@ def test_squad_detail_foto_url_signed_for_each_member_with_public_id(
 
 
 @pytest.mark.django_db
+def test_squad_detail_habito_null_or_configured(api_client, creator, member, squad):
+    membership = Membresia.objects.get(escuadron=squad, usuario=member)
+    habit = HabitoDiario.objects.create(
+        membresia=membership,
+        opcion=HabitoDiario.Opcion.LEER,
+        texto_personalizado="",
+    )
+
+    response = authenticated_client(api_client, member).get(detail_url(squad))
+
+    assert response.status_code == 200
+    by_id = members_by_usuario_id(response.data)
+    assert by_id[creator.pk]["habito"] is None
+    assert by_id[creator.pk]["prueba_hoy"] is None
+    assert set(by_id[member.pk]["habito"]) == {
+        "id",
+        "opcion",
+        "texto_personalizado",
+        "creado_en",
+        "actualizado_en",
+    }
+    assert by_id[member.pk]["habito"]["id"] == habit.pk
+    assert by_id[member.pk]["habito"]["opcion"] == HabitoDiario.Opcion.LEER
+    assert by_id[member.pk]["prueba_hoy"] is None
+
+
+@pytest.mark.django_db
+def test_squad_detail_prueba_hoy_null_without_today_registro(
+    api_client, creator, member, squad
+):
+    membership = Membresia.objects.get(escuadron=squad, usuario=member)
+    habit = HabitoDiario.objects.create(
+        membresia=membership,
+        opcion=HabitoDiario.Opcion.GIMNASIO,
+    )
+    RegistroDiario.objects.create(
+        habito=habit,
+        fecha=timezone.localdate() - timedelta(days=1),
+        estado=RegistroDiario.Estado.CUMPLIDO,
+        cloudinary_public_id="pruebas/ayer",
+    )
+
+    response = authenticated_client(api_client, creator).get(detail_url(squad))
+
+    assert response.status_code == 200
+    by_id = members_by_usuario_id(response.data)
+    assert by_id[member.pk]["habito"]["id"] == habit.pk
+    assert by_id[member.pk]["prueba_hoy"] is None
+
+
+@pytest.mark.parametrize(
+    "estado",
+    [
+        RegistroDiario.Estado.PENDIENTE,
+        RegistroDiario.Estado.CUMPLIDO,
+        RegistroDiario.Estado.NO_CUMPLIDO,
+    ],
+)
+@pytest.mark.django_db
+def test_squad_detail_prueba_hoy_matches_registro_estado(
+    api_client, creator, member, squad, estado
+):
+    membership = Membresia.objects.get(escuadron=squad, usuario=member)
+    habit = HabitoDiario.objects.create(
+        membresia=membership,
+        opcion=HabitoDiario.Opcion.ESTUDIAR,
+    )
+    proof = RegistroDiario.objects.create(
+        habito=habit,
+        fecha=timezone.localdate(),
+        estado=estado,
+        cloudinary_public_id=f"pruebas/{estado}",
+    )
+
+    response = authenticated_client(api_client, creator).get(detail_url(squad))
+
+    assert response.status_code == 200
+    by_id = members_by_usuario_id(response.data)
+    assert by_id[member.pk]["prueba_hoy"] == {"id": proof.pk, "estado": estado}
+    assert by_id[creator.pk]["prueba_hoy"] is None
+
+
+@pytest.mark.django_db
 def test_squad_detail_includes_streak_and_week(api_client, creator, member, squad):
     today = timezone.localdate()
     Escuadron.objects.filter(pk=squad.pk).update(
