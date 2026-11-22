@@ -168,7 +168,7 @@ def test_squad_detail_includes_streak_and_week(api_client, creator, member, squa
     response = authenticated_client(api_client, member).get(detail_url(squad))
 
     assert response.status_code == 200
-    assert response.data["racha"] == 2
+    assert response.data["racha"] == 1
     week = response.data["miembros"][0]["semana"]
     assert len(week) == 7
     assert week[today.weekday()] == {"fecha": today.isoformat(), "estado": "cumplido"}

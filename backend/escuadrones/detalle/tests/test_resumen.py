@@ -1,11 +1,13 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from django.utils import timezone
 
 from escuadrones.detalle.services import ResumenEscuadron, lunes_de
 from escuadrones.models import Escuadron, Membresia
-from habitos.models import HabitoDiario, RegistroDiario
+from habitos.models import HabitoDiario, RegistroDiario, VotoValidacion
+from habitos.validacion.tasks import cerrar_jornadas_pendientes
 from usuarios.models import CustomUser
 
 CUMPLIDO = RegistroDiario.Estado.CUMPLIDO
@@ -52,7 +54,7 @@ def unir(escuadron, email, dias_atras=30):
 
 
 def prueba(membresia, dia, estado=CUMPLIDO):
-    RegistroDiario.objects.create(
+    return RegistroDiario.objects.create(
         habito=membresia.habito_diario,
         fecha=dia,
         estado=estado,
@@ -62,6 +64,29 @@ def prueba(membresia, dia, estado=CUMPLIDO):
 
 def resumen(escuadron):
     return ResumenEscuadron(escuadron, escuadron.membresias.all(), hoy=HOY)
+
+
+def preparar_racha_y_cierre(escuadron, *, marcar_fallo=False):
+    miembros = [
+        unir(escuadron, "ana@example.com"),
+        unir(escuadron, "luis@example.com"),
+    ]
+    for dias_atras in (2, 3, 4):
+        for miembro in miembros:
+            prueba(miembro, hace(dias_atras))
+
+    registros_ayer = []
+    for indice, miembro in enumerate(miembros):
+        registro = prueba(miembro, hace(1), PENDIENTE)
+        votante = miembros[1 - indice].usuario
+        voto = (
+            VotoValidacion.Valor.NO
+            if marcar_fallo and indice == 1
+            else VotoValidacion.Valor.SI
+        )
+        VotoValidacion.objects.create(registro=registro, usuario=votante, voto=voto)
+        registros_ayer.append(registro)
+    return miembros, registros_ayer
 
 
 @pytest.mark.django_db
@@ -76,26 +101,82 @@ def test_racha_cuenta_los_dias_seguidos_en_que_cumplen_todos(escuadron):
     assert resumen(escuadron).racha == 3
 
 
+@pytest.mark.django_db
+def test_cierre_de_ayer_incrementa_la_racha_de_n_a_n_mas_uno(escuadron):
+    miembros, registros_ayer = preparar_racha_y_cierre(escuadron)
+    ayer = hace(1)
+    racha_antes_del_cierre = ResumenEscuadron(
+        escuadron,
+        escuadron.membresias.all(),
+        hoy=ayer,
+    ).racha
+
+    with (
+        patch("habitos.validacion.tasks.timezone.localdate", return_value=HOY),
+        patch("habitos.validacion.tasks.programar_actualizacion_panel") as publicar,
+    ):
+        cerrados = cerrar_jornadas_pendientes()
+
+    for registro in registros_ayer:
+        registro.refresh_from_db()
+    assert racha_antes_del_cierre == 3
+    assert cerrados == len(miembros)
+    assert all(
+        registro.estado == RegistroDiario.Estado.CUMPLIDO for registro in registros_ayer
+    )
+    assert resumen(escuadron).racha == 4
+    publicar.assert_called_once_with(
+        escuadron_id=escuadron.pk,
+        motivo="cierre_diario",
+    )
+
+
+@pytest.mark.django_db
+def test_cierre_de_ayer_reinicia_la_racha_si_un_miembro_no_cumplio(escuadron):
+    miembros, registros_ayer = preparar_racha_y_cierre(
+        escuadron,
+        marcar_fallo=True,
+    )
+    ayer = hace(1)
+    racha_antes_del_cierre = ResumenEscuadron(
+        escuadron,
+        escuadron.membresias.all(),
+        hoy=ayer,
+    ).racha
+
+    with (
+        patch("habitos.validacion.tasks.timezone.localdate", return_value=HOY),
+        patch("habitos.validacion.tasks.programar_actualizacion_panel"),
+    ):
+        cerrados = cerrar_jornadas_pendientes()
+
+    for registro in registros_ayer:
+        registro.refresh_from_db()
+    assert racha_antes_del_cierre == 3
+    assert cerrados == len(miembros)
+    assert registros_ayer[0].estado == RegistroDiario.Estado.CUMPLIDO
+    assert registros_ayer[1].estado == RegistroDiario.Estado.NO_CUMPLIDO
+    assert resumen(escuadron).racha == 0
+
+
 @pytest.mark.parametrize(
-    ("estados_hoy", "racha"),
+    "estados_hoy",
     [
-        ((CUMPLIDO, CUMPLIDO), 2),
-        ((CUMPLIDO, PENDIENTE), 1),
-        ((CUMPLIDO, None), 1),
-        ((CUMPLIDO, NO_CUMPLIDO), 0),
+        (CUMPLIDO, CUMPLIDO),
+        (CUMPLIDO, PENDIENTE),
+        (CUMPLIDO, None),
+        (CUMPLIDO, NO_CUMPLIDO),
     ],
 )
 @pytest.mark.django_db
-def test_hoy_suma_si_esta_cumplido_y_solo_rompe_con_no_cumplido(
-    escuadron, estados_hoy, racha
-):
+def test_racha_solo_cuenta_jornadas_anteriores_a_hoy(escuadron, estados_hoy):
     miembros = [unir(escuadron, "ana@example.com"), unir(escuadron, "luis@example.com")]
     for membresia, estado in zip(miembros, estados_hoy, strict=True):
         prueba(membresia, hace(1))
         if estado:
             prueba(membresia, HOY, estado)
 
-    assert resumen(escuadron).racha == racha
+    assert resumen(escuadron).racha == 1
 
 
 @pytest.mark.parametrize("estado", [PENDIENTE, NO_CUMPLIDO, None])
@@ -127,7 +208,7 @@ def test_quien_se_une_un_dia_empieza_a_contar_al_siguiente(escuadron):
     assert resumen(escuadron).racha == 2
 
     prueba(nuevo, HOY)
-    assert resumen(escuadron).racha == 3
+    assert resumen(escuadron).racha == 2
 
 
 @pytest.mark.django_db
@@ -147,7 +228,7 @@ def test_la_racha_no_cuenta_dias_en_que_aun_no_habia_miembros(escuadron):
     for dias in range(5):
         prueba(ana, hace(dias))
 
-    assert resumen(escuadron).racha == 2
+    assert resumen(escuadron).racha == 1
 
 
 @pytest.mark.django_db

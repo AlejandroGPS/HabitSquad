@@ -1,6 +1,7 @@
 from django.db import IntegrityError, transaction
 
 from escuadrones.models import Escuadron, Membresia
+from escuadrones.tiempo_real.events import programar_actualizacion_panel
 
 
 class SquadronNotFoundError(Exception):
@@ -33,6 +34,10 @@ def unirse_escuadron(*, codigo_invitacion: str, usuario) -> Escuadron:
                 escuadron=escuadron,
                 usuario=usuario,
                 es_administrador=False,
+            )
+            programar_actualizacion_panel(
+                escuadron_id=escuadron.pk,
+                motivo="miembro_se_unio",
             )
     except IntegrityError as error:
         raise AlreadyMemberError("Ya perteneces a este escuadrón") from error

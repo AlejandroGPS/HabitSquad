@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_DB: habitsquad
+      POSTGRES_USER: habitsquad
+      POSTGRES_PASSWORD: habitsquad
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U habitsquad -d habitsquad"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:8.1.0-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    image: habitsquad-backend-dev
+    build: ./backend
+    environment: &backend-environment
+      DJANGO_DEBUG: "true"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      DJANGO_SECRET_KEY: local-only-development-key
+      EMAIL_BACKEND: django.core.mail.backends.console.EmailBackend
+      POSTGRES_DB: habitsquad
+      POSTGRES_USER: habitsquad
+      POSTGRES_PASSWORD: habitsquad
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "manage.py", "check", "--database", "default"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  worker:
+    image: habitsquad-backend-dev
+    environment: *backend-environment
+    command:
+      - sh
+      - -c
+      - python manage.py programar_cierre_diario && exec python manage.py qcluster
+    depends_on:
+      api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy

@@ -37,15 +37,23 @@ az vm start -g habitsquad-rg -n habitsquad-vm
 | Servicio | Imagen | Función |
 | --- | --- | --- |
 | `db` | `postgres:18.6-alpine` | Base de datos, con los datos en el volumen `postgres-data`. |
+| `redis` | `redis:8.1.0-alpine` | Capa compartida de Channels y broker del worker Q2. |
 | `api` | `backend/Dockerfile` | Django sobre uvicorn (ASGI). Al arrancar aplica las migraciones y ejecuta `collectstatic`. |
+| `worker` | `backend/Dockerfile` | Programa el cierre diario y ejecuta el cluster de Django Q2. |
 | `web` | `frontend/Dockerfile` | Build de Vite servido por Caddy, con HTTPS. |
 
 Caddy reparte las peticiones según el `Caddyfile`:
 
-- `/api/` y `/admin/` van a Django.
+- `/api/`, `/admin/` y `/ws/` van a Django; el proxy conserva las conexiones WebSocket.
 - `/static/` sirve los estáticos de Django.
 - El resto sirve el frontend; si la ruta no es un archivo, responde con
   `index.html` para que funcione el enrutador del cliente.
+
+La API y el worker comparten `REDIS_URL` (en producción Compose los conecta a
+`redis://redis:6379/0`). El worker espera a que la API aplique las migraciones,
+crea el horario idempotente y ejecuta Q2. Channels usa Redis para enviar los
+eventos del panel entre procesos. En `.env.example` se documenta la variable;
+en el Compose de producción se fija a la dirección interna del servicio Redis.
 
 ## Variables de entorno
 
@@ -112,9 +120,11 @@ shell ni abrir túneles. El repositorio tiene estos secretos:
 | `AZURE_VM_KNOWN_HOSTS` | Clave pública SSH del servidor para verificar su identidad. |
 
 El script construye las imágenes de una en una, arranca los contenedores y
-comprueba por HTTPS tanto el frontend como el admin de Django. Las migraciones
-se aplican en el arranque de la API. GitHub Actions vuelve a comprobar la URL
-desde fuera de Azure.
+espera a que API y Redis estén saludables, que el worker siga ejecutándose,
+que el frontend y el admin respondan y que `/ws/` complete el upgrade HTTP
+101. Si alguna comprobación falla, muestra el estado y los logs de los
+servicios. GitHub Actions vuelve a comprobar HTTPS y el proxy WebSocket desde
+fuera de Azure.
 
 También se puede lanzar manualmente desde la pestaña **Actions > CD > Run
 workflow**.
@@ -133,9 +143,25 @@ Comprobaciones:
 
 ```bash
 docker compose ps
-docker compose logs --tail 50 api
+docker compose logs --tail 50 api redis worker
 curl -I https://habitsquad.austriaeast.cloudapp.azure.com
 ```
+
+El estado de `api` y `redis` debe figurar como `healthy`; `worker` debe estar
+`running`. Para comprobar el proxy WebSocket desde la VM, envía un handshake
+HTTP Upgrade:
+
+```bash
+curl --http1.1 --max-time 3 -i \
+  -H 'Connection: Upgrade' \
+  -H 'Upgrade: websocket' \
+  -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+  -H 'Sec-WebSocket-Version: 13' \
+  https://habitsquad.austriaeast.cloudapp.azure.com/ws/escuadrones/1/
+```
+
+La respuesta debe incluir `HTTP/1.1 101 Switching Protocols`. El socket se
+cerrará después porque esta comprobación no envía un JWT de usuario.
 
 ## Operación
 
