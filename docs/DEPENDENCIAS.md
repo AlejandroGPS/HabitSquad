@@ -82,10 +82,13 @@ transitivas que resolvió pip:
 | click | 8.5.0 | Dependencia de uvicorn. |
 | h11 | 0.16.0 | Dependencia de uvicorn. |
 
-Web Push se incorporará cuando se trabaje esa fase, con sus versiones y cambios
-documentados. Channels usa `channels-redis` para distribuir eventos entre
-procesos; Django Q2 usa Redis como broker. Cloudinary ya está incluido para el
-almacenamiento de las fotos de prueba diaria.
+El contrato de alertas Web Push está en [ALERTAS.md](ALERTAS.md) (suscripción,
+VAPID y criterio de envío con Q2). La librería de envío push y sus versiones
+se fijarán al implementar el backend de alertas. Channels usa
+`channels-redis` para distribuir eventos entre procesos; Django Q2 usa Redis
+como broker (cierre diario y, cuando exista, el envío programado de avisos).
+Cloudinary ya está incluido para el almacenamiento de las fotos de prueba
+diaria.
 
 ### Instalación local
 

@@ -137,6 +137,17 @@ El contrato completo está en
 [docs/PERFIL_USUARIO.md](../docs/PERFIL_USUARIO.md). La implementación vive en
 `usuarios/perfil/` (`api/`, `services/`, `tests/`).
 
+## API de alertas
+
+Los endpoints bajo `/api/alertas/` documentan la suscripción Web Push y la
+clave pública VAPID (stubs OpenAPI hasta la implementación completa):
+
+- `GET /api/alertas/vapid-public-key/`
+- `POST /api/alertas/suscripcion/` y `DELETE /api/alertas/suscripcion/`
+
+La hora de aviso sigue en el perfil (`hora_aviso`). El contrato está en
+[docs/ALERTAS.md](../docs/ALERTAS.md). El código vive en `alertas/api/`.
+
 ## Organización por funcionalidad
 
 Cada funcionalidad de autenticación separa el transporte HTTP, la lógica de
