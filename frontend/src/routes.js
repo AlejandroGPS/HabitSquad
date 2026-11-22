@@ -1,6 +1,7 @@
 import {
   ApiError,
   confirmEmailVerification,
+  confirmProfileEmail,
   confirmPasswordReset,
   createSquad,
   joinSquad,
@@ -24,6 +25,9 @@ import { selectorEscuadronScreen } from './views/selectorEscuadron.js'
 import { unirseEscuadronScreen } from './views/unirseEscuadron.js'
 import { verificarCorreoScreen } from './views/verificarCorreo.js'
 import { votarPruebaScreen } from './views/votarPrueba.js'
+import { perfilScreen } from './views/perfil.js'
+import { editarPerfilScreen } from './views/editarPerfil.js'
+import { confirmarCorreoPerfilScreen } from './views/confirmarCorreoPerfil.js'
 
 const backHome = [{ href: '/', label: 'Volver al inicio' }]
 
@@ -134,6 +138,34 @@ function selectorEscuadron(navigate) {
 }
 
 export const routes = [
+  {
+    path: '/perfil',
+    title: 'Mi perfil',
+    private: true,
+    view: ({ navigate } = {}) => perfilScreen({ onLogout: async () => { await logout(); navigate?.('/login') } }),
+  },
+  {
+    path: '/perfil/editar',
+    title: 'Editar perfil',
+    private: true,
+    view: ({ navigate } = {}) => editarPerfilScreen({ onLogout: async () => { await logout(); navigate?.('/login') } }),
+  },
+  {
+    path: '/perfil/confirmar-email',
+    title: 'Confirmar correo nuevo',
+    view: () => {
+      const params = new URLSearchParams(window.location.search)
+      return confirmarCorreoPerfilScreen({ uid: params.get('uid'), token: params.get('token'), onConfirm: confirmProfileEmail })
+    },
+  },
+  {
+    path: '/perfil/email/confirmar',
+    title: 'Confirmar correo nuevo',
+    view: () => {
+      const params = new URLSearchParams(window.location.search)
+      return confirmarCorreoPerfilScreen({ uid: params.get('uid'), token: params.get('token'), onConfirm: confirmProfileEmail })
+    },
+  },
   {
     path: '/',
     title: 'HabitSquad',

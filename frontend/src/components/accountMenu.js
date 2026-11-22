@@ -17,7 +17,7 @@ function link(href, iconName, text) {
   return node
 }
 
-export function accountMenu({ nombre, onLogout }) {
+export function accountMenu({ nombre, fotoUrl, onLogout }) {
   const root = document.createElement('div')
   root.className = 'relative'
 
@@ -32,6 +32,15 @@ export function accountMenu({ nombre, onLogout }) {
   toggle.setAttribute('aria-expanded', 'false')
   toggle.setAttribute('aria-controls', panelId)
   toggle.textContent = iniciales(nombre)
+  if (fotoUrl) {
+    const photo = document.createElement('img')
+    photo.src = fotoUrl
+    photo.alt = ''
+    photo.className = 'h-full w-full rounded-full object-cover'
+    photo.referrerPolicy = 'no-referrer'
+    photo.addEventListener('error', () => toggle.replaceChildren(iniciales(nombre)), { once: true })
+    toggle.replaceChildren(photo)
+  }
 
   const panel = document.createElement('div')
   panel.id = panelId
@@ -64,6 +73,7 @@ export function accountMenu({ nombre, onLogout }) {
 
   panel.append(
     heading,
+    link('/perfil', 'users', 'Mi perfil'),
     link('/escuadrones/nuevo', 'plus', 'Crear un escuadrón'),
     link('/escuadrones/unirse', 'join', 'Unirme a un escuadrón'),
     separator,
