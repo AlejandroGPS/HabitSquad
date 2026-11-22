@@ -15,6 +15,26 @@ SIGNED_FOTO_URL = (
     "https://res.cloudinary.com/demo/image/private/s--firma--/v1/perfiles/abc.jpg"
 )
 
+SQUAD_PANEL_KEYS = {
+    "id",
+    "nombre",
+    "codigo_invitacion",
+    "creador_id",
+    "miembros",
+    "racha",
+}
+
+MEMBER_PANEL_KEYS = {
+    "usuario_id",
+    "es_administrador",
+    "es_usuario",
+    "nickname",
+    "foto_url",
+    "habito",
+    "prueba_hoy",
+    "semana",
+}
+
 
 @pytest.fixture
 def api_client():
@@ -78,6 +98,10 @@ def authenticated_client(api_client, user):
     return api_client
 
 
+def members_by_usuario_id(payload):
+    return {item["usuario_id"]: item for item in payload["miembros"]}
+
+
 @pytest.mark.django_db
 def test_squad_detail_requires_authentication(api_client, squad):
     response = api_client.get(detail_url(squad))
@@ -103,7 +127,7 @@ def test_squad_detail_rejects_unknown_squad(api_client, member):
 
 
 @pytest.mark.django_db
-def test_squad_detail_includes_each_members_habit_or_null(
+def test_squad_detail_panel_happy_path_includes_nicknames(
     api_client,
     creator,
     member,
@@ -125,57 +149,44 @@ def test_squad_detail_includes_each_members_habit_or_null(
         habito=habit, fecha=today, cloudinary_public_id="pruebas/hoy"
     )
 
-    response = authenticated_client(api_client, creator).get(detail_url(squad))
+    response = authenticated_client(api_client, member).get(detail_url(squad))
 
     assert response.status_code == 200
-    assert set(response.data) == {
-        "id",
-        "nombre",
-        "codigo_invitacion",
-        "creador_id",
-        "miembros",
-        "racha",
-    }
+    assert set(response.data) == SQUAD_PANEL_KEYS
     assert response.data["id"] == squad.pk
     assert response.data["nombre"] == "Madrugadores"
     assert response.data["codigo_invitacion"] == "X8K9QL"
     assert response.data["creador_id"] == creator.pk
     assert isinstance(response.data["racha"], int)
-    members_by_id = {item["usuario_id"]: item for item in response.data["miembros"]}
-    expected_member_keys = {
-        "usuario_id",
-        "es_administrador",
-        "es_usuario",
-        "nickname",
-        "foto_url",
-        "habito",
-        "prueba_hoy",
-        "semana",
-    }
-    assert set(members_by_id[creator.pk]) == expected_member_keys
-    assert set(members_by_id[member.pk]) == expected_member_keys
-    assert "nombre" not in members_by_id[creator.pk]
-    assert members_by_id[creator.pk]["nickname"] == "CreadorHero"
-    assert members_by_id[member.pk]["nickname"] == "MiembroPro"
-    assert members_by_id[creator.pk]["foto_url"] is None
-    assert members_by_id[member.pk]["foto_url"] is None
-    assert members_by_id[creator.pk]["es_administrador"] is True
-    assert members_by_id[member.pk]["es_administrador"] is False
-    assert members_by_id[member.pk]["habito"]["id"] == habit.pk
-    assert members_by_id[member.pk]["habito"]["texto_personalizado"] == (
-        "Leer 20 páginas"
-    )
-    assert members_by_id[creator.pk]["habito"] is None
-    assert members_by_id[creator.pk]["es_usuario"] is True
-    assert members_by_id[creator.pk]["prueba_hoy"] is None
-    assert members_by_id[member.pk]["es_usuario"] is False
-    assert members_by_id[member.pk]["prueba_hoy"] == {
+
+    by_id = members_by_usuario_id(response.data)
+    assert set(by_id) == {creator.pk, member.pk}
+    assert set(by_id[creator.pk]) == MEMBER_PANEL_KEYS
+    assert set(by_id[member.pk]) == MEMBER_PANEL_KEYS
+    assert "nombre" not in by_id[creator.pk]
+    assert "nombre" not in by_id[member.pk]
+
+    assert by_id[creator.pk]["nickname"] == "CreadorHero"
+    assert by_id[member.pk]["nickname"] == "MiembroPro"
+    assert by_id[creator.pk]["foto_url"] is None
+    assert by_id[member.pk]["foto_url"] is None
+    assert by_id[creator.pk]["es_administrador"] is True
+    assert by_id[member.pk]["es_administrador"] is False
+    assert by_id[creator.pk]["es_usuario"] is False
+    assert by_id[member.pk]["es_usuario"] is True
+
+    assert by_id[creator.pk]["habito"] is None
+    assert by_id[member.pk]["habito"]["id"] == habit.pk
+    assert by_id[member.pk]["habito"]["opcion"] == HabitoDiario.Opcion.OTRO
+    assert by_id[member.pk]["habito"]["texto_personalizado"] == "Leer 20 páginas"
+    assert by_id[creator.pk]["prueba_hoy"] is None
+    assert by_id[member.pk]["prueba_hoy"] == {
         "id": proof.pk,
         "estado": "pendiente",
     }
-    assert len(members_by_id[creator.pk]["semana"]) == 7
-    assert len(members_by_id[member.pk]["semana"]) == 7
-    assert members_by_id[member.pk]["semana"][today.weekday()] == {
+    assert len(by_id[creator.pk]["semana"]) == 7
+    assert len(by_id[member.pk]["semana"]) == 7
+    assert by_id[member.pk]["semana"][today.weekday()] == {
         "fecha": today.isoformat(),
         "estado": "pendiente",
     }
@@ -193,10 +204,10 @@ def test_squad_detail_foto_url_null_or_signed(api_client, creator, member, squad
         response = authenticated_client(api_client, creator).get(detail_url(squad))
 
     assert response.status_code == 200
-    members_by_id = {item["usuario_id"]: item for item in response.data["miembros"]}
-    assert members_by_id[creator.pk]["foto_url"] is None
-    assert members_by_id[member.pk]["foto_url"] == SIGNED_FOTO_URL
-    assert "foto_perfil_public_id" not in members_by_id[member.pk]
+    by_id = members_by_usuario_id(response.data)
+    assert by_id[creator.pk]["foto_url"] is None
+    assert by_id[member.pk]["foto_url"] == SIGNED_FOTO_URL
+    assert "foto_perfil_public_id" not in by_id[member.pk]
     assert "perfiles/mock" not in str(response.data)
     build_url.assert_called_once_with("perfiles/mock")
 
