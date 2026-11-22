@@ -41,6 +41,7 @@ describe('perfil conectado', () => {
   it('protege perfil y edición; la confirmación es pública', () => {
     for (const path of ['/perfil', '/perfil/editar']) expect(guard(routes.find((route) => route.path === path))).toContain('/login')
     expect(guard(routes.find((route) => route.path === '/perfil/email/confirmar'))).toBeNull()
+    expect(guard(routes.find((route) => route.path === '/perfil/confirmar-email'))).toBeNull()
   })
   it('muestra identidad real y hábitos sin inventar estadísticas', async () => {
     api.listSquads.mockResolvedValue([{ id: 7, nombre: 'Lectores' }])

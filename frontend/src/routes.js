@@ -151,6 +151,14 @@ export const routes = [
     view: ({ navigate } = {}) => editarPerfilScreen({ onLogout: async () => { await logout(); navigate?.('/login') } }),
   },
   {
+    path: '/perfil/confirmar-email',
+    title: 'Confirmar correo nuevo',
+    view: () => {
+      const params = new URLSearchParams(window.location.search)
+      return confirmarCorreoPerfilScreen({ uid: params.get('uid'), token: params.get('token'), onConfirm: confirmProfileEmail })
+    },
+  },
+  {
     path: '/perfil/email/confirmar',
     title: 'Confirmar correo nuevo',
     view: () => {

@@ -1,7 +1,7 @@
 # Perfil de usuario: frontend
 
-Implementación en `feature/perfil-usuario`, basada en
-`origin/feature/perfil-usuario-backend` (`fd1fb84`). Utiliza el contrato de
+Implementación en `feature/perfil-usuario`, con el backend de
+`origin/main` (`f488700`) integrado. Utiliza el contrato de
 [PERFIL_USUARIO.md](PERFIL_USUARIO.md) y las pantallas Perfil y Editar perfil
 de la propuesta de diseño del sprint 3.
 
@@ -10,9 +10,9 @@ de la propuesta de diseño del sprint 3.
 - El menú de cuenta, tanto en el selector como en el panel, incluye **Mi perfil**.
 - `/perfil`: identidad, ajustes de cuenta y hábitos de los escuadrones.
 - `/perfil/editar`: foto, nickname, correo, contraseña y hora del aviso.
-- `/perfil/email/confirmar?uid=...&token=...`: confirmación pública del correo
-  nuevo. El backend debe construir el enlace del correo con esta ruta del
-  frontend. No utiliza `/verify-email`, que verifica el registro inicial.
+- `/perfil/confirmar-email?uid=...&token=...`: confirmación pública del correo
+  nuevo, compatible con el enlace que genera el backend. También se conserva
+  `/perfil/email/confirmar` como alias. `/verify-email` verifica el registro inicial.
 - Perfil y edición requieren sesión; el router conserva el destino al pedir login.
 
 Con `npm run dev`, `/perfil-preview.html` permite revisar las pantallas con
@@ -39,14 +39,21 @@ caducada. No guarda el perfil ni las URLs temporales de las fotos en localStorag
 - Los errores 400 se muestran junto a sus campos. Los errores de conexión
   conservan los valores editados; se puede reintentar la carga.
 
-## Dependencias pendientes del backend
+## Estado de la integración
 
-La rama base contiene documentación OpenAPI y stubs: los seis endpoints de
-perfil responden **501** incluso autenticado. Los tests del propio backend
-comprueban ese comportamiento. Por eso esta entrega conecta el frontend al
-contrato, pero no permite todavía persistir cambios de perfil con ese backend.
-La carga muestra un mensaje de indisponibilidad y Reintentar, sin datos ficticios
-ni formularios con valores supuestos.
+El backend de main ya implementa los seis endpoints; no son stubs 501.
+Requiere aplicar `python manage.py migrate` para incorporar los campos de perfil
+de la migración `usuarios.0004_customuser_perfil_fields`.
+
+Comprobado el 22 de noviembre de 2026 mediante HTTP contra Django y las funciones
+reales de `frontend/src/api.js`, con una base temporal, cuenta ficticia y correo
+en memoria: login, consulta, guardado persistente de nickname y hora, validación,
+renovación JWT, solicitud y confirmación de correo usando el enlace generado,
+cambio de contraseña, acceso con la contraseña nueva y cierre de sesión.
+
+La foto válida necesita credenciales de Cloudinary. Sin ellas no se ha probado
+la subida al servicio externo; sí la petición multipart y el rechazo de formato
+no permitido por HTTP. La suite del backend cubre el éxito con Cloudinary simulado.
 
 El contrato no proporciona:
 
@@ -79,7 +86,7 @@ autenticación, renovación JWT y confirmación pública. Los tests de
 `src/views/perfil.test.js` cubren carga, 501 y reintento, hábitos, validación,
 guardado explícito, correo pendiente, contraseña y foto.
 
-Para la prueba manual con una implementación funcional del backend:
+Para la prueba manual:
 
 1. Iniciar backend y frontend según sus README; entrar y abrir Mi perfil.
 2. Guardar nombre, foto y hora por separado; recargar y comprobar persistencia.
