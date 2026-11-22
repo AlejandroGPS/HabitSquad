@@ -624,6 +624,7 @@ No hay una carpeta de ADR formales; las decisiones están registradas en `docs/`
 
 - **WebSocket del panel:** `backend/escuadrones/tiempo_real/consumers.py` acepta conexiones en `ws/escuadrones/{id}/`; el primer mensaje JSON debe llevar `tipo: autenticar` y el access JWT en `access`. Solo miembros activos pueden suscribirse. Los eventos se distribuyen por Redis.
 - **Cierre programado:** `backend/habitos/validacion/tasks.py` cierra jornadas pendientes anteriores al día local actual. Django Q2 lo programa a medianoche en `Europe/Madrid`; Compose arranca su worker.
+- **Avisos Web Push:** `backend/alertas/tasks.py` evalúa cada minuto; `programar_alertas` crea el horario idempotente junto a `programar_cierre_diario` en el worker.
 - **Autenticación completa:** registro, verificación de email, login, refresh con rotación, logout y recuperación de contraseña.
   - Rutas: `backend/autenticacion/*/api/urls.py`.
   - Lógica: `backend/autenticacion/*/services/`.

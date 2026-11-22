@@ -145,10 +145,10 @@ clave pública VAPID:
 - `GET /api/alertas/vapid-public-key/` (`200` / `503` si falta la clave)
 - `POST /api/alertas/suscripcion/` y `DELETE /api/alertas/suscripcion/` (JWT)
 
-El criterio de envío y `pywebpush` están en `alertas/services/`; la tarea Q2
-de programación sigue pendiente. La hora de aviso está en el perfil
-(`hora_aviso`). Contrato: [docs/ALERTAS.md](../docs/ALERTAS.md). Código en
-`alertas/` (`api/`, `services/`, `models/`).
+El criterio de envío y `pywebpush` están en `alertas/services/`. El worker
+Q2 programa `programar_alertas` (cada minuto) junto al cierre diario. La hora
+de aviso está en el perfil (`hora_aviso`). Contrato:
+[docs/ALERTAS.md](../docs/ALERTAS.md). Código en `alertas/`.
 
 ## Organización por funcionalidad
 

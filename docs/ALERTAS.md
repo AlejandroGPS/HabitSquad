@@ -257,4 +257,6 @@ Si falta la clave pública, `GET /api/alertas/vapid-public-key/` responde
    documento solo cubre la API y el criterio de envío.
 4. El worker Q2 de alertas reutiliza la infra documentada en
    [SINCRONIZACION_TIEMPO_REAL.md](SINCRONIZACION_TIEMPO_REAL.md) y
-   [DESPLIEGUE.md](DESPLIEGUE.md); no exige Channels ni WebSockets.
+   [DESPLIEGUE.md](DESPLIEGUE.md); no exige Channels ni WebSockets. Al
+   arrancar, el worker ejecuta `programar_alertas` (horario cada minuto,
+   idempotente) junto a `programar_cierre_diario`.
