@@ -2,6 +2,13 @@ from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
 
+def _campo_no_vacio(valor: str, mensaje: str) -> str:
+    limpio = valor.strip() if isinstance(valor, str) else valor
+    if not limpio:
+        raise serializers.ValidationError(mensaje)
+    return limpio
+
+
 @extend_schema_serializer(component_name="VapidPublicKey")
 class VapidPublicKeySerializer(serializers.Serializer):
     public_key = serializers.CharField(
@@ -18,6 +25,12 @@ class SuscripcionKeysSerializer(serializers.Serializer):
         help_text="Secreto de autenticación de la suscripción.",
     )
 
+    def validate_p256dh(self, value):
+        return _campo_no_vacio(value, "Este campo no puede estar vacío.")
+
+    def validate_auth(self, value):
+        return _campo_no_vacio(value, "Este campo no puede estar vacío.")
+
 
 @extend_schema_serializer(component_name="SuscripcionCreate")
 class SuscripcionCreateSerializer(serializers.Serializer):
@@ -25,6 +38,9 @@ class SuscripcionCreateSerializer(serializers.Serializer):
         help_text="URL del servicio push; tras strip no vacía.",
     )
     keys = SuscripcionKeysSerializer()
+
+    def validate_endpoint(self, value):
+        return _campo_no_vacio(value, "Este campo no puede estar vacío.")
 
 
 @extend_schema_serializer(component_name="SuscripcionResponse")
@@ -40,6 +56,9 @@ class SuscripcionDeleteSerializer(serializers.Serializer):
     endpoint = serializers.URLField(
         help_text="Endpoint de la suscripción a eliminar.",
     )
+
+    def validate_endpoint(self, value):
+        return _campo_no_vacio(value, "Este campo no puede estar vacío.")
 
 
 @extend_schema_serializer(component_name="ErrorValidacionAlertas")

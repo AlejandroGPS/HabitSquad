@@ -5,6 +5,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from alertas.services import (
+    VapidNoConfiguradoError,
+    eliminar_suscripcion,
+    obtener_clave_publica_vapid,
+    registrar_suscripcion,
+)
+
 from .serializers import (
     ErrorDetalleAlertasSerializer,
     ErrorValidacionAlertasSerializer,
@@ -15,7 +22,6 @@ from .serializers import (
 )
 
 _CONTRATO = "Contrato: docs/ALERTAS.md."
-_PENDIENTE = "Implementación pendiente: este stub solo documenta el contrato OpenAPI."
 
 
 class VapidPublicKeyView(APIView):
@@ -49,10 +55,14 @@ class VapidPublicKeyView(APIView):
         ],
     )
     def get(self, request, *args, **kwargs):
-        return Response(
-            {"detail": _PENDIENTE},
-            status=status.HTTP_501_NOT_IMPLEMENTED,
-        )
+        try:
+            public_key = obtener_clave_publica_vapid()
+        except VapidNoConfiguradoError as error:
+            return Response(
+                {"detail": str(error)},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        return Response({"public_key": public_key}, status=status.HTTP_200_OK)
 
 
 class SuscripcionView(APIView):
@@ -106,9 +116,19 @@ class SuscripcionView(APIView):
         ],
     )
     def post(self, request, *args, **kwargs):
+        serializer = SuscripcionCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        suscripcion, creado = registrar_suscripcion(
+            usuario=request.user,
+            endpoint=data["endpoint"],
+            p256dh=data["keys"]["p256dh"],
+            auth=data["keys"]["auth"],
+        )
+        status_code = status.HTTP_201_CREATED if creado else status.HTTP_200_OK
         return Response(
-            {"detail": _PENDIENTE},
-            status=status.HTTP_501_NOT_IMPLEMENTED,
+            {"endpoint": suscripcion.endpoint, "creado": creado},
+            status=status_code,
         )
 
     @extend_schema(
@@ -135,7 +155,10 @@ class SuscripcionView(APIView):
         ),
     )
     def delete(self, request, *args, **kwargs):
-        return Response(
-            {"detail": _PENDIENTE},
-            status=status.HTTP_501_NOT_IMPLEMENTED,
+        serializer = SuscripcionDeleteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        eliminar_suscripcion(
+            usuario=request.user,
+            endpoint=serializer.validated_data["endpoint"],
         )
+        return Response(status=status.HTTP_204_NO_CONTENT)
