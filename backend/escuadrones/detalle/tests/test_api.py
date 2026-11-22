@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from django.urls import reverse
@@ -9,6 +10,10 @@ from rest_framework_simplejwt.tokens import AccessToken
 from escuadrones.models import Escuadron, Membresia
 from habitos.models import HabitoDiario, RegistroDiario
 from usuarios.models import CustomUser
+
+SIGNED_FOTO_URL = (
+    "https://res.cloudinary.com/demo/image/private/s--firma--/v1/perfiles/abc.jpg"
+)
 
 
 @pytest.fixture
@@ -21,6 +26,7 @@ def creator(db):
     return CustomUser.objects.create_user(
         email="creador@example.com",
         password="S0mething!Secure-497",
+        nickname="CreadorHero",
     )
 
 
@@ -29,6 +35,7 @@ def member(db):
     return CustomUser.objects.create_user(
         email="miembro@example.com",
         password="S0mething!Secure-497",
+        nickname="MiembroPro",
     )
 
 
@@ -37,6 +44,7 @@ def outsider(db):
     return CustomUser.objects.create_user(
         email="externo@example.com",
         password="S0mething!Secure-497",
+        nickname="ExternoUser",
     )
 
 
@@ -128,7 +136,31 @@ def test_squad_detail_includes_each_members_habit_or_null(
         "miembros",
         "racha",
     }
+    assert response.data["id"] == squad.pk
+    assert response.data["nombre"] == "Madrugadores"
+    assert response.data["codigo_invitacion"] == "X8K9QL"
+    assert response.data["creador_id"] == creator.pk
+    assert isinstance(response.data["racha"], int)
     members_by_id = {item["usuario_id"]: item for item in response.data["miembros"]}
+    expected_member_keys = {
+        "usuario_id",
+        "es_administrador",
+        "es_usuario",
+        "nickname",
+        "foto_url",
+        "habito",
+        "prueba_hoy",
+        "semana",
+    }
+    assert set(members_by_id[creator.pk]) == expected_member_keys
+    assert set(members_by_id[member.pk]) == expected_member_keys
+    assert "nombre" not in members_by_id[creator.pk]
+    assert members_by_id[creator.pk]["nickname"] == "CreadorHero"
+    assert members_by_id[member.pk]["nickname"] == "MiembroPro"
+    assert members_by_id[creator.pk]["foto_url"] is None
+    assert members_by_id[member.pk]["foto_url"] is None
+    assert members_by_id[creator.pk]["es_administrador"] is True
+    assert members_by_id[member.pk]["es_administrador"] is False
     assert members_by_id[member.pk]["habito"]["id"] == habit.pk
     assert members_by_id[member.pk]["habito"]["texto_personalizado"] == (
         "Leer 20 páginas"
@@ -141,6 +173,32 @@ def test_squad_detail_includes_each_members_habit_or_null(
         "id": proof.pk,
         "estado": "pendiente",
     }
+    assert len(members_by_id[creator.pk]["semana"]) == 7
+    assert len(members_by_id[member.pk]["semana"]) == 7
+    assert members_by_id[member.pk]["semana"][today.weekday()] == {
+        "fecha": today.isoformat(),
+        "estado": "pendiente",
+    }
+
+
+@pytest.mark.django_db
+def test_squad_detail_foto_url_null_or_signed(api_client, creator, member, squad):
+    member.foto_perfil_public_id = "perfiles/mock"
+    member.save(update_fields=["foto_perfil_public_id"])
+
+    with patch(
+        "escuadrones.detalle.api.serializers.build_signed_foto_url",
+        return_value=SIGNED_FOTO_URL,
+    ) as build_url:
+        response = authenticated_client(api_client, creator).get(detail_url(squad))
+
+    assert response.status_code == 200
+    members_by_id = {item["usuario_id"]: item for item in response.data["miembros"]}
+    assert members_by_id[creator.pk]["foto_url"] is None
+    assert members_by_id[member.pk]["foto_url"] == SIGNED_FOTO_URL
+    assert "foto_perfil_public_id" not in members_by_id[member.pk]
+    assert "perfiles/mock" not in str(response.data)
+    build_url.assert_called_once_with("perfiles/mock")
 
 
 @pytest.mark.django_db
