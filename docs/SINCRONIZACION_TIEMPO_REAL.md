@@ -155,19 +155,13 @@ La racha es común a todo el escuadrón, pero se calcula a partir de los estados
 diarios; no hay un contador de racha persistido aparte. Un día cuenta como
 cumplido cuando todos los miembros elegibles para ese día tienen su registro en
 estado `cumplido`. Una membresía empieza a contar desde el día siguiente a su
-alta. En el día actual, que sigue abierto, el valor puede aumentar si todos ya
-cumplieron; si algún registro está `no_cumplido`, la racha calculada pasa a
-cero. En el backend actual, ese aumento se refleja tan pronto como el estado
-diario de hoy pasa a `cumplido`; no espera a las 00:00. Al cambiar la fecha, el
-cierre de las pruebas pendientes de ayer fija el resultado definitivo para la
-secuencia. Si todos cumplieron, el valor que ya pudo aumentar durante el día se
-mantiene; si alguno no alcanzó la mayoría afirmativa, la racha pasa a cero. La
-PBI #10 describe que a las 00:00 el contador pasa de N a N+1; en la
-implementación vigente, el posible paso a N+1 ocurre antes, cuando todos los
-registros del día pasan a `cumplido`, y el cierre de medianoche no vuelve a
-sumar ese día. Por tanto, este momento de actualización no coincide exactamente
-con el criterio de aceptación. El enlace al contrato T48 debe confirmarse para
-cerrar esa diferencia en la documentación contractual.
+alta. La jornada actual no suma ni rompe la racha mientras siga abierta. Al
+cambiar la fecha, el cierre de las pruebas pendientes de ayer fija el resultado
+definitivo: una jornada en que todos cumplieron pasa de N a N+1; si alguien no
+alcanzó la mayoría afirmativa, la racha se reinicia a cero. El valor del detalle
+REST refleja jornadas cerradas y el evento `cierre_diario` avisa a los clientes
+de que deben consultarlo de nuevo. El enlace al contrato T48 debe confirmarse
+para cerrar esa referencia documental.
 
 Al terminar el cierre programado se emite `panel.actualizado` con motivo
 `cierre_diario` para cada escuadrón, incluso si no tenía pruebas pendientes,

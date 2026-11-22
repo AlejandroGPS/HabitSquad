@@ -122,8 +122,7 @@ def test_cierre_de_ayer_incrementa_la_racha_de_n_a_n_mas_uno(escuadron):
     assert racha_antes_del_cierre == 3
     assert cerrados == len(miembros)
     assert all(
-        registro.estado == RegistroDiario.Estado.CUMPLIDO
-        for registro in registros_ayer
+        registro.estado == RegistroDiario.Estado.CUMPLIDO for registro in registros_ayer
     )
     assert resumen(escuadron).racha == 4
     publicar.assert_called_once_with(
@@ -161,25 +160,23 @@ def test_cierre_de_ayer_reinicia_la_racha_si_un_miembro_no_cumplio(escuadron):
 
 
 @pytest.mark.parametrize(
-    ("estados_hoy", "racha"),
+    "estados_hoy",
     [
-        ((CUMPLIDO, CUMPLIDO), 2),
-        ((CUMPLIDO, PENDIENTE), 1),
-        ((CUMPLIDO, None), 1),
-        ((CUMPLIDO, NO_CUMPLIDO), 0),
+        (CUMPLIDO, CUMPLIDO),
+        (CUMPLIDO, PENDIENTE),
+        (CUMPLIDO, None),
+        (CUMPLIDO, NO_CUMPLIDO),
     ],
 )
 @pytest.mark.django_db
-def test_hoy_suma_si_esta_cumplido_y_solo_rompe_con_no_cumplido(
-    escuadron, estados_hoy, racha
-):
+def test_racha_solo_cuenta_jornadas_anteriores_a_hoy(escuadron, estados_hoy):
     miembros = [unir(escuadron, "ana@example.com"), unir(escuadron, "luis@example.com")]
     for membresia, estado in zip(miembros, estados_hoy, strict=True):
         prueba(membresia, hace(1))
         if estado:
             prueba(membresia, HOY, estado)
 
-    assert resumen(escuadron).racha == racha
+    assert resumen(escuadron).racha == 1
 
 
 @pytest.mark.parametrize("estado", [PENDIENTE, NO_CUMPLIDO, None])
@@ -211,7 +208,7 @@ def test_quien_se_une_un_dia_empieza_a_contar_al_siguiente(escuadron):
     assert resumen(escuadron).racha == 2
 
     prueba(nuevo, HOY)
-    assert resumen(escuadron).racha == 3
+    assert resumen(escuadron).racha == 2
 
 
 @pytest.mark.django_db
@@ -231,7 +228,7 @@ def test_la_racha_no_cuenta_dias_en_que_aun_no_habia_miembros(escuadron):
     for dias in range(5):
         prueba(ana, hace(dias))
 
-    assert resumen(escuadron).racha == 2
+    assert resumen(escuadron).racha == 1
 
 
 @pytest.mark.django_db

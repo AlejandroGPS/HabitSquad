@@ -1,5 +1,6 @@
 import asyncio
 import json
+from unittest.mock import AsyncMock
 
 import pytest
 from asgiref.sync import async_to_sync
@@ -13,9 +14,7 @@ from escuadrones.models import Escuadron, Membresia
 from escuadrones.tiempo_real.consumers import SincronizacionEscuadronConsumer
 from usuarios.models import CustomUser
 
-_CAPA_EN_MEMORIA = {
-    "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
-}
+_CAPA_EN_MEMORIA = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 
 
 @pytest.fixture
@@ -101,17 +100,14 @@ def test_miembro_autenticado_recibe_actualizaciones_del_escuadron(
         eventos = []
         for comunicador in comunicadores:
             eventos.append(await comunicador.receive_output(timeout=2))
-            await comunicador.send_input(
-                {"type": "websocket.disconnect", "code": 1000}
-            )
+            await comunicador.send_input({"type": "websocket.disconnect", "code": 1000})
             await comunicador.wait(timeout=2)
         return autenticaciones, eventos
 
     autenticaciones, eventos = async_to_sync(flujo)()
 
     assert all(
-        aceptacion["type"] == "websocket.accept"
-        for aceptacion, _ in autenticaciones
+        aceptacion["type"] == "websocket.accept" for aceptacion, _ in autenticaciones
     )
     assert all(
         json.loads(autenticado["text"])
@@ -251,17 +247,13 @@ def test_websocket_cierra_conexiones_no_autenticadas_por_timeout(
 def test_timeout_no_cierra_una_conexion_ya_autenticada(monkeypatch):
     consumidor = SincronizacionEscuadronConsumer()
     consumidor.usuario = object()
-    cerrado = False
+    cierre = AsyncMock()
 
     async def no_esperar(_segundos):
         return None
 
-    async def registrar_cierre(**_kwargs):
-        nonlocal cerrado
-        cerrado = True
-
     monkeypatch.setattr(asyncio, "sleep", no_esperar)
-    monkeypatch.setattr(consumidor, "close", registrar_cierre)
+    monkeypatch.setattr(consumidor, "close", cierre)
     async_to_sync(consumidor._cerrar_si_no_se_autentica)()
 
-    assert cerrado is False
+    cierre.assert_not_awaited()

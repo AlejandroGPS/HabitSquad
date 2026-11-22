@@ -43,9 +43,7 @@ class SincronizacionEscuadronConsumer(AsyncJsonWebsocketConsumer):
         self.usuario = usuario
         self.timeout_autenticacion.cancel()
         await self.channel_layer.group_add(self.grupo, self.channel_name)
-        await self.send_json(
-            {"tipo": "autenticado", "escuadron_id": self.escuadron_id}
-        )
+        await self.send_json({"tipo": "autenticado", "escuadron_id": self.escuadron_id})
 
     async def panel_actualizado(self, event):
         await self.send_json(event["datos"])

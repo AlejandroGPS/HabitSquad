@@ -39,8 +39,9 @@ class EscuadronDetailView(APIView):
         description=(
             "Devuelve el escuadrón, los hábitos y las pruebas de hoy de sus miembros. "
             "Los miembros que todavía no tienen hábito incluyen «habito: null». "
-            "«racha» cuenta los días seguidos en que todos los miembros cumplieron; "
-            "hoy suma si ya está cumplido. «semana» da el estado de la prueba de "
+            "«racha» cuenta los días cerrados consecutivos en que todos los miembros "
+            "cumplieron; el día actual se incorpora al cambiar la fecha. «semana» "
+            "da el estado de la prueba de "
             "cada miembro de lunes a domingo, o null si no hay prueba ese día."
         ),
     )

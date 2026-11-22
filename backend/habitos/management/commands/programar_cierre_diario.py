@@ -6,7 +6,6 @@ from django_q.models import Schedule
 
 from habitos.validacion.tasks import cerrar_jornadas_pendientes
 
-
 NOMBRE_TAREA = "cerrar_jornadas_pendientes_habitsquad"
 
 
