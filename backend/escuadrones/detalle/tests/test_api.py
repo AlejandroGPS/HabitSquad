@@ -7,6 +7,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
+from escuadrones.detalle.services import lunes_de
 from escuadrones.models import Escuadron, Membresia
 from habitos.models import HabitoDiario, RegistroDiario
 from usuarios.models import CustomUser
@@ -110,6 +111,14 @@ def members_by_usuario_id(payload):
 
 @pytest.mark.django_db
 def test_squad_detail_requires_authentication(api_client, squad):
+    response = api_client.get(detail_url(squad))
+
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_squad_detail_rejects_invalid_token(api_client, squad):
+    api_client.credentials(HTTP_AUTHORIZATION="Bearer token-invalido")
     response = api_client.get(detail_url(squad))
 
     assert response.status_code == 401
@@ -357,8 +366,11 @@ def test_squad_detail_prueba_hoy_matches_registro_estado(
 
 
 @pytest.mark.django_db
-def test_squad_detail_includes_streak_and_week(api_client, creator, member, squad):
+def test_squad_detail_includes_invite_code_streak_and_week(
+    api_client, creator, member, squad
+):
     today = timezone.localdate()
+    monday = lunes_de(today)
     Escuadron.objects.filter(pk=squad.pk).update(
         creado_en=timezone.now() - timedelta(days=10)
     )
@@ -381,11 +393,26 @@ def test_squad_detail_includes_streak_and_week(api_client, creator, member, squa
     response = authenticated_client(api_client, member).get(detail_url(squad))
 
     assert response.status_code == 200
+    assert response.data["codigo_invitacion"] == "X8K9QL"
     assert response.data["racha"] == 2
-    week = response.data["miembros"][0]["semana"]
-    assert len(week) == 7
-    assert week[today.weekday()] == {"fecha": today.isoformat(), "estado": "cumplido"}
-    assert all(day["estado"] is None for day in week[today.weekday() + 1 :])
+
+    expected_fechas = [(monday + timedelta(days=i)).isoformat() for i in range(7)]
+    by_id = members_by_usuario_id(response.data)
+    for user in (creator, member):
+        week = by_id[user.pk]["semana"]
+        assert len(week) == 7
+        assert [day["fecha"] for day in week] == expected_fechas
+        assert set(week[0]) == {"fecha", "estado"}
+        assert week[today.weekday()] == {
+            "fecha": today.isoformat(),
+            "estado": "cumplido",
+        }
+        if today.weekday() > 0:
+            assert week[today.weekday() - 1] == {
+                "fecha": (today - timedelta(days=1)).isoformat(),
+                "estado": "cumplido",
+            }
+        assert all(day["estado"] is None for day in week[today.weekday() + 1 :])
 
 
 def test_squad_detail_is_documented_in_openapi_schema(api_client):
@@ -399,6 +426,10 @@ def test_squad_detail_is_documented_in_openapi_schema(api_client):
     assert set(operation["responses"]) == {"200", "401", "403", "404"}
     assert "docs/HABITOS.md" in operation["description"]
     assert "nickname" in operation["description"].lower()
+    assert "foto" in operation["description"].lower()
+    assert "401" in operation["responses"]
+    assert "403" in operation["responses"]
+    assert "404" in operation["responses"]
 
     schemas = response.data["components"]["schemas"]
     member_schema = schemas.get("MembresiaConPrueba") or schemas.get(
@@ -406,6 +437,19 @@ def test_squad_detail_is_documented_in_openapi_schema(api_client):
     )
     assert member_schema is not None
     props = member_schema["properties"]
+    assert set(props) >= MEMBER_PANEL_KEYS
     assert "nickname" in props
     assert "foto_url" in props
+    assert props["foto_url"].get("nullable") is True
     assert "nombre" not in props
+    assert "foto_perfil_public_id" not in props
+    assert "hora_aviso" not in props
+
+    squad_schema = schemas.get("EscuadronDetalle") or schemas.get(
+        "EscuadronDetalleSerializer"
+    )
+    assert squad_schema is not None
+    squad_props = squad_schema["properties"]
+    assert set(squad_props) >= SQUAD_PANEL_KEYS
+    assert "codigo_invitacion" in squad_props
+    assert "racha" in squad_props
