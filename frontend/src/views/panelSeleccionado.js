@@ -33,7 +33,8 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
   retry.hidden = true
   const huecos = panelCargando()
   const body = element('div', REJILLA, back, status, error, retry)
-  root.append(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body }))
+  const cuenta = accountMenu({ onLogout: async () => { await logout(); navigate('/login') } })
+  root.append(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body, trailing: cuenta }))
   let loading = false
   async function load() {
     if (loading) return
@@ -81,8 +82,10 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
         tarjeta.style.setProperty('--orden', String(orden))
       }
       const content = element('div', REJILLA, back, ...tarjetas)
+      const focus = cuenta.contains(document.activeElement) ? document.activeElement : null
       root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Escuadrón', title: squad.nombre, body: content,
-        trailing: [rachaChip({ racha }), accountMenu({ onLogout: async () => { await logout(); navigate('/login') } })] }))
+        trailing: [rachaChip({ racha }), cuenta] }))
+      focus?.focus()
       for (const link of root.querySelectorAll('a[href="/habito"]')) {
         link.href = `/habito?escuadron=${id}`
       }
