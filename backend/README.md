@@ -148,7 +148,8 @@ clave pública VAPID:
 El criterio de envío y `pywebpush` están en `alertas/services/`. El worker
 Q2 programa `programar_alertas` (cada minuto) junto al cierre diario. La hora
 de aviso está en el perfil (`hora_aviso`). Contrato:
-[docs/ALERTAS.md](../docs/ALERTAS.md). Código en `alertas/`.
+[docs/ALERTAS.md](../docs/ALERTAS.md). Código y tests en `alertas/` (cobertura
+CI al 100 % con el resto de apps del backend).
 
 ## Organización por funcionalidad
 

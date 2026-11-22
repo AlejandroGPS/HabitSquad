@@ -659,7 +659,7 @@ Hechos comprobados en el checkout actual:
    - `docs/SINCRONIZACION_TIEMPO_REAL.md` describe el contrato WebSocket, la autenticación por JWT, los eventos y la tarea de cierre diario.
    - El cliente debe volver a consultar el detalle REST después del evento `panel.actualizado`; no se envía el detalle completo por WebSocket.
    - `ResumenEscuadron.racha` cuenta jornadas cerradas anteriores a la fecha local actual; la jornada de hoy se incorpora al cambiar la fecha. El enlace de T48 está pendiente de confirmar.
-   - Alertas: suscripción/VAPID en `backend/alertas/` y `docs/ALERTAS.md`; el envío Q2 reutiliza el worker. Falta el frontend (permisos del navegador / service worker) y la batería pytest amplia (T56).
+   - Alertas: suscripción/VAPID en `backend/alertas/` y `docs/ALERTAS.md`; el envío Q2 reutiliza el worker; pytest de `alertas` está en CI con cobertura 100 %. Falta el frontend (permisos del navegador / service worker).
 
 3. **El límite de 5 miembros por escuadrón solo se muestra en el frontend.**
    - `frontend/src/views/panelSeleccionado.js` calcula `5 - miembros.length` y `miembrosCard` muestra «de 5 miembros».
