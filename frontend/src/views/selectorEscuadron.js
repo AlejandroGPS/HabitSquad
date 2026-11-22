@@ -30,7 +30,7 @@ function listaEscuadrones(squads) {
   )
 }
 
-export function selectorEscuadronScreen({ onLogout, loadSquads = listSquads } = {}) {
+export function selectorEscuadronScreen({ onLogout, loadSquads = listSquads, loadProfile } = {}) {
   const bocadillo = element(
     'p',
     'glass speech-bubble rounded-2xl px-4 py-2.5 text-[1rem] font-extrabold text-balance text-ink',
@@ -94,7 +94,7 @@ export function selectorEscuadronScreen({ onLogout, loadSquads = listSquads } = 
     'div',
     'relative isolate flex min-h-dvh flex-col overflow-x-clip font-rounded text-ink antialiased',
     fondo,
-    landingNav({ cuenta: accountMenu({ onLogout }) }),
+    landingNav({ cuenta: accountMenu({ onLogout, loadProfile }) }),
     element('main', 'flex flex-col', seccion),
   )
 }

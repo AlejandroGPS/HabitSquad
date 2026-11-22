@@ -2,6 +2,7 @@ import {
   ApiError,
   confirmEmailVerification,
   confirmProfileEmail,
+  getProfile,
   confirmPasswordReset,
   createSquad,
   joinSquad,
@@ -12,6 +13,7 @@ import {
   requestPasswordReset,
 } from './api.js'
 import { hasSession } from './session.js'
+import { accountMenu } from './components/accountMenu.js'
 import { loginScreen, registroScreen } from './views/acceso.js'
 import { crearEscuadronScreen } from './views/crearEscuadron.js'
 import { habitoDiarioScreen } from './views/habitoDiario.js'
@@ -130,6 +132,7 @@ export function destinoTrasAcceso() {
 
 function selectorEscuadron(navigate) {
   return selectorEscuadronScreen({
+    loadProfile: getProfile,
     onLogout: async () => {
       await logout()
       navigate('/login')
@@ -169,7 +172,16 @@ export const routes = [
   {
     path: '/',
     title: 'HabitSquad',
-    view: ({ navigate } = {}) => presentacionScreen({ navigate }),
+    view: ({ navigate } = {}) => presentacionScreen({
+      navigate,
+      cuenta: hasSession() ? accountMenu({
+        loadProfile: getProfile,
+        onLogout: async () => {
+          await logout()
+          navigate?.('/')
+        },
+      }) : undefined,
+    }),
   },
   {
     path: '/escuadrones/prueba',
