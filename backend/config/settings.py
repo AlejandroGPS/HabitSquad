@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     "usuarios.apps.UsuariosConfig",
     "escuadrones.apps.EscuadronesConfig",
     "habitos.apps.HabitosConfig",
+    "alertas.apps.AlertasConfig",
 ]
 
 MIDDLEWARE = [
@@ -238,3 +239,8 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "API de HabitSquad.",
     "VERSION": "1.0.0",
 }
+
+# Web Push (alertas). Solo la clave pública se expone por API; ver docs/ALERTAS.md.
+VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
+VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
+VAPID_ADMIN_EMAIL = os.environ.get("VAPID_ADMIN_EMAIL", "")

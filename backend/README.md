@@ -140,13 +140,16 @@ El contrato completo está en
 ## API de alertas
 
 Los endpoints bajo `/api/alertas/` documentan la suscripción Web Push y la
-clave pública VAPID (stubs OpenAPI hasta la implementación completa):
+clave pública VAPID (stubs OpenAPI hasta la implementación completa de
+servicios):
 
 - `GET /api/alertas/vapid-public-key/`
 - `POST /api/alertas/suscripcion/` y `DELETE /api/alertas/suscripcion/`
 
-La hora de aviso sigue en el perfil (`hora_aviso`). El contrato está en
-[docs/ALERTAS.md](../docs/ALERTAS.md). El código vive en `alertas/api/`.
+El modelo `SuscripcionPush` y los settings VAPID ya están registrados; el
+envío usará `pywebpush`. La hora de aviso sigue en el perfil (`hora_aviso`).
+El contrato está en [docs/ALERTAS.md](../docs/ALERTAS.md). El código vive en
+`alertas/`.
 
 ## Organización por funcionalidad
 

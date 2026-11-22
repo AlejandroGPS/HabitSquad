@@ -2,7 +2,7 @@
 
 Documento de contexto permanente para agentes de IA (OpenCode, Claude, Codex, etc.) que trabajen en **HabitSquad**.
 
-> Revisado contra el checkout actual el **2026-11-21**. Si algo de este documento no coincide con el código, prevalecen el código y los archivos de configuración; actualiza este documento después de verificar el cambio.
+> Revisado contra el checkout actual el **2026-11-22**. Si algo de este documento no coincide con el código, prevalecen el código y los archivos de configuración; actualiza este documento después de verificar el cambio.
 
 ---
 
@@ -75,6 +75,7 @@ Fuentes principales: `README.md`, `docs/ARQUITECTURA.md`, `backend/README.md`, `
 | Calidad | Ruff 0.17.0 | `backend/ruff.toml` |
 | Servidor producción | uvicorn 0.54.0 sobre ASGI | `backend/requirements-prod.txt`, `backend/docker-entrypoint.sh` |
 | Tiempo real y tareas | Channels 4.3.2, channels-redis 4.3.0, Django Q2 1.11.1, Redis | `backend/requirements.txt`, `backend/config/settings.py` |
+| Web Push | pywebpush 2.5.0 (VAPID; modelo `SuscripcionPush`) | `backend/requirements.txt`, `backend/alertas/`, `docs/ALERTAS.md` |
 | Base de datos | SQLite en desarrollo; PostgreSQL con `psycopg` en producción | `backend/config/settings.py`, `backend/requirements-prod.txt` |
 
 ### Frontend
@@ -94,6 +95,7 @@ Fuentes principales: `README.md`, `docs/ARQUITECTURA.md`, `backend/README.md`, `
 - **Docker Compose** de producción con `db` (PostgreSQL 18.6), `redis`, `api` (Django + uvicorn), `worker` (Django Q2) y `web` (Vite servido por Caddy 2.11.7). `docker-compose.dev.yml` ofrece API, PostgreSQL, Redis y worker local sin Caddy.
 - **Caddy** termina HTTPS, sirve el frontend, hace proxy de `/api/`, `/admin/` y `/ws/` a Django y sirve `/static/`. Ver `Caddyfile`.
 - **Cloudinary** almacena las fotos de prueba como imágenes privadas; la base de datos solo guarda el `public_id`.
+- **VAPID** (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_ADMIN_EMAIL`) para Web Push; la pública se expone por API cuando el endpoint deje de ser stub.
 - **SMTP** para verificación de correo y recuperación de contraseña; en desarrollo el backend de consola es el predeterminado.
 - **GitHub Actions** para CI y CD; despliegue en una VM de Azure descrito en `docs/DESPLIEGUE.md`.
 - **Tiempo real:** Django Channels enruta WebSockets en ASGI; Redis comparte eventos entre la API y el worker. Django Q2 programa el cierre diario. Web Push sigue pendiente.
@@ -113,6 +115,7 @@ El proyecto Django se llama `config` y agrupa cuatro apps de dominio:
 | `backend/autenticacion/` | Registro, login, refresh, logout, recuperación de contraseña y verificación de email. | `autenticacion/urls.py` |
 | `backend/escuadrones/` | Escuadrones, membresías, creación, unión, listado y detalle. | `escuadrones/urls.py`, `escuadrones/models/escuadron.py` |
 | `backend/habitos/` | Hábito diario, registros, fotos de prueba, votos y cierre diario. | `habitos/api/urls.py`, `habitos/models/` |
+| `backend/alertas/` | Suscripciones Web Push, clave VAPID pública y (en curso) envío programado. | `alertas/api/urls.py`, `alertas/models/` |
 
 **Patrón interno dominante:** cada funcionalidad se organiza como una carpeta con:
 
@@ -373,6 +376,7 @@ Variables reconocidas por el backend (`backend/config/settings.py`) y por Compos
 | Email | `EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `EMAIL_TIMEOUT`, `DEFAULT_FROM_EMAIL` |
 | Enlaces del frontend | `EMAIL_VERIFICATION_FRONTEND_URL`, `PASSWORD_RESET_FRONTEND_URL`, `PASSWORD_RESET_TIMEOUT` |
 | Cloudinary | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` |
+| Web Push (VAPID) | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_ADMIN_EMAIL` |
 | PostgreSQL | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT` |
 | Compose/Caddy | `SITE_ADDRESS` |
 
