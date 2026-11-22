@@ -37,7 +37,7 @@ az vm start -g habitsquad-rg -n habitsquad-vm
 | Servicio | Imagen | Función |
 | --- | --- | --- |
 | `db` | `postgres:18.6-alpine` | Base de datos, con los datos en el volumen `postgres-data`. |
-| `redis` | `redis:8.1.0-alpine` | Capa compartida de Channels y broker del worker Q2. |
+| `redis` | `redis:8.10.3-alpine` | Capa compartida de Channels y broker del worker Q2. |
 | `api` | `backend/Dockerfile` | Django sobre uvicorn (ASGI). Al arrancar aplica las migraciones y ejecuta `collectstatic`. |
 | `worker` | `backend/Dockerfile` | Programa el cierre diario y ejecuta el cluster de Django Q2. |
 | `web` | `frontend/Dockerfile` | Build de Vite servido por Caddy, con HTTPS. |
