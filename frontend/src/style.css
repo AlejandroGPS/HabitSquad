@@ -42,6 +42,30 @@
 }
 
 @layer components {
+  .profile-card {
+    min-width: 0;
+    border-radius: 1.75rem;
+    background: white;
+    padding: 1.5rem;
+    box-shadow: 0 6px 16px -10px rgb(60 30 140 / 0.22);
+    scroll-margin-top: 7rem;
+  }
+
+  .profile-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  @media (width >= 64rem) {
+    .profile-grid {
+      grid-template-columns: minmax(15rem, 0.9fr) minmax(0, 2fr);
+      align-items: start;
+    }
+    .profile-identity { grid-column: 1; grid-row: 1; }
+    .profile-account { grid-column: 1; grid-row: 2; }
+    .profile-summary { grid-column: 2; grid-row: 1 / span 3; }
+  }
+
   .access-backdrop {
     background:
       radial-gradient(ellipse 45% 40% at 8% 10%, rgb(255 122 26 / 0.55), transparent 70%),

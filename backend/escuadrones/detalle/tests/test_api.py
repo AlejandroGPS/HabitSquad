@@ -394,7 +394,8 @@ def test_squad_detail_includes_invite_code_streak_and_week(
 
     assert response.status_code == 200
     assert response.data["codigo_invitacion"] == "X8K9QL"
-    assert response.data["racha"] == 2
+    # La racha solo cuenta jornadas anteriores a hoy.
+    assert response.data["racha"] == 1
 
     expected_fechas = [(monday + timedelta(days=i)).isoformat() for i in range(7)]
     by_id = members_by_usuario_id(response.data)

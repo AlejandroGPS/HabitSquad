@@ -45,9 +45,10 @@ class EscuadronDetailView(APIView):
             "Devuelve el escuadrón, nickname y foto de perfil de cada miembro, "
             "sus hábitos y las pruebas de hoy. Los miembros sin hábito incluyen "
             "«habito: null»; sin prueba hoy, «prueba_hoy: null». «racha» cuenta "
-            "los días seguidos en que todos los miembros cumplieron; hoy suma si "
-            "ya está cumplido. «semana» da el estado de la prueba de cada "
-            f"miembro de lunes a domingo, o null si no hay prueba ese día. {_CONTRATO}"
+            "los días cerrados consecutivos en que todos los miembros cumplieron; "
+            "el día actual se incorpora al cambiar la fecha. «semana» da el estado "
+            "de la prueba de cada miembro de lunes a domingo, o null si no hay "
+            f"prueba ese día. {_CONTRATO}"
         ),
         examples=[
             OpenApiExample(

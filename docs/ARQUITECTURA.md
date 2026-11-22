@@ -56,6 +56,10 @@ un hábito diferente en cada escuadrón. La asignación, consulta propia y
 consulta de hábitos del panel están descritas en
 [`docs/HABITOS.md`](HABITOS.md).
 
+La sincronización WebSocket del panel y el cierre de la jornada con Django Q2
+están descritos en
+[`docs/SINCRONIZACION_TIEMPO_REAL.md`](SINCRONIZACION_TIEMPO_REAL.md).
+
 La recuperación de contraseña, la verificación de email, sus endpoints y su
 configuración de correo están descritas en
 [`docs/RECUPERACION_CONTRASENA.md`](RECUPERACION_CONTRASENA.md).

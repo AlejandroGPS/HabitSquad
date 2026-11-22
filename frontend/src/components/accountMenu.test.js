@@ -51,7 +51,7 @@ describe('accountMenu', () => {
     const menu = mount({ nombre: 'Alejandro' })
     const hrefs = [...menu.querySelectorAll('a[data-link]')].map((link) => link.getAttribute('href'))
 
-    expect(hrefs).toEqual(['/escuadrones/nuevo', '/escuadrones/unirse'])
+    expect(hrefs).toEqual(['/perfil', '/escuadrones/nuevo', '/escuadrones/unirse'])
   })
 
   it('cierra el menú al elegir un enlace', () => {
