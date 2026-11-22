@@ -7,7 +7,7 @@ de la propuesta de diseño del sprint 3.
 
 ## Acceso y rutas
 
-- El menú de cuenta, tanto en el selector como en el panel, incluye **Mi perfil**.
+- En el selector, el panel y la edición, **Tu cuenta → Ver perfil** abre `/perfil`.
 - `/perfil`: identidad, ajustes de cuenta y hábitos de los escuadrones.
 - `/perfil/editar`: foto, nickname, correo, contraseña y hora del aviso.
 - `/perfil/confirmar-email?uid=...&token=...`: confirmación pública del correo

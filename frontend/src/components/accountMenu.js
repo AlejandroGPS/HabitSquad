@@ -73,7 +73,7 @@ export function accountMenu({ nombre, fotoUrl, onLogout }) {
 
   panel.append(
     heading,
-    link('/perfil', 'users', 'Mi perfil'),
+    link('/perfil', 'users', 'Ver perfil'),
     link('/escuadrones/nuevo', 'plus', 'Crear un escuadrón'),
     link('/escuadrones/unirse', 'join', 'Unirme a un escuadrón'),
     separator,
