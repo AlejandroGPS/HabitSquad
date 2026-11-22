@@ -40,7 +40,7 @@ def test_vapid_public_key_sin_configurar_devuelve_503(api_client):
     response = api_client.get(reverse("alertas:vapid-public-key"))
 
     assert response.status_code == 503
-    assert "detail" in response.data
+    assert response.data["detail"] == "La clave pública VAPID no está configurada."
 
 
 @override_settings(VAPID_PUBLIC_KEY="  BNcRdsaClavePublicaDePrueba  ")
@@ -94,10 +94,94 @@ def test_registrar_suscripcion_actualiza_200(auth_client, user):
 
 
 @pytest.mark.django_db
+def test_registrar_suscripcion_reasigna_endpoint_de_otro_usuario(auth_client, user):
+    otro = CustomUser.objects.create_user(
+        email="otro-push@example.com",
+        password="S0mething!Secure-497",
+        nickname="OtroPush",
+    )
+    SuscripcionPush.objects.create(
+        usuario=otro,
+        endpoint=ENDPOINT,
+        p256dh="vieja",
+        auth="vieja",
+    )
+
+    response = auth_client.post(
+        reverse("alertas:suscripcion"),
+        PAYLOAD,
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data == {"endpoint": ENDPOINT, "creado": False}
+    suscripcion = SuscripcionPush.objects.get(endpoint=ENDPOINT)
+    assert suscripcion.usuario_id == user.pk
+    assert suscripcion.p256dh == "clave-p256dh"
+
+
+@pytest.mark.django_db
 def test_registrar_suscripcion_body_incompleto_400(auth_client):
     response = auth_client.post(
         reverse("alertas:suscripcion"),
         {"endpoint": ENDPOINT},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "keys" in response.data
+
+
+@pytest.mark.django_db
+def test_registrar_suscripcion_sin_endpoint_400(auth_client):
+    response = auth_client.post(
+        reverse("alertas:suscripcion"),
+        {"keys": {"p256dh": "abc", "auth": "def"}},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "endpoint" in response.data
+
+
+@pytest.mark.django_db
+def test_registrar_suscripcion_endpoint_invalido_400(auth_client):
+    response = auth_client.post(
+        reverse("alertas:suscripcion"),
+        {
+            "endpoint": "no-es-una-url",
+            "keys": {"p256dh": "abc", "auth": "def"},
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "endpoint" in response.data
+
+
+@pytest.mark.django_db
+def test_registrar_suscripcion_keys_vacias_400(auth_client):
+    response = auth_client.post(
+        reverse("alertas:suscripcion"),
+        {
+            "endpoint": ENDPOINT,
+            "keys": {"p256dh": "   ", "auth": "   "},
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "keys" in response.data
+
+
+@pytest.mark.django_db
+def test_registrar_suscripcion_falta_p256dh_400(auth_client):
+    response = auth_client.post(
+        reverse("alertas:suscripcion"),
+        {
+            "endpoint": ENDPOINT,
+            "keys": {"auth": "clave-auth"},
+        },
         format="json",
     )
 
@@ -151,6 +235,18 @@ def test_eliminar_suscripcion_sin_endpoint_400(auth_client):
     response = auth_client.delete(
         reverse("alertas:suscripcion"),
         {},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "endpoint" in response.data
+
+
+@pytest.mark.django_db
+def test_eliminar_suscripcion_endpoint_vacio_400(auth_client):
+    response = auth_client.delete(
+        reverse("alertas:suscripcion"),
+        {"endpoint": "   "},
         format="json",
     )
 

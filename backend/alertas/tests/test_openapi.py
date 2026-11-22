@@ -24,6 +24,7 @@ def test_alertas_endpoints_are_included_in_openapi_schema():
     assert post["operationId"] == "registrarSuscripcionWebPush"
     assert set(post["responses"]) >= {"200", "201", "400", "401"}
     assert "docs/ALERTAS.md" in post["description"]
+    assert "requestBody" in post
 
     delete = paths["/api/alertas/suscripcion/"]["delete"]
     assert delete["operationId"] == "eliminarSuscripcionWebPush"
