@@ -14,6 +14,12 @@ from usuarios.models import CustomUser
 SIGNED_FOTO_URL = (
     "https://res.cloudinary.com/demo/image/private/s--firma--/v1/perfiles/abc.jpg"
 )
+SIGNED_FOTO_URL_CREATOR = (
+    "https://res.cloudinary.com/demo/image/private/s--c1--/v1/perfiles/u-creator.jpg"
+)
+SIGNED_FOTO_URL_MEMBER = (
+    "https://res.cloudinary.com/demo/image/private/s--m1--/v1/perfiles/u-member.jpg"
+)
 
 SQUAD_PANEL_KEYS = {
     "id",
@@ -193,23 +199,78 @@ def test_squad_detail_panel_happy_path_includes_nicknames(
 
 
 @pytest.mark.django_db
-def test_squad_detail_foto_url_null_or_signed(api_client, creator, member, squad):
-    member.foto_perfil_public_id = "perfiles/mock"
+def test_squad_detail_foto_url_null_when_member_has_no_public_id(
+    api_client, creator, member, squad
+):
+    with patch(
+        "escuadrones.detalle.api.serializers.build_signed_foto_url",
+        return_value=SIGNED_FOTO_URL,
+    ) as build_url:
+        response = authenticated_client(api_client, member).get(detail_url(squad))
+
+    assert response.status_code == 200
+    by_id = members_by_usuario_id(response.data)
+    assert by_id[creator.pk]["foto_url"] is None
+    assert by_id[member.pk]["foto_url"] is None
+    assert "foto_perfil_public_id" not in by_id[creator.pk]
+    assert "foto_perfil_public_id" not in by_id[member.pk]
+    build_url.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_squad_detail_foto_url_null_or_signed_per_member(
+    api_client, creator, member, squad
+):
+    member.foto_perfil_public_id = "perfiles/miembro"
     member.save(update_fields=["foto_perfil_public_id"])
 
     with patch(
         "escuadrones.detalle.api.serializers.build_signed_foto_url",
-        return_value=SIGNED_FOTO_URL,
+        return_value=SIGNED_FOTO_URL_MEMBER,
     ) as build_url:
         response = authenticated_client(api_client, creator).get(detail_url(squad))
 
     assert response.status_code == 200
     by_id = members_by_usuario_id(response.data)
     assert by_id[creator.pk]["foto_url"] is None
-    assert by_id[member.pk]["foto_url"] == SIGNED_FOTO_URL
+    assert by_id[member.pk]["foto_url"] == SIGNED_FOTO_URL_MEMBER
     assert "foto_perfil_public_id" not in by_id[member.pk]
-    assert "perfiles/mock" not in str(response.data)
-    build_url.assert_called_once_with("perfiles/mock")
+    assert "perfiles/miembro" not in str(response.data)
+    build_url.assert_called_once_with("perfiles/miembro")
+
+
+@pytest.mark.django_db
+def test_squad_detail_foto_url_signed_for_each_member_with_public_id(
+    api_client, creator, member, squad
+):
+    creator.foto_perfil_public_id = "perfiles/creador"
+    creator.save(update_fields=["foto_perfil_public_id"])
+    member.foto_perfil_public_id = "perfiles/miembro"
+    member.save(update_fields=["foto_perfil_public_id"])
+
+    def signed_url(public_id):
+        return {
+            "perfiles/creador": SIGNED_FOTO_URL_CREATOR,
+            "perfiles/miembro": SIGNED_FOTO_URL_MEMBER,
+        }[public_id]
+
+    with patch(
+        "escuadrones.detalle.api.serializers.build_signed_foto_url",
+        side_effect=signed_url,
+    ) as build_url:
+        response = authenticated_client(api_client, member).get(detail_url(squad))
+
+    assert response.status_code == 200
+    by_id = members_by_usuario_id(response.data)
+    assert by_id[creator.pk]["foto_url"] == SIGNED_FOTO_URL_CREATOR
+    assert by_id[member.pk]["foto_url"] == SIGNED_FOTO_URL_MEMBER
+    assert "foto_perfil_public_id" not in by_id[creator.pk]
+    assert "foto_perfil_public_id" not in by_id[member.pk]
+    assert "perfiles/creador" not in str(response.data)
+    assert "perfiles/miembro" not in str(response.data)
+    assert build_url.call_count == 2
+    build_url.assert_any_call("perfiles/creador")
+    build_url.assert_any_call("perfiles/miembro")
 
 
 @pytest.mark.django_db
