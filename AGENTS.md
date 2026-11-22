@@ -53,7 +53,7 @@ npm run dev
   - Validación por votos «sí»/«no», mayoría simple y cierre diario mediante comando de gestión.
   - Sincronización del panel por WebSocket autenticado, eventos por Redis y cierre nocturno con Django Q2.
   - Frontend SPA responsive y PWA instalable (manifest y service worker generados en build).
-- **Estado general:** desarrollo activo y funcional en `main`; no es un producto terminado. La sincronización del panel usa Django Channels y Redis; Django Q2 cierra las pruebas pendientes a medianoche de `Europe/Madrid`. Las notificaciones siguen pendientes. Ver sección 10.
+- **Estado general:** desarrollo activo y funcional en `main`; no es un producto terminado. La sincronización del panel usa Django Channels y Redis; Django Q2 cierra las pruebas pendientes a medianoche de `Europe/Madrid` y evalúa avisos Web Push cada minuto. La UI/service worker de notificaciones sigue pendiente en frontend. Ver sección 10.
 
 Fuentes principales: `README.md`, `docs/ARQUITECTURA.md`, `backend/README.md`, `frontend/README.md` y el código de las apps.
 
@@ -95,10 +95,10 @@ Fuentes principales: `README.md`, `docs/ARQUITECTURA.md`, `backend/README.md`, `
 - **Docker Compose** de producción con `db` (PostgreSQL 18.6), `redis`, `api` (Django + uvicorn), `worker` (Django Q2) y `web` (Vite servido por Caddy 2.11.7). `docker-compose.dev.yml` ofrece API, PostgreSQL, Redis y worker local sin Caddy.
 - **Caddy** termina HTTPS, sirve el frontend, hace proxy de `/api/`, `/admin/` y `/ws/` a Django y sirve `/static/`. Ver `Caddyfile`.
 - **Cloudinary** almacena las fotos de prueba como imágenes privadas; la base de datos solo guarda el `public_id`.
-- **VAPID** (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_ADMIN_EMAIL`) para Web Push; la pública se expone por API cuando el endpoint deje de ser stub.
+- **VAPID** (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_ADMIN_EMAIL`) para Web Push; la pública se expone en `GET /api/alertas/vapid-public-key/`.
 - **SMTP** para verificación de correo y recuperación de contraseña; en desarrollo el backend de consola es el predeterminado.
 - **GitHub Actions** para CI y CD; despliegue en una VM de Azure descrito en `docs/DESPLIEGUE.md`.
-- **Tiempo real:** Django Channels enruta WebSockets en ASGI; Redis comparte eventos entre la API y el worker. Django Q2 programa el cierre diario. Web Push sigue pendiente.
+- **Tiempo real y avisos:** Django Channels enruta WebSockets en ASGI; Redis comparte eventos entre la API y el worker. Django Q2 programa el cierre diario y los avisos Web Push (`programar_alertas`).
 
 ---
 
@@ -115,7 +115,7 @@ El proyecto Django se llama `config` y agrupa cuatro apps de dominio:
 | `backend/autenticacion/` | Registro, login, refresh, logout, recuperación de contraseña y verificación de email. | `autenticacion/urls.py` |
 | `backend/escuadrones/` | Escuadrones, membresías, creación, unión, listado y detalle. | `escuadrones/urls.py`, `escuadrones/models/escuadron.py` |
 | `backend/habitos/` | Hábito diario, registros, fotos de prueba, votos y cierre diario. | `habitos/api/urls.py`, `habitos/models/` |
-| `backend/alertas/` | Suscripciones Web Push, clave VAPID pública y (en curso) envío programado. | `alertas/api/urls.py`, `alertas/models/` |
+| `backend/alertas/` | Suscripciones Web Push, clave VAPID pública y envío programado con Q2. | `alertas/api/urls.py`, `alertas/models/`, `alertas/tasks.py` |
 
 **Patrón interno dominante:** cada funcionalidad se organiza como una carpeta con:
 
@@ -218,11 +218,14 @@ Todas las rutas cuelgan de `/api/`. Salvo las marcadas como públicas, requieren
 | `GET /api/escuadrones/{id}/pruebas/{registro_id}/votos/` | Consulta estado de votación. | JWT + pertenencia |
 | `POST /api/escuadrones/{id}/pruebas/{registro_id}/votos/` | Emite voto `"sí"`/`"no"`. | JWT + pertenencia |
 | `WS /ws/escuadrones/{id}/` | Autentica miembros por primer mensaje JSON y envía invalidaciones `panel.actualizado`. | Access JWT + pertenencia |
+| `GET /api/alertas/vapid-public-key/` | Clave pública VAPID para suscribirse a Web Push. | Pública |
+| `POST /api/alertas/suscripcion/` | Registra o actualiza la suscripción Web Push. | JWT |
+| `DELETE /api/alertas/suscripcion/` | Elimina la suscripción Web Push (idempotente). | JWT |
 | `GET /api/schema/`, `GET /api/docs/` | Esquema OpenAPI y Swagger UI. | Públicas |
 
 **Atención:** `GET /api/escuadrones/` y `POST /api/escuadrones/` comparten ruta pero pertenecen a vistas distintas incluidas en `backend/escuadrones/urls.py` (selector y crear). Al añadir rutas, revisa el orden de `include()` y evita colisiones.
 
-Contratos detallados: `docs/REGISTRO.md`, `docs/AUTENTICACION_JWT.md`, `docs/RECUPERACION_CONTRASENA.md`, `docs/CREAR_ESCUADRON.md`, `docs/UNIRSE_ESCUADRON.md`, `docs/HABITOS.md`, `docs/PRUEBA_FOTO.md`, `docs/VALIDACION_HABITO.md`, `docs/SINCRONIZACION_TIEMPO_REAL.md`.
+Contratos detallados: `docs/REGISTRO.md`, `docs/AUTENTICACION_JWT.md`, `docs/RECUPERACION_CONTRASENA.md`, `docs/CREAR_ESCUADRON.md`, `docs/UNIRSE_ESCUADRON.md`, `docs/HABITOS.md`, `docs/PRUEBA_FOTO.md`, `docs/VALIDACION_HABITO.md`, `docs/SINCRONIZACION_TIEMPO_REAL.md`, `docs/ALERTAS.md`.
 
 ### 3.5 Frontend: SPA sin framework
 
@@ -652,10 +655,11 @@ Hechos comprobados en el checkout actual:
 1. **El cierre diario está programado con Django Q2.**
    - Compose ejecuta un worker separado que programa el cierre cada día a las 00:00 (`Europe/Madrid`) y procesa fechas pendientes anteriores si hubo una interrupción.
 
-2. **Tiempo real implementado; Web Push sigue pendiente.**
+2. **Tiempo real y backend de Web Push implementados; UI de notificaciones pendiente.**
    - `docs/SINCRONIZACION_TIEMPO_REAL.md` describe el contrato WebSocket, la autenticación por JWT, los eventos y la tarea de cierre diario.
    - El cliente debe volver a consultar el detalle REST después del evento `panel.actualizado`; no se envía el detalle completo por WebSocket.
    - `ResumenEscuadron.racha` cuenta jornadas cerradas anteriores a la fecha local actual; la jornada de hoy se incorpora al cambiar la fecha. El enlace de T48 está pendiente de confirmar.
+   - Alertas: suscripción/VAPID en `backend/alertas/` y `docs/ALERTAS.md`; el envío Q2 reutiliza el worker. Falta el frontend (permisos del navegador / service worker) y la batería pytest amplia (T56).
 
 3. **El límite de 5 miembros por escuadrón solo se muestra en el frontend.**
    - `frontend/src/views/panelSeleccionado.js` calcula `5 - miembros.length` y `miembrosCard` muestra «de 5 miembros».
