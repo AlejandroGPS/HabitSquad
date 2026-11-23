@@ -226,6 +226,11 @@ mediante `conectarEscuadron()` de `frontend/src/tiempoReal.js`:
   animaciones de entrada, solo si cambia algo de lo que se ve, y devuelve el
   foco al mismo control. Si la petición falla, mantiene el panel anterior hasta
   el siguiente aviso.
+- Anima solo lo que ha cambiado (`components/panel/cambios.js`): el número de
+  la racha salta si sube y tiembla si cae, la fila de un miembro que cambia de
+  estado o de hábito se ilumina, un miembro nuevo entra deslizándose y en «Hoy»
+  salta el contador y se vuelve a llenar la barra de quien ha cambiado. Con
+  `prefers-reduced-motion` no se anima nada.
 - Si el servidor cierra con `4401` antes de autenticar (el access dura cinco
   minutos), renueva la sesión con el refresh y vuelve a conectar. Si también
   rechaza el access nuevo, deja de intentarlo; si el refresh ya no vale, la

@@ -163,7 +163,8 @@ El panel del escuadrón se conecta por WebSocket a `/ws/escuadrones/{id}/`
 cuando termina de cargar (`src/tiempoReal.js`). El servidor solo avisa de que
 algo ha cambiado; el panel vuelve a pedir el detalle por REST y repinta la
 racha y los miembros sin recargar la página ni repetir las animaciones de
-entrada. Junto a «← Mis escuadrones» se ve «En directo» mientras la conexión
+entrada. Solo se anima lo que cambia: la racha salta al subir y tiembla al
+caer, y se ilumina la fila del miembro que cambia. Junto a «← Mis escuadrones» se ve «En directo» mientras la conexión
 está activa y «Reconectando…» si se corta. La conexión se cierra al salir del
 panel.
 
