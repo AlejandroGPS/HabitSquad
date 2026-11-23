@@ -358,6 +358,39 @@ describe('panel del escuadrón: sincronización en tiempo real', () => {
     expect(view.querySelector('.hueco')).toBeNull()
   })
 
+  it('anima solo lo que ha cambiado: la racha, la fila de quien cambia, el miembro nuevo y «Hoy»', async () => {
+    const view = mount()
+    await loaded(view)
+    const animados = () => [...view.querySelectorAll('[class*="vivo-"]')]
+    expect(animados()).toEqual([])
+
+    api.getSquad.mockResolvedValue({
+      ...squad,
+      racha: 5,
+      miembros: [
+        squad.miembros[0],
+        { ...squad.miembros[1], prueba_hoy: { id: 21, estado: 'cumplido' } },
+        squad.miembros[2],
+        { usuario_id: 4, nombre: 'Marta', es_usuario: false, habito: null, prueba_hoy: null },
+      ],
+    })
+    avisos.alActualizar(aviso)
+    await vi.waitFor(() => expect(view.textContent).toContain('5días seguidos'))
+
+    expect(view.querySelector('[data-racha]').classList).toContain('vivo-sube')
+    expect(view.querySelector('header').querySelector('.vivo-sube').textContent).toBe('5')
+    expect(view.querySelector('[data-valor]').classList).toContain('vivo-sube')
+    const filas = [...view.querySelectorAll('li')]
+    expect(filas.map((fila) => [...fila.classList].filter((clase) => clase.startsWith('vivo-')))).toEqual([
+      [], ['vivo-destello'], [], ['vivo-llega'],
+    ])
+
+    api.getSquad.mockResolvedValue({ ...squad, racha: 0 })
+    avisos.alActualizar(aviso)
+    await vi.waitFor(() => expect(view.textContent).toContain('0días seguidos'))
+    expect(view.querySelector('[data-racha]').classList).toContain('vivo-cae')
+  })
+
   it('al suscribirse o reconectar vuelve a pedir el panel, pero no lo repinta si no ha cambiado nada visible', async () => {
     const view = mount()
     await loaded(view)

@@ -3,6 +3,7 @@ import { appLayout } from '../components/appLayout.js'
 import { accountMenu } from '../components/accountMenu.js'
 import { element } from '../components/dom.js'
 import {
+  animarCambios,
   cierreCard,
   conexionEnDirecto,
   habitoCard,
@@ -48,6 +49,7 @@ export function panelSeleccionadoScreen({
   let loading = false
   let pendiente = false
   let pintado = null
+  let anterior = null
   let enDirecto = null
 
   // Al repintar se sustituyen los nodos: el foco vuelve al control equivalente del panel nuevo.
@@ -78,8 +80,8 @@ export function panelSeleccionadoScreen({
     observador.observe(document.body, { childList: true, subtree: true })
   }
 
-  // En vivo se repinta sin huecos ni animaciones, y solo si cambia algo de lo que se ve.
-  // Si falla, se mantiene el panel que ya había hasta el siguiente aviso.
+  // En vivo se repinta sin huecos ni animaciones de entrada, solo si cambia algo de lo que se ve,
+  // y se anima únicamente lo que ha cambiado. Si falla, se mantiene el panel que ya había.
   async function load({ enVivo = false } = {}) {
     if (loading) {
       pendiente ||= enVivo
@@ -101,6 +103,7 @@ export function panelSeleccionadoScreen({
       const squad = await api.getSquad(id)
       const ownHabit = await api.getDailyHabit(id)
       const miembros = squad.miembros.map((miembro) => ({
+        id: miembro.usuario_id,
         nombre: miembro.nombre || `Miembro ${miembro.usuario_id}`,
         esUsuario: miembro.es_usuario,
         habito: habitText(miembro.habito),
@@ -116,9 +119,13 @@ export function panelSeleccionadoScreen({
       const momento = ahora()
       const abrirPrueba = ({ pruebaId }) => navigate(`/escuadrones/prueba?escuadron=${id}&registro=${pruebaId}`)
       const pruebaPropia = miembros.find(({ esUsuario }) => esUsuario)?.pruebaId
+      const rachaTarjeta = rachaCard({ racha })
+      const hoy = hoyCard({ miembros })
+      const miembrosTarjeta = miembrosCard({ miembros, onVerFoto: abrirPrueba, onVotar: abrirPrueba })
+      const chip = rachaChip({ racha })
       const tarjetas = [
-        rachaCard({ racha }),
-        hoyCard({ miembros }),
+        rachaTarjeta,
+        hoy,
         cierreCard({ ahora: momento }),
         semanaCard({ miembros, ahora: momento }),
         habitoCard({
@@ -127,7 +134,7 @@ export function panelSeleccionadoScreen({
           onSubirPrueba: () => navigate(`/prueba?escuadron=${id}`),
           onVerPrueba: pruebaPropia ? () => abrirPrueba({ pruebaId: pruebaPropia }) : undefined,
         }),
-        miembrosCard({ miembros, onVerFoto: abrirPrueba, onVotar: abrirPrueba }),
+        miembrosTarjeta,
         invitaCard({ codigo: squad.codigo_invitacion, libres: 5 - squad.miembros.length }),
       ]
       if (!enVivo) {
@@ -135,11 +142,14 @@ export function panelSeleccionadoScreen({
           tarjeta.classList.add('entrada')
           tarjeta.style.setProperty('--orden', String(orden))
         }
+      } else if (anterior) {
+        animarCambios(anterior, { racha, miembros }, { rachaTarjeta, chip, hoy, miembrosTarjeta })
       }
+      anterior = { racha, miembros }
       const devolverFoco = recordarFoco()
       const content = element('div', REJILLA, barra, ...tarjetas)
       root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Escuadrón', title: squad.nombre, body: content,
-        trailing: [rachaChip({ racha }), cuenta] }))
+        trailing: [chip, cuenta] }))
       devolverFoco()
       for (const link of root.querySelectorAll('a[href="/habito"]')) {
         link.href = `/habito?escuadron=${id}`
