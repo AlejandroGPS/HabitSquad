@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, timedelta
 from unittest.mock import patch
 
 import pytest
@@ -232,23 +232,26 @@ def test_la_racha_no_cuenta_dias_en_que_aun_no_habia_miembros(escuadron):
 
 
 @pytest.mark.django_db
-def test_semana_da_el_estado_de_cada_dia_de_lunes_a_domingo(escuadron):
+@pytest.mark.parametrize(
+    "hoy", [date(2026, 11, 23), date(2026, 11, 25)], ids=["lunes", "miercoles"]
+)
+def test_semana_da_el_estado_de_cada_dia_de_lunes_a_domingo(escuadron, hoy):
     ana = unir(escuadron, "ana@example.com")
-    lunes = lunes_de(HOY)
+    lunes = lunes_de(hoy)
     prueba(ana, lunes - timedelta(days=1))
-    prueba(ana, HOY, PENDIENTE)
-    if lunes < HOY:
+    prueba(ana, hoy, PENDIENTE)
+    if lunes < hoy:
         prueba(ana, lunes, NO_CUMPLIDO)
 
-    semana = resumen(escuadron).semana(ana)
+    semana = ResumenEscuadron(escuadron, [ana], hoy=hoy).semana(ana)
 
     assert [dia["fecha"] for dia in semana] == [
         lunes + timedelta(days=indice) for indice in range(7)
     ]
     estados = {dia["fecha"]: dia["estado"] for dia in semana}
-    assert estados[HOY] == PENDIENTE
-    if lunes < HOY:
+    assert estados[hoy] == PENDIENTE
+    if lunes < hoy:
         assert estados[lunes] == NO_CUMPLIDO
     assert all(
-        estado is None for fecha, estado in estados.items() if fecha not in (HOY, lunes)
+        estado is None for fecha, estado in estados.items() if fecha not in (hoy, lunes)
     )

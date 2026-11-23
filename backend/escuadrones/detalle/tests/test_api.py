@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from unittest.mock import patch
 
 import pytest
@@ -366,17 +366,17 @@ def test_squad_detail_prueba_hoy_matches_registro_estado(
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    "today", [date(2026, 11, 23), date(2026, 11, 25)], ids=["lunes", "miercoles"]
+)
 def test_squad_detail_includes_invite_code_streak_and_week(
-    api_client, creator, member, squad
+    api_client, creator, member, squad, today, monkeypatch
 ):
-    today = timezone.localdate()
+    now = datetime.combine(today, time(12), tzinfo=UTC)
+    monkeypatch.setattr(timezone, "now", lambda: now)
     monday = lunes_de(today)
-    Escuadron.objects.filter(pk=squad.pk).update(
-        creado_en=timezone.now() - timedelta(days=10)
-    )
-    Membresia.objects.filter(escuadron=squad).update(
-        unido_en=timezone.now() - timedelta(days=10)
-    )
+    Escuadron.objects.filter(pk=squad.pk).update(creado_en=now - timedelta(days=10))
+    Membresia.objects.filter(escuadron=squad).update(unido_en=now - timedelta(days=10))
     for user in (creator, member):
         habit = HabitoDiario.objects.create(
             membresia=Membresia.objects.get(escuadron=squad, usuario=user),
