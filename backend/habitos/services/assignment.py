@@ -1,4 +1,5 @@
 from escuadrones.models import Membresia
+from escuadrones.tiempo_real.events import programar_actualizacion_panel
 from habitos.models import HabitoDiario
 
 
@@ -31,5 +32,9 @@ def save_habito_diario(
     habit, _ = HabitoDiario.objects.update_or_create(
         membresia=membresia,
         defaults=validated_data,
+    )
+    programar_actualizacion_panel(
+        escuadron_id=membresia.escuadron_id,
+        motivo="habito_actualizado",
     )
     return habit

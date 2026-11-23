@@ -17,7 +17,7 @@ function link(href, iconName, text) {
   return node
 }
 
-export function accountMenu({ nombre, fotoUrl, onLogout }) {
+export function accountMenu({ nombre, fotoUrl, onLogout, loadProfile }) {
   const root = document.createElement('div')
   root.className = 'relative'
 
@@ -31,16 +31,6 @@ export function accountMenu({ nombre, fotoUrl, onLogout }) {
   toggle.setAttribute('aria-label', 'Tu cuenta')
   toggle.setAttribute('aria-expanded', 'false')
   toggle.setAttribute('aria-controls', panelId)
-  toggle.textContent = iniciales(nombre)
-  if (fotoUrl) {
-    const photo = document.createElement('img')
-    photo.src = fotoUrl
-    photo.alt = ''
-    photo.className = 'h-full w-full rounded-full object-cover'
-    photo.referrerPolicy = 'no-referrer'
-    photo.addEventListener('error', () => toggle.replaceChildren(iniciales(nombre)), { once: true })
-    toggle.replaceChildren(photo)
-  }
 
   const panel = document.createElement('div')
   panel.id = panelId
@@ -52,7 +42,31 @@ export function accountMenu({ nombre, fotoUrl, onLogout }) {
 
   const heading = document.createElement('p')
   heading.className = 'truncate px-3 pt-2 pb-1 text-[0.8125rem] font-extrabold text-ink-muted'
-  heading.textContent = nombre ?? 'Tu cuenta'
+  function mostrarIdentidad(nombre, fotoUrl) {
+    heading.textContent = nombre || 'Tu cuenta'
+    const respaldo = !nombre && loadProfile ? icon('users') : iniciales(nombre)
+    if (!fotoUrl) {
+      toggle.replaceChildren(respaldo)
+      return
+    }
+    const photo = document.createElement('img')
+    photo.alt = ''
+    photo.className = 'h-full w-full rounded-full object-cover'
+    photo.referrerPolicy = 'no-referrer'
+    photo.addEventListener('error', () => toggle.replaceChildren(respaldo), { once: true })
+    photo.src = fotoUrl
+    toggle.replaceChildren(photo)
+  }
+  mostrarIdentidad(nombre, fotoUrl)
+
+  async function cargarIdentidad() {
+    try {
+      const perfil = await loadProfile()
+      if (perfil) mostrarIdentidad(perfil.nickname, perfil.foto_url)
+    } catch {
+      // El menú sigue disponible si no se puede cargar la identidad.
+    }
+  }
 
   const separator = document.createElement('hr')
   separator.className = 'my-1 border-hairline'
@@ -73,7 +87,7 @@ export function accountMenu({ nombre, fotoUrl, onLogout }) {
 
   panel.append(
     heading,
-    link('/perfil', 'users', 'Mi perfil'),
+    link('/perfil', 'users', 'Ver perfil'),
     link('/escuadrones/nuevo', 'plus', 'Crear un escuadrón'),
     link('/escuadrones/unirse', 'join', 'Unirme a un escuadrón'),
     separator,
@@ -100,5 +114,6 @@ export function accountMenu({ nombre, fotoUrl, onLogout }) {
     else if (!root.contains(event.target)) setOpen(false)
   })
 
+  if (loadProfile) void cargarIdentidad()
   return root
 }

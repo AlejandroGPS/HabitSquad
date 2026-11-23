@@ -314,7 +314,7 @@ Content-Type: application/json
 1. Se valida `uid` + `token` respecto al cambio pendiente.
 2. El nuevo email pasa a ser el de login; `email_pendiente` queda vacío.
 3. A partir de ese momento, `POST /api/auth/token/` debe usar el correo nuevo.
-4. Tokens inválidos, expirados o sin cambio pendiente pendiente → `400`.
+4. Tokens inválidos, expirados o sin cambio pendiente → `400`.
 
 ### Errores
 
@@ -406,4 +406,8 @@ Ejemplo de confirmación distinta (`400`):
 tratarla como enlace permanente ni cachearla a largo plazo.
 - Hasta confirmar el correo nuevo, el login y el resto de la API siguen
 asociados al email anterior.
+- El enlace de confirmación de correo nuevo se construye con
+  `PROFILE_EMAIL_CHANGE_FRONTEND_URL` (por defecto
+  `http://localhost:5173/perfil/confirmar-email`; en Docker Compose
+  `https://<SITE_ADDRESS>/perfil/confirmar-email`).
 - La especificación OpenAPI está en `/api/schema/` y la UI en `/api/docs/`.

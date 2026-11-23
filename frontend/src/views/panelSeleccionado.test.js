@@ -125,6 +125,15 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     expect(view.textContent).not.toContain('Configuración · demo')
   })
 
+  it('muestra el límite guardado en la API y los nicknames del detalle', async () => {
+    api.getSquad.mockResolvedValue({ ...squad, limite_miembros: 8, miembros: squad.miembros.map((member) => ({ ...member, nickname: `nick${member.usuario_id}` })) })
+    const view = mount()
+    await loaded(view)
+    expect(view.textContent).toContain('3 de 8 miembros')
+    expect(view.textContent).toContain('Quedan 5 plazas')
+    expect(view.textContent).toContain('nick2')
+  })
+
   it('pinta el resumen: racha, cumplidos de hoy, cierre y semana de cada miembro', async () => {
     const dias = ['2026-11-09', '2026-11-10', '2026-11-11', '2026-11-12', '2026-11-13', '2026-11-14', '2026-11-15']
     const semana = (...estados) => dias.map((fecha, indice) => ({ fecha, estado: estados[indice] ?? null }))

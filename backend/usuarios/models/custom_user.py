@@ -1,3 +1,4 @@
+from datetime import time
 from typing import ClassVar
 
 from django.contrib.auth.base_user import BaseUserManager
@@ -79,6 +80,24 @@ class CustomUser(AbstractUser):
         default=False,
         verbose_name="email verified",
     )
+    # Solo la referencia en Cloudinary; la URL firmada se calcula al leer el perfil
+    foto_perfil_public_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="profile photo public id",
+    )
+    email_pendiente = models.EmailField(
+        blank=True,
+        null=True,
+        verbose_name="pending email",
+        help_text="New email awaiting verification before replacing login email.",
+    )
+    hora_aviso = models.TimeField(
+        default=time(20, 0),
+        verbose_name="alert time",
+        help_text="Time for the missing daily proof reminder (default 20:00).",
+    )
 
     objects = CustomUserManager()
 
@@ -98,6 +117,12 @@ class CustomUser(AbstractUser):
     def save(self, *args, **kwargs):
         self.email = CustomUserManager.normalize_email(self.email)
         self.nickname = CustomUserManager.normalize_nickname(self.nickname)
+        if self.email_pendiente:
+            self.email_pendiente = CustomUserManager.normalize_email(
+                self.email_pendiente
+            )
+        else:
+            self.email_pendiente = None
         super().save(*args, **kwargs)
 
     def __str__(self):

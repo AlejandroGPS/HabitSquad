@@ -34,4 +34,10 @@ describe('escuadronCard', () => {
     expect(card.textContent).toContain('1 de 2 miembros')
     expect(card.textContent).toContain('Queda 1 plaza')
   })
+
+  it('limita los puntos decorativos para capacidades grandes sin alterar la ocupación escrita', () => {
+    const card = escuadronCard({ id: 3, nombre: 'Grupo grande', miembros: 3, plazas: 100000 })
+    expect(card.textContent).toContain('3 de 100000 miembros')
+    expect(card.querySelectorAll('[aria-hidden="true"] > span')).toHaveLength(10)
+  })
 })

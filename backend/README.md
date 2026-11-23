@@ -27,7 +27,7 @@ Desde `backend/` con el entorno virtual activado:
 ```bash
 python manage.py migrate
 python manage.py check
-pytest --cov=usuarios --cov=autenticacion --cov=escuadrones --cov=habitos --cov-report=term-missing --cov-fail-under=100
+pytest --cov=usuarios --cov=autenticacion --cov=escuadrones --cov=habitos --cov=alertas --cov-report=term-missing --cov-fail-under=100
 ruff check .
 ruff format --check .
 python manage.py runserver
@@ -92,11 +92,21 @@ cuentas no verificadas no pueden iniciar sesión.
 El endpoint autenticado `POST /api/escuadrones/` recibe `nombre` y crea un
 escuadrón. El usuario del access token queda como miembro administrador y el
 escuadrón obtiene un `codigo_invitacion` único de 6 caracteres (`A–Z`, `0–9`).
-La respuesta incluye `id`, `nombre`, `codigo_invitacion`, `creador_id` y
-`miembros`.
+La respuesta incluye `id`, `nombre`, `codigo_invitacion`, `es_publico`,
+`limite_miembros`, `creador_id` y `miembros`. La configuración inicial es
+privada y permite hasta 5 miembros; el límite no puede ser inferior a 2.
+
+Los administradores consultan y actualizan la configuración con
+`GET/PATCH /api/escuadrones/{escuadron_id}/configuracion/`. Los usuarios
+autenticados pueden descubrir grupos públicos con
+`GET /api/escuadrones/publicos/` y unirse sin código con
+`POST /api/escuadrones/{escuadron_id}/unirse/`. Los grupos privados siguen
+requiriendo código mediante `POST /api/escuadrones/unirse/`.
 
 El contrato de entrada y respuesta está documentado en
 [docs/CREAR_ESCUADRON.md](../docs/CREAR_ESCUADRON.md).
+La configuración, privacidad y límite se documentan en
+[docs/CONFIGURACION_ESCUADRON.md](../docs/CONFIGURACION_ESCUADRON.md).
 
 ## API de hábitos diarios
 
@@ -119,6 +129,37 @@ La app `usuarios` contiene el modelo `CustomUser`, su configuración de
 administración y sus pruebas. El modelo usa un ID `BigAutoField`, email único
 normalizado a minúsculas como identificador y el manejo de contraseña hasheada
 de Django. La migración inicial se creó después de configurar `AUTH_USER_MODEL`.
+También guarda la foto de perfil (`foto_perfil_public_id`), el correo pendiente
+de confirmación (`email_pendiente`) y la hora de aviso (`hora_aviso`, por
+defecto `20:00`).
+
+## API de perfil
+
+Los endpoints autenticados bajo `/api/perfil/` permiten consultar y actualizar
+el perfil del usuario:
+
+- `GET /api/perfil/` y `PATCH /api/perfil/` (nickname y/o `hora_aviso`)
+- `POST /api/perfil/foto/` (multipart, campo `foto`)
+- `POST /api/perfil/email/` y `POST /api/perfil/email/confirm/`
+- `POST /api/perfil/password/`
+
+El contrato completo está en
+[docs/PERFIL_USUARIO.md](../docs/PERFIL_USUARIO.md). La implementación vive en
+`usuarios/perfil/` (`api/`, `services/`, `tests/`).
+
+## API de alertas
+
+Los endpoints bajo `/api/alertas/` gestionan la suscripción Web Push y la
+clave pública VAPID:
+
+- `GET /api/alertas/vapid-public-key/` (`200` / `503` si falta la clave)
+- `POST /api/alertas/suscripcion/` y `DELETE /api/alertas/suscripcion/` (JWT)
+
+El criterio de envío y `pywebpush` están en `alertas/services/`. El worker
+Q2 programa `programar_alertas` (cada minuto) junto al cierre diario. La hora
+de aviso está en el perfil (`hora_aviso`). Contrato:
+[docs/ALERTAS.md](../docs/ALERTAS.md). Código y tests en `alertas/` (cobertura
+CI al 100 % con el resto de apps del backend).
 
 ## Organización por funcionalidad
 
@@ -146,6 +187,10 @@ autenticacion/
 usuarios/
 ├── models/                     # Entidades persistentes compartidas
 ├── admin.py                   # Integración con Django Admin
+├── perfil/                     # Consulta y actualización del perfil
+│   ├── api/
+│   ├── services/
+│   └── tests/
 └── tests/                      # Pruebas del modelo de usuario
 
 escuadrones/

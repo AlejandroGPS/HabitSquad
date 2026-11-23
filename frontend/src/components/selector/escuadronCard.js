@@ -8,7 +8,7 @@ function puntosPlazas(ocupadas, plazas) {
   const puntos = element(
     'span',
     'flex gap-1',
-    ...Array.from({ length: plazas }, (_, indice) =>
+    ...Array.from({ length: Math.min(plazas, 10) }, (_, indice) =>
       element('span', `h-2.5 w-2.5 rounded-full ${indice < ocupadas ? 'bg-accent' : 'bg-accent/15'}`),
     ),
   )

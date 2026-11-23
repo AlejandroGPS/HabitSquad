@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.db import IntegrityError
 
 from escuadrones.models import Membresia
+from escuadrones.tiempo_real.events import programar_actualizacion_panel
 from habitos.models import RegistroDiario, VotoValidacion
 
 
@@ -110,4 +111,9 @@ def emitir_voto(*, registro: RegistroDiario, usuario, voto: str) -> dict:
         registro.save(update_fields=["estado", "actualizado_en"])
 
     registro.refresh_from_db()
+    programar_actualizacion_panel(
+        escuadron_id=_escuadron_id(registro),
+        motivo="voto_emitido",
+        registro_id=registro.pk,
+    )
     return construir_estado_votacion(registro, usuario)

@@ -65,6 +65,13 @@ describe('selectorEscuadronScreen', () => {
     await vi.waitFor(() => expect(view.querySelector('[role="status"]').textContent).toBe('Tienes 1 escuadrón. Ábrelo para ver cómo va el día.'))
   })
 
+  it('muestra en las tarjetas la capacidad configurada en el backend', async () => {
+    const view = mount({ loadSquads: async () => [{ ...squads[0], limite_miembros: 8 }] })
+    await vi.waitFor(() => expect(tarjetas(view)).toHaveLength(1))
+    expect(tarjetas(view)[0].textContent).toContain('1 de 8 miembros')
+    expect(tarjetas(view)[0].textContent).toContain('Quedan 7 plazas')
+  })
+
   it('sin escuadrones cambia el saludo e invita a crear o unirse', async () => {
     const view = mount({ loadSquads: async () => [] })
     await vi.waitFor(() => expect(view.querySelector('[role="status"]').textContent).toContain('Todavía no perteneces'))
@@ -282,7 +289,10 @@ describe('selector recuperado conectado al backend', () => {
     expect(fetchMock.mock.calls.some(([path, options]) => path === '/api/escuadrones/9/habito/' && options.method === 'PUT')).toBe(true)
   })
   it('muestra un error de conexión y permite volver a cargar la lista', async () => {
-    fetchMock.mockRejectedValueOnce(new TypeError('offline')).mockResolvedValueOnce(response(200, squads))
+    const listRequest = vi.fn().mockRejectedValueOnce(new TypeError('offline')).mockResolvedValueOnce(response(200, squads))
+    fetchMock.mockImplementation((path) => path === '/api/escuadrones/'
+      ? listRequest()
+      : Promise.resolve(response(200, { nickname: 'Ana' })))
     start()
     await vi.waitFor(() => expect(root.querySelector('[role="alert"]').textContent).toContain('No se han podido cargar'))
     expect(root.querySelectorAll('a[aria-label^="Abrir panel"]')).toHaveLength(0)

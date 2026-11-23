@@ -13,7 +13,7 @@
       import { createMockSquadSettings } from '/src/mocks/configuracionEscuadron.js'
 
       const esAdministrador = new URLSearchParams(location.search).get('rol') !== 'miembro'
-      document.body.append(configuracionEscuadronScreen({ api: createMockSquadSettings({ esAdministrador }) }))
+      document.body.append(configuracionEscuadronScreen({ api: createMockSquadSettings({ esAdministrador }), id: 'demo', demo: true }))
     </script>
   </body>
 </html>

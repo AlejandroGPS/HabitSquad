@@ -34,7 +34,8 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
   retry.hidden = true
   const huecos = panelCargando()
   const body = element('div', REJILLA, back, status, error, retry)
-  root.append(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body }))
+  const cuenta = accountMenu({ onLogout: async () => { await logout(); navigate('/login') } })
+  root.append(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body, trailing: cuenta }))
   let loading = false
   async function load() {
     if (loading) return
@@ -52,7 +53,7 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
       const squad = await api.getSquad(id)
       const ownHabit = await api.getDailyHabit(id)
       const miembros = squad.miembros.map((miembro) => ({
-        nombre: miembro.nombre || `Miembro ${miembro.usuario_id}`,
+        nombre: miembro.nickname || miembro.nombre || `Miembro ${miembro.usuario_id}`,
         esUsuario: miembro.es_usuario,
         habito: habitText(miembro.habito),
         estado: miembro.prueba_hoy?.estado,
@@ -74,17 +75,19 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
           onSubirPrueba: () => navigate(`/prueba?escuadron=${id}`),
           onVerPrueba: pruebaPropia ? () => abrirPrueba({ pruebaId: pruebaPropia }) : undefined,
         }),
-        miembrosCard({ miembros, onVerFoto: abrirPrueba, onVotar: abrirPrueba }),
-        invitaCard({ codigo: squad.codigo_invitacion, libres: 5 - squad.miembros.length }),
+        miembrosCard({ miembros, plazas: squad.limite_miembros ?? 5, onVerFoto: abrirPrueba, onVotar: abrirPrueba }),
+        invitaCard({ codigo: squad.codigo_invitacion, libres: (squad.limite_miembros ?? 5) - squad.miembros.length }),
       ]
       for (const [orden, tarjeta] of tarjetas.entries()) {
         tarjeta.classList.add('entrada')
         tarjeta.style.setProperty('--orden', String(orden))
       }
       const content = element('div', REJILLA, back, ...tarjetas)
+      const focus = cuenta.contains(document.activeElement) ? document.activeElement : null
       root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Escuadrón', title: squad.nombre, body: content,
         navItems: squadNavigation(id),
-        trailing: [rachaChip({ racha }), squadSettingsLink(id), accountMenu({ onLogout: async () => { await logout(); navigate('/login') } })] }))
+        trailing: [rachaChip({ racha }), squadSettingsLink(id), cuenta] }))
+      focus?.focus()
       for (const link of root.querySelectorAll('a[href="/habito"]')) {
         link.href = `/habito?escuadron=${id}`
       }

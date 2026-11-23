@@ -197,47 +197,35 @@ El menú de cuenta enlaza a `/perfil` y `/perfil/editar`. La integración, las
 pruebas y las dependencias pendientes del backend se describen en
 [PERFIL_USUARIO_FRONTEND.md](../docs/PERFIL_USUARIO_FRONTEND.md).
 
-## Configuración del escuadrón (mock)
+## Configuración del escuadrón
 
-`/escuadrones/configuracion` requiere sesión. «Configuración» forma parte del
-menú lateral del panel, junto a Escuadrón, Racha, Alertas y Mi hábito. En móvil
-se abre con el botón de ajustes de la cabecera del panel. Ambas pantallas
-comparten el menú y conservan el ID seleccionado al volver al panel o abrir
-Mi hábito. La configuración abre siempre el escuadrón ficticio Los Inquebrantables,
-independiente del escuadrón real desde el que se navega. El parámetro `origen`
-conserva el destino para volver a ese panel, sin cargar ni modificar sus datos.
+«Configuración» se abre desde el menú lateral del panel o desde el botón de
+ajustes de la cabecera móvil. La ruta `/escuadrones/configuracion?origen=ID`
+requiere sesión y conserva el escuadrón seleccionado en el menú y al volver.
+Sin un ID válido se pide abrirla desde el panel, sin consultar la API.
 
-Para probar sin cuenta ni backend, ejecutar `npm run dev` y abrir
-`/previews/configuracion.html`. Añadir `?rol=miembro` permite revisar el aviso
-para quien no administra. Estas vistas previas solo se sirven en desarrollo.
+La aplicación usa el adaptador `src/configuracion-api.js`, con JWT y renovación
+de sesión a través de `authFetch`. Consulta la configuración con GET y guarda
+nombre, visibilidad y límite mediante PATCH en
+`/api/escuadrones/{id}/configuracion/`. El detalle del escuadrón aporta miembros,
+fotos, papeles y código. El contrato está en
+[CONFIGURACION_ESCUADRON.md](../docs/CONFIGURACION_ESCUADRON.md).
 
-- **General:** nombre (1–100 caracteres), visibilidad y plazas se guardan juntos.
-  El resumen muestra los valores guardados. El borrador se conserva al cambiar
-  de pestaña; «Descartar» restaura los valores anteriores. Las plazas van de
-  2 a 10 y nunca bajan del número de miembros.
-- **Miembros:** nickname, foto o iniciales, papel y plazas libres. Expulsar y
-  eliminar requieren dos pulsaciones y permiten cancelar. El administrador
-  no puede expulsarse. La eliminación solo afecta al escuadrón ficticio;
-  recargar restaura los ejemplos.
-- **Invitaciones:** código seleccionable, copia con alternativa manual,
-  generación de otro código con confirmación y número de plazas libres.
+- General mantiene el borrador hasta guardar o descartar. El resumen refleja
+  los valores guardados y el servidor valida las modificaciones.
+- El límite empieza en 5 y admite enteros desde 2. Se permite reducirlo por
+  debajo de la ocupación; se avisa de que nadie será expulsado y que no habrá
+  nuevas incorporaciones hasta que queden plazas. No hay máximo de 10 en la API.
+- Solo administra quien autoriza el backend. Un 403 retira los controles y
+  muestra el aviso correspondiente, también si se pierde el permiso al guardar.
+- Miembros muestra los datos reales. Invitaciones permite copiar el código.
+  Expulsar, eliminar y regenerar no aparecen porque aún no existen sus endpoints.
+- Los errores de validación o red conservan el borrador para reintentar.
+  Los controles se bloquean durante el guardado para evitar peticiones duplicadas.
+- El panel y el selector muestran `limite_miembros` en vez de asumir cinco plazas.
 
-El estado mock se conserva en memoria durante la navegación y se reinicia al
-recargar. No comparte datos con el buscador ni modifica el backend. Los errores
-se muestran sin perder el borrador; durante las operaciones se bloquean los
-controles para evitar envíos duplicados. Las pestañas admiten flechas, Inicio
-y Fin con selección y foco accesibles.
-
-La vista recibe `configuracionEscuadronScreen({ api, id, panelHref, onLogout })`.
-El adaptador asíncrono está en `src/mocks/configuracionEscuadron.js` y expone
-`get(id)`, `update(id, { nombre, publico, capacidad })`,
-`removeMember(id, memberId)`, `regenerateInvitation(id)` y `delete(id)`.
-Todos salvo `delete` devuelven el escuadrón completo:
-`{ id, nombre, publico, capacidad, codigo, esAdministrador, miembros }`;
-cada miembro tiene `{ id, nickname, esAdministrador, esUsuario, fotoUrl }`.
-
-Al conectar la API habrá que inyectar el adaptador real y el ID seleccionado,
-retirar la indicación de demo y aplicar los permisos y límites también en el
-servidor. La creación de escuadrones mantiene su contrato actual hasta esa
-integración. La gestión de expulsados en el selector de otras cuentas queda
-pendiente del backend; esta pantalla solo simula el resultado local.
+`npm run dev` también sirve `/previews/configuracion.html`, una vista previa
+independiente que inyecta explícitamente `demo: true`, el ID de ejemplo y
+`createMockSquadSettings()`. `?rol=miembro` muestra la vista sin permisos.
+Solo esta demo conserva las operaciones simuladas de expulsión, eliminación y
+regeneración y los límites de la propuesta visual (2–10). No modifica la API.

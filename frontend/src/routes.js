@@ -2,6 +2,7 @@ import {
   ApiError,
   confirmEmailVerification,
   confirmProfileEmail,
+  getProfile,
   confirmPasswordReset,
   createSquad,
   joinSquad,
@@ -12,6 +13,7 @@ import {
   requestPasswordReset,
 } from './api.js'
 import { hasSession } from './session.js'
+import { accountMenu } from './components/accountMenu.js'
 import { loginScreen, registroScreen } from './views/acceso.js'
 import { crearEscuadronScreen } from './views/crearEscuadron.js'
 import { configuracionEscuadronScreen } from './views/configuracionEscuadron.js'
@@ -131,6 +133,7 @@ export function destinoTrasAcceso() {
 
 function selectorEscuadron(navigate) {
   return selectorEscuadronScreen({
+    loadProfile: getProfile,
     onLogout: async () => {
       await logout()
       navigate('/login')
@@ -152,6 +155,14 @@ export const routes = [
     view: ({ navigate } = {}) => editarPerfilScreen({ onLogout: async () => { await logout(); navigate?.('/login') } }),
   },
   {
+    path: '/perfil/confirmar-email',
+    title: 'Confirmar correo nuevo',
+    view: () => {
+      const params = new URLSearchParams(window.location.search)
+      return confirmarCorreoPerfilScreen({ uid: params.get('uid'), token: params.get('token'), onConfirm: confirmProfileEmail })
+    },
+  },
+  {
     path: '/perfil/email/confirmar',
     title: 'Confirmar correo nuevo',
     view: () => {
@@ -162,7 +173,16 @@ export const routes = [
   {
     path: '/',
     title: 'HabitSquad',
-    view: ({ navigate } = {}) => presentacionScreen({ navigate }),
+    view: ({ navigate } = {}) => presentacionScreen({
+      navigate,
+      cuenta: hasSession() ? accountMenu({
+        loadProfile: getProfile,
+        onLogout: async () => {
+          await logout()
+          navigate?.('/')
+        },
+      }) : undefined,
+    }),
   },
   {
     path: '/escuadrones/prueba',
@@ -183,6 +203,7 @@ export const routes = [
     view: ({ navigate } = {}) => {
       const origen = new URLSearchParams(window.location.search).get('origen')
       return configuracionEscuadronScreen({
+        id: origen,
         panelHref: /^[1-9]\d*$/.test(origen ?? '') ? `/escuadrones/panel?id=${origen}` : '/escuadrones',
         onLogout: async () => { await logout(); navigate?.('/login') },
       })

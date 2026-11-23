@@ -8,7 +8,8 @@ import { icon } from '../components/icons.js'
 import { clearFieldError, labeledField, setFieldError } from '../components/forms.js'
 import { settingsTabs } from '../components/configuracion/tabs.js'
 import { squadNavigation } from '../components/panel/navigation.js'
-import { mockSquadSettings } from '../mocks/configuracionEscuadron.js'
+import { ApiError, getProfile } from '../api.js'
+import { squadSettingsApi } from '../configuracion-api.js'
 
 const text = (value, className = '') => element('p', className, value)
 
@@ -22,7 +23,7 @@ function row(iconName, title, description, control, tone = '') {
       element('div', 'min-w-0', element('h3', 'font-extrabold', title), description)), control)
 }
 
-export function configuracionEscuadronScreen({ api = mockSquadSettings, id = 'demo', panelHref = '/escuadrones', onLogout } = {}) {
+export function configuracionEscuadronScreen({ api = squadSettingsApi, id, panelHref = '/escuadrones', onLogout, demo = false } = {}) {
   let saved
   let draft
   let activeTab = 0
@@ -54,20 +55,41 @@ export function configuracionEscuadronScreen({ api = mockSquadSettings, id = 'de
   const demoNote = text('Datos de ejemplo. Los cambios se conservan al navegar y se reinician al recargar.', 'settings-demo')
   const originId = new URL(panelHref, window.location.origin).searchParams.get('id')
   const navItems = squadNavigation(originId)
-  const layout = appLayout({ active: 'configuracion', kicker: 'Escuadrón de ejemplo', title: 'Configuración del escuadrón',
-    leading: back, trailing: accountMenu({ nombre: 'alegarcia', onLogout }), body: content, detail: true, navItems })
+  const layout = appLayout({ active: 'configuracion', kicker: demo ? 'Escuadrón de ejemplo' : 'Escuadrón', title: 'Configuración del escuadrón',
+    leading: back, trailing: accountMenu({ onLogout, loadProfile: demo ? undefined : getProfile }), body: content, detail: true, navItems })
   layout.classList.add('squad-settings')
   layout.querySelector('h1').classList.remove('truncate')
   root.append(layout)
 
   const dirty = () => saved && draft && (saved.nombre !== draft.nombre.trim() || saved.publico !== draft.publico || saved.capacidad !== draft.capacidad)
+  const memberCount = () => saved.miembrosActuales ?? saved.miembros.length
   function resetDraft() { draft = { nombre: saved.nombre, publico: saved.publico, capacidad: saved.capacidad } }
   function summary() {
     return element('div', 'settings-summary', squadAvatar({ nombre: saved.nombre }), element('div', 'min-w-0',
       element('h2', 'font-black break-words', saved.nombre),
-      text(`${saved.publico ? 'Público' : 'Privado'} · ${saved.miembros.length} de ${saved.capacidad} miembros`, 'settings-description')))
+      text(`${saved.publico ? 'Público' : 'Privado'} · ${memberCount()} de ${saved.capacidad} miembros`, 'settings-description')))
   }
-  function message(cause) { return cause instanceof Error ? cause.message : 'No se ha podido guardar. Vuelve a intentarlo.' }
+  function message(cause) {
+    if (cause instanceof ApiError) {
+      if (cause.status === 401) return 'Tu sesión ha caducado. Vuelve a iniciar sesión.'
+      if (cause.status === 404) return 'Este escuadrón ya no está disponible.'
+      if (cause.status === 400) {
+        const errors = ['nombre', 'es_publico', 'limite_miembros', 'non_field_errors', 'detail'].flatMap((field) => cause.data?.[field] ?? [])
+        return errors.length ? errors.join(' ') : 'Revisa los datos de configuración.'
+      }
+      return 'No se ha podido guardar la configuración. Vuelve a intentarlo.'
+    }
+    return cause instanceof Error ? cause.message : 'No se ha podido guardar. Vuelve a intentarlo.'
+  }
+  function forbidden() {
+    tabs.node.hidden = true
+    panel.removeAttribute('role')
+    panel.removeAttribute('aria-labelledby')
+    panel.replaceChildren(element('section', 'settings-card settings-empty', element('span', 'settings-icon', icon('lock')),
+      element('h2', 'mt-4 text-xl font-black', 'Solo para el administrador'),
+      text('Solo el administrador puede cambiar la configuración de este escuadrón.', 'settings-description mt-2'),
+      pillLink({ href: panelHref, variant: 'secondary', className: 'mt-5' }, backLabel)))
+  }
   async function perform(operation, success, { reset = false, deleted = false } = {}) {
     if (busy) return
     busy = true
@@ -90,15 +112,17 @@ export function configuracionEscuadronScreen({ api = mockSquadSettings, id = 'de
           text('Recarga la página para empezar de nuevo con los datos de ejemplo.', 'settings-description mt-2'),
           pillLink({ href: '/escuadrones', variant: 'secondary', className: 'mt-5' }, 'Mis escuadrones')))
       } else {
-        saved = updated
+        saved = { ...saved, ...updated }
         if (reset) resetDraft()
         // Una expulsión no descarta los cambios que quedan pendientes en General.
-        draft.capacidad = Math.max(draft.capacidad, saved.miembros.length, 2)
+        if (demo) draft.capacidad = Math.max(draft.capacidad, saved.miembros.length, 2)
+        layout.querySelector('header p').textContent = saved.nombre
         renderPanel()
       }
       status.textContent = success
     } catch (cause) {
       status.textContent = ''
+      if (cause instanceof ApiError && cause.status === 403) { forbidden(); return }
       error.textContent = message(cause)
     } finally {
       busy = false
@@ -152,10 +176,11 @@ export function configuracionEscuadronScreen({ api = mockSquadSettings, id = 'de
       publicButton.setAttribute('aria-pressed', String(draft.publico))
       visibilityNote.textContent = draft.publico ? 'Sale en el buscador y cualquiera puede unirse si hay plazas.' : 'Solo se puede entrar con el código de invitación.'
       capacity.value = String(draft.capacidad)
-      const free = draft.capacidad - saved.miembros.length
-      capacityNote.textContent = `Sois ${saved.miembros.length} · ${free === 0 ? 'No quedan plazas libres' : `Quedan ${free} ${free === 1 ? 'plaza libre' : 'plazas libres'}`}`
-      less.disabled = draft.capacidad <= Math.max(2, saved.miembros.length)
-      more.disabled = draft.capacidad >= 10
+      const free = draft.capacidad - memberCount()
+      capacityNote.textContent = `Sois ${memberCount()} · ${free <= 0 ? 'No quedan plazas libres' : `Quedan ${free} ${free === 1 ? 'plaza libre' : 'plazas libres'}`}`
+      less.disabled = draft.capacidad <= (demo ? Math.max(2, saved.miembros.length) : 2)
+      more.disabled = demo && draft.capacidad >= 10
+      if (!demo && draft.capacidad < memberCount()) capacityNote.textContent += '. Nadie será expulsado; no habrá nuevas incorporaciones hasta que queden plazas.'
       changes.textContent = dirty() ? 'Tienes cambios sin guardar' : 'Todo está guardado'
       discard.disabled = save.disabled = !dirty()
     }
@@ -198,7 +223,7 @@ export function configuracionEscuadronScreen({ api = mockSquadSettings, id = 'de
       const item = element('li', 'settings-member', avatar,
         element('div', 'min-w-0 flex-1', text(member.nickname, 'font-extrabold break-words'),
           text(member.esAdministrador ? `Administrador${member.esUsuario ? ' · Tú' : ''}` : 'Miembro', 'settings-description')))
-      if (!member.esAdministrador && !member.esUsuario) {
+      if (api.removeMember && !member.esAdministrador && !member.esUsuario) {
         const confirming = confirmation === member.id
         const remove = action(confirming ? `¿Expulsar a ${member.nickname}?` : 'Expulsar', () => {
           if (confirmation !== member.id) { confirmation = member.id; renderPanel(); panel.querySelector(`[data-remove="${member.id}"]`).focus(); return }
@@ -212,10 +237,11 @@ export function configuracionEscuadronScreen({ api = mockSquadSettings, id = 'de
       }
       list.append(item)
     }
-    for (let i = saved.miembros.length; i < saved.capacidad; i++) {
+    for (let i = memberCount(); i < Math.min(saved.capacidad, memberCount() + 10); i++) {
       list.append(element('li', 'settings-member', element('span', 'settings-free-avatar', icon('plus')),
         element('div', '', text('Plaza libre', 'font-extrabold'), text('Entra quien use el código', 'settings-description'))))
     }
+    if (!api.delete) return element('div', '', text(`Miembros · ${memberCount()} de ${saved.capacidad}`, 'settings-description mb-3'), list)
     const deleting = confirmation === 'delete'
     const deleteButton = action(deleting ? 'Confirmar eliminación' : 'Eliminar', () => {
       if (confirmation !== 'delete') { confirmation = 'delete'; renderPanel(); panel.querySelector('[data-delete]').focus(); return }
@@ -231,7 +257,7 @@ export function configuracionEscuadronScreen({ api = mockSquadSettings, id = 'de
   }
 
   function invitations() {
-    const free = saved.capacidad - saved.miembros.length
+    const free = Math.max(0, saved.capacidad - memberCount())
     const copied = text('', 'settings-description mt-3')
     copied.setAttribute('role', 'status')
     const copy = action('Copiar código', async () => {
@@ -244,7 +270,7 @@ export function configuracionEscuadronScreen({ api = mockSquadSettings, id = 'de
       void perform(() => api.regenerateInvitation(id), 'Nuevo código generado. El anterior ya no es válido.')
     }, 'secondary', 'refresh')
     regenerate.dataset.regenerate = ''
-    const actions = element('div', 'settings-invite-actions', copy, regenerate)
+    const actions = element('div', 'settings-invite-actions', copy, api.regenerateInvitation && regenerate)
     if (regenerating) actions.append(action('Cancelar', () => { confirmation = null; renderPanel(); panel.querySelector('[data-regenerate]').focus() }, 'secondary'))
     const code = element('code', 'settings-code', saved.codigo)
     code.tabIndex = 0
@@ -255,7 +281,7 @@ export function configuracionEscuadronScreen({ api = mockSquadSettings, id = 'de
         text('Comparte este código para que se unan a vuestro escuadrón.', 'settings-description mt-2'), code,
         text(free === 0 ? 'Escuadrón completo. Aumenta las plazas en General para invitar a alguien.' : `Quedan ${free} ${free === 1 ? 'plaza libre' : 'plazas libres'} de ${saved.capacidad}.`, 'settings-places'),
         actions, copied,
-        text(regenerating ? '¿Generar otro código? El actual dejará de servir. Tendrás que compartir el nuevo.' : 'Si generas otro código, el anterior dejará de servir.', 'settings-description mt-4')))
+        api.regenerateInvitation && text(regenerating ? '¿Generar otro código? El actual dejará de servir. Tendrás que compartir el nuevo.' : 'Si generas otro código, el anterior dejará de servir.', 'settings-description mt-4')))
   }
 
   function renderPanel() {
@@ -264,6 +290,10 @@ export function configuracionEscuadronScreen({ api = mockSquadSettings, id = 'de
   }
   async function load() {
     if (busy) return
+    if (!id || (!demo && !/^[1-9]\d*$/.test(String(id)))) {
+      status.textContent = 'Selecciona un escuadrón desde su panel para abrir la configuración.'
+      return
+    }
     busy = true
     error.textContent = ''
     status.textContent = 'Cargando configuración…'
@@ -273,19 +303,17 @@ export function configuracionEscuadronScreen({ api = mockSquadSettings, id = 'de
       saved = await api.get(id)
       status.textContent = ''
       if (!saved.esAdministrador) {
-        panel.removeAttribute('role')
-        panel.replaceChildren(element('section', 'settings-card settings-empty', element('span', 'settings-icon', icon('lock')),
-          element('h2', 'mt-4 text-xl font-black', 'Solo para el administrador'),
-          text('Solo el administrador puede cambiar la configuración de este escuadrón.', 'settings-description mt-2'),
-          pillLink({ href: panelHref, variant: 'secondary', className: 'mt-5' }, backLabel)))
+        forbidden()
         return
       }
       resetDraft()
+      layout.querySelector('header p').textContent = saved.nombre
       tabs.node.hidden = false
       renderPanel()
-      content.append(demoNote)
+      if (demo) content.append(demoNote)
     } catch (cause) {
       status.textContent = ''
+      if (cause instanceof ApiError && cause.status === 403) { forbidden(); return }
       error.textContent = message(cause)
       panel.replaceChildren(action('Reintentar', load, 'secondary'))
     } finally {

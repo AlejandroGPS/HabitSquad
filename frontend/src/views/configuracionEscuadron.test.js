@@ -14,7 +14,7 @@ const changeName = (value) => {
 }
 const submit = () => page.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true }))
 async function mount(value = api) {
-  page = configuracionEscuadronScreen({ api: value })
+  page = configuracionEscuadronScreen({ api: value, id: 'demo', demo: true })
   document.body.replaceChildren(page)
   await vi.waitFor(() => expect(page.querySelector('[aria-busy]').getAttribute('aria-busy')).toBe('false'))
 }
@@ -25,7 +25,7 @@ describe('pantalla de configuración', () => {
     await mount()
   })
   it('mantiene el menú del panel con Configuración activa y las rutas del escuadrón de origen', async () => {
-    page = configuracionEscuadronScreen({ api, panelHref: '/escuadrones/panel?id=7' })
+    page = configuracionEscuadronScreen({ api, id: 'demo', demo: true, panelHref: '/escuadrones/panel?id=7' })
     document.body.replaceChildren(page)
     await vi.waitFor(() => expect(page.querySelector('input')).not.toBeNull())
     const nav = page.querySelector('aside nav')

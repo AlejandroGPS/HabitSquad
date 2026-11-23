@@ -19,8 +19,8 @@ class ResumenEscuadron:
 
     Un día cuenta para la racha si todos los miembros que ya estaban en el
     escuadrón antes de ese día tienen su prueba cumplida. Quien se une un día
-    empieza a contar al siguiente. Hoy sigue abierto hasta las 23:59: suma si
-    ya está cumplido y solo rompe la racha si alguna prueba ya es no_cumplido.
+    empieza a contar al siguiente. La racha solo incluye días anteriores a hoy:
+    la jornada actual se incorpora al cambiar la fecha y cerrarse sus pendientes.
     """
 
     def __init__(self, escuadron, membresias, hoy: date | None = None):
@@ -54,11 +54,8 @@ class ResumenEscuadron:
 
     @property
     def racha(self) -> int:
-        estado_hoy = self.estado_del_dia(self.hoy)
-        if estado_hoy == NO_CUMPLIDO:
-            return 0
-        racha = 1 if estado_hoy == CUMPLIDO else 0
         dia = self.hoy - timedelta(days=1)
+        racha = 0
         while self.estado_del_dia(dia) == CUMPLIDO:
             racha += 1
             dia -= timedelta(days=1)
