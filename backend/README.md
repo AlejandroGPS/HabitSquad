@@ -92,11 +92,21 @@ cuentas no verificadas no pueden iniciar sesión.
 El endpoint autenticado `POST /api/escuadrones/` recibe `nombre` y crea un
 escuadrón. El usuario del access token queda como miembro administrador y el
 escuadrón obtiene un `codigo_invitacion` único de 6 caracteres (`A–Z`, `0–9`).
-La respuesta incluye `id`, `nombre`, `codigo_invitacion`, `creador_id` y
-`miembros`.
+La respuesta incluye `id`, `nombre`, `codigo_invitacion`, `es_publico`,
+`limite_miembros`, `creador_id` y `miembros`. La configuración inicial es
+privada y permite hasta 5 miembros; el límite no puede ser inferior a 2.
+
+Los administradores consultan y actualizan la configuración con
+`GET/PATCH /api/escuadrones/{escuadron_id}/configuracion/`. Los usuarios
+autenticados pueden descubrir grupos públicos con
+`GET /api/escuadrones/publicos/` y unirse sin código con
+`POST /api/escuadrones/{escuadron_id}/unirse/`. Los grupos privados siguen
+requiriendo código mediante `POST /api/escuadrones/unirse/`.
 
 El contrato de entrada y respuesta está documentado en
 [docs/CREAR_ESCUADRON.md](../docs/CREAR_ESCUADRON.md).
+La configuración, privacidad y límite se documentan en
+[docs/CONFIGURACION_ESCUADRON.md](../docs/CONFIGURACION_ESCUADRON.md).
 
 ## API de hábitos diarios
 

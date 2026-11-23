@@ -112,7 +112,7 @@ prueba de hoy y semana). El nickname y la foto siguen el mismo criterio que en
 | --- | --- |
 | Endpoint | `GET /api/escuadrones/{escuadron_id}/` (sin ruta nueva) |
 | Auth | JWT (`Authorization: Bearer <access>`) + pertenencia al escuadrón |
-| Escuadrón | `id`, `nombre`, `codigo_invitacion`, `creador_id`, `racha` |
+| Escuadrón | `id`, `nombre`, `codigo_invitacion`, `es_publico`, `limite_miembros`, `creador_id`, `racha` |
 | Miembro | `usuario_id`, `es_administrador`, `es_usuario`, `nickname`, `foto_url`, `habito`, `prueba_hoy`, `semana` |
 | Nickname | Nombre público del usuario (mismo campo que en perfil/registro) |
 | Foto | `foto_url`: URL firmada/temporal o `null` si no hay foto |
@@ -142,6 +142,8 @@ No lleva cuerpo.
   "id": 1,
   "nombre": "Madrugadores",
   "codigo_invitacion": "X8K9QL",
+  "es_publico": false,
+  "limite_miembros": 5,
   "creador_id": 42,
   "racha": 2,
   "miembros": [
