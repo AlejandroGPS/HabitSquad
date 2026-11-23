@@ -234,21 +234,24 @@ def test_la_racha_no_cuenta_dias_en_que_aun_no_habia_miembros(escuadron):
 @pytest.mark.django_db
 def test_semana_da_el_estado_de_cada_dia_de_lunes_a_domingo(escuadron):
     ana = unir(escuadron, "ana@example.com")
-    lunes = lunes_de(HOY)
+    hoy = HOY + timedelta(days=(2 - HOY.weekday()) % 7)
+    lunes = lunes_de(hoy)
     prueba(ana, lunes - timedelta(days=1))
-    prueba(ana, HOY, PENDIENTE)
-    if lunes < HOY:
-        prueba(ana, lunes, NO_CUMPLIDO)
+    prueba(ana, hoy, PENDIENTE)
+    prueba(ana, lunes, NO_CUMPLIDO)
 
-    semana = resumen(escuadron).semana(ana)
+    semana = ResumenEscuadron(
+        escuadron,
+        escuadron.membresias.all(),
+        hoy=hoy,
+    ).semana(ana)
 
     assert [dia["fecha"] for dia in semana] == [
         lunes + timedelta(days=indice) for indice in range(7)
     ]
     estados = {dia["fecha"]: dia["estado"] for dia in semana}
-    assert estados[HOY] == PENDIENTE
-    if lunes < HOY:
-        assert estados[lunes] == NO_CUMPLIDO
+    assert estados[hoy] == PENDIENTE
+    assert estados[lunes] == NO_CUMPLIDO
     assert all(
-        estado is None for fecha, estado in estados.items() if fecha not in (HOY, lunes)
+        estado is None for fecha, estado in estados.items() if fecha not in (hoy, lunes)
     )

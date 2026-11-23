@@ -26,6 +26,8 @@ SQUAD_PANEL_KEYS = {
     "id",
     "nombre",
     "codigo_invitacion",
+    "es_publico",
+    "limite_miembros",
     "creador_id",
     "miembros",
     "racha",
@@ -370,6 +372,7 @@ def test_squad_detail_includes_invite_code_streak_and_week(
     api_client, creator, member, squad
 ):
     today = timezone.localdate()
+    today += timedelta(days=(1 - today.weekday()) % 7)
     monday = lunes_de(today)
     Escuadron.objects.filter(pk=squad.pk).update(
         creado_en=timezone.now() - timedelta(days=10)
@@ -390,7 +393,16 @@ def test_squad_detail_includes_invite_code_streak_and_week(
                 cloudinary_public_id=f"pruebas/{user.pk}-{days}",
             )
 
-    response = authenticated_client(api_client, member).get(detail_url(squad))
+    localdate_actual = timezone.localdate
+
+    def localdate_determinista(value=None):
+        return today if value is None else localdate_actual(value)
+
+    with patch(
+        "escuadrones.detalle.api.views.timezone.localdate",
+        side_effect=localdate_determinista,
+    ):
+        response = authenticated_client(api_client, member).get(detail_url(squad))
 
     assert response.status_code == 200
     assert response.data["codigo_invitacion"] == "X8K9QL"
