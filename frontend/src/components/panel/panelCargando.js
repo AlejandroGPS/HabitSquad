@@ -18,7 +18,7 @@ function tarjeta(className, ...children) {
 function miembro() {
   return element(
     'div',
-    'flex items-center gap-3 py-1.5 lg:rounded-xl lg:bg-[#f2f2f7] lg:p-3',
+    'flex items-center gap-3 py-2.5',
     hueco('h-10 w-10 shrink-0', 'rounded-xl'),
     element('div', 'flex-1', hueco('h-3.5 w-20'), hueco('mt-2 h-3 w-32 max-w-full')),
   )
@@ -58,7 +58,7 @@ export function panelCargando() {
     tarjeta(
       'col-span-2 lg:col-span-3',
       element('div', 'mb-1 flex justify-between', hueco('h-3.5 w-16'), hueco('h-3.5 w-24')),
-      element('div', 'lg:mt-2 lg:grid lg:grid-cols-3 lg:gap-3', miembro(), miembro(), miembro()),
+      element('div', 'mt-1 divide-y divide-hairline', miembro(), miembro(), miembro()),
     ),
     tarjeta(
       'hidden flex-col lg:flex',

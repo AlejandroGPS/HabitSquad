@@ -33,7 +33,13 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
   retry.hidden = true
   const huecos = panelCargando()
   const body = element('div', REJILLA, back, status, error, retry)
-  const cuenta = accountMenu({ onLogout: async () => { await logout(); navigate('/login') } })
+  // La cuenta usa el nickname y la foto que ya trae el escuadrón, sin pedir el perfil aparte.
+  let mostrarIdentidad
+  const identidad = new Promise((resolve) => { mostrarIdentidad = resolve })
+  const cuenta = accountMenu({
+    loadProfile: () => identidad,
+    onLogout: async () => { await logout(); navigate('/login') },
+  })
   root.append(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body, trailing: cuenta }))
   let loading = false
   async function load() {
@@ -52,7 +58,8 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
       const squad = await api.getSquad(id)
       const ownHabit = await api.getDailyHabit(id)
       const miembros = squad.miembros.map((miembro) => ({
-        nombre: miembro.nombre || `Miembro ${miembro.usuario_id}`,
+        nombre: miembro.nickname || `Miembro ${miembro.usuario_id}`,
+        fotoUrl: miembro.foto_url,
         esUsuario: miembro.es_usuario,
         habito: habitText(miembro.habito),
         estado: miembro.prueba_hoy?.estado,
@@ -62,6 +69,8 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
       const racha = squad.racha ?? 0
       const momento = ahora()
       const abrirPrueba = ({ pruebaId }) => navigate(`/escuadrones/prueba?escuadron=${id}&registro=${pruebaId}`)
+      const propio = squad.miembros.find(({ es_usuario }) => es_usuario)
+      mostrarIdentidad(propio && { nickname: propio.nickname, foto_url: propio.foto_url })
       const pruebaPropia = miembros.find(({ esUsuario }) => esUsuario)?.pruebaId
       const tarjetas = [
         rachaCard({ racha }),
