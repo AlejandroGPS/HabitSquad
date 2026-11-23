@@ -10,9 +10,9 @@ const squad = {
   nombre: 'Lectores',
   codigo_invitacion: 'ABC123',
   miembros: [
-    { usuario_id: 1, nombre: 'Laura', habito: { opcion: 'leer' }, prueba_hoy: { id: 21, estado: 'pendiente' } },
-    { usuario_id: 2, nombre: 'Carlos' },
-    { usuario_id: 3, nombre: 'Ana', es_usuario: true },
+    { usuario_id: 1, nickname: 'Laura', foto_url: null, habito: { opcion: 'leer' }, prueba_hoy: { id: 21, estado: 'pendiente' } },
+    { usuario_id: 2, nickname: 'Carlos', foto_url: null },
+    { usuario_id: 3, nickname: 'Ana', foto_url: null, es_usuario: true },
   ],
 }
 const proof = { id: 21, usuario_id: 1, fecha: '2026-11-09', foto_url: 'https://example.com/prueba.jpg' }
