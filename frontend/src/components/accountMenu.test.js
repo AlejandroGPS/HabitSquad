@@ -36,6 +36,15 @@ describe('accountMenu', () => {
     expect(panel(menu).textContent).toContain('Tu cuenta')
   })
 
+  it('muestra las iniciales del perfil si la foto falla', async () => {
+    const menu = mount({ loadProfile: async () => ({ nickname: 'Ana', foto_url: 'https://example.com/foto.jpg' }) })
+    expect(toggle(menu).textContent).toBe('')
+    await vi.waitFor(() => expect(toggle(menu).querySelector('img')).not.toBeNull())
+    toggle(menu).querySelector('img').dispatchEvent(new Event('error'))
+    expect(toggle(menu).textContent).toBe('A')
+    expect(panel(menu).textContent).toContain('Ana')
+  })
+
   it('abre y cierra el menú al pulsar la inicial', () => {
     const menu = mount({ nombre: 'Alejandro' })
 
