@@ -47,7 +47,7 @@ verificar el correo, `/login` pide `POST /api/auth/token/` y guarda la sesión
 en `localStorage` con la clave `habitsquad.session`.
 
 A continuación la aplicación abre `/escuadrones`, «Mis escuadrones». La presentación
-está en `/`. En desarrollo, Vite reenvía `/api` a
+está en `/`. En desarrollo, Vite reenvía `/api` y `/ws` a
 `http://127.0.0.1:8000`. El contrato de la API está en
 OpenAPI y el recorrido de la sesión, en `docs/AUTENTICACION_JWT.md`.
 
@@ -152,10 +152,25 @@ o no la cuenta. El enlace del mensaje abre `/reset-password`, donde el usuario
 escribe y confirma la nueva contraseña. La pantalla envía el código del enlace
 y la nueva contraseña a `POST /api/auth/password-reset/confirm/`.
 
-En desarrollo, `npm run dev` y `npm run preview` reenvían `/api` al backend en
-`http://localhost:8000`, así que hay que tener `python manage.py runserver` en
-marcha para iniciar sesión. En producción Caddy sirve frontend y API en el
-mismo dominio.
+En desarrollo, `npm run dev` y `npm run preview` reenvían `/api` y `/ws` al
+backend en `http://127.0.0.1:8000`, así que hay que tener `python manage.py
+runserver` en marcha para iniciar sesión. En producción Caddy sirve frontend y
+API en el mismo dominio.
+
+## Panel en directo
+
+El panel del escuadrón se conecta por WebSocket a `/ws/escuadrones/{id}/`
+cuando termina de cargar (`src/tiempoReal.js`). El servidor solo avisa de que
+algo ha cambiado; el panel vuelve a pedir el detalle por REST y repinta la
+racha y los miembros sin recargar la página ni repetir las animaciones de
+entrada. Junto a «← Mis escuadrones» se ve «En directo» mientras la conexión
+está activa y «Reconectando…» si se corta. La conexión se cierra al salir del
+panel.
+
+`runserver` no atiende WebSockets: para probar el panel en directo, la API
+tiene que ir con uvicorn o con `docker-compose.dev.yml`. El contrato, la
+reconexión y la renovación del token están en
+[`docs/SINCRONIZACION_TIEMPO_REAL.md`](../docs/SINCRONIZACION_TIEMPO_REAL.md).
 
 ## PWA
 
@@ -184,6 +199,7 @@ HTTPS, así que se prueba con la versión desplegada.
 - `src/routes.js`: rutas, pantallas y rutas que exigen sesión.
 - `src/api.js`: inicio y cierre de sesión, renovación de tokens y `authFetch`.
 - `src/session.js`: guarda los tokens en el navegador.
+- `src/tiempoReal.js`: conexión WebSocket del panel del escuadrón.
 - `src/components/`: piezas reutilizables de diseño, formularios y navegación.
 - `src/views/`: pantallas de la aplicación.
 - `src/style.css`: importa Tailwind CSS.
