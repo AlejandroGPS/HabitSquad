@@ -47,7 +47,11 @@ describe('invitaCard', () => {
     )
   })
 
-  it('solo se ve en web por defecto', () => {
-    expect(invitaCard().classList.contains('hidden')).toBe(true)
+  it('se ve también en el móvil, a todo el ancho, y en web ocupa una columna', () => {
+    const card = invitaCard()
+
+    expect(card.classList.contains('hidden')).toBe(false)
+    expect(card.classList.contains('col-span-2')).toBe(true)
+    expect(card.classList.contains('lg:col-span-1')).toBe(true)
   })
 })

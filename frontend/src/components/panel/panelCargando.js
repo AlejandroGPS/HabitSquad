@@ -66,7 +66,7 @@ export function panelCargando() {
       element('div', 'mt-1 divide-y divide-hairline', miembro(), miembro(), miembro()),
     ),
     tarjeta(
-      'hidden flex-col lg:flex',
+      'col-span-2 flex flex-col lg:col-span-1',
       chip(),
       hueco('h-3.5 w-12'),
       hueco('mt-2 h-7 w-32', 'rounded-lg'),

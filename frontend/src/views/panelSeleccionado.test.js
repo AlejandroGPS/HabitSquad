@@ -104,6 +104,8 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     expect(items[2]).toBe('Miembro 3' + 'Sin hábito · Cumplido' + 'Ver foto')
     expect(view.textContent).toContain('ABC123')
     expect(view.textContent).toContain('Quedan 2 plazas')
+    const invita = [...view.querySelectorAll('section')].find((item) => item.textContent.includes('ABC123'))
+    expect(invita.classList.contains('hidden')).toBe(false)
     for (const link of view.querySelectorAll('a[href^="/habito"]')) {
       expect(link.getAttribute('href')).toBe('/habito?escuadron=7')
     }
