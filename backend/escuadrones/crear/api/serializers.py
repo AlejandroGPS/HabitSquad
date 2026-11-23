@@ -22,12 +22,16 @@ class EscuadronCreateSerializer(serializers.ModelSerializer):
             "id",
             "nombre",
             "codigo_invitacion",
+            "es_publico",
+            "limite_miembros",
             "creador_id",
             "miembros",
         )
         read_only_fields = (
             "id",
             "codigo_invitacion",
+            "es_publico",
+            "limite_miembros",
             "creador_id",
             "miembros",
         )

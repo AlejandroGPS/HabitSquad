@@ -2,7 +2,7 @@
 
 Documento de contexto permanente para agentes de IA (OpenCode, Claude, Codex, etc.) que trabajen en **HabitSquad**.
 
-> Revisado contra el checkout actual el **2026-11-22**. Si algo de este documento no coincide con el código, prevalecen el código y los archivos de configuración; actualiza este documento después de verificar el cambio.
+> Revisado contra el checkout actual el **2026-11-23**. Si algo de este documento no coincide con el código, prevalecen el código y los archivos de configuración; actualiza este documento después de verificar el cambio.
 
 ---
 
@@ -130,6 +130,7 @@ Ejemplos reales:
 
 - `backend/autenticacion/registro/api/` → `services/registration.py` → `usuarios.models.CustomUser`.
 - `backend/escuadrones/crear/api/` → `services/creation.py` y `services/invitation_code.py` → `escuadrones.models`.
+- `backend/escuadrones/configuracion/api/` → consulta y actualización restringida al administrador.
 - `backend/habitos/validacion/api/` → `services/voting.py` y `services/closing.py` → `habitos.models`.
 - `backend/habitos/prueba/api/` → `services/upload.py` → Cloudinary + `RegistroDiario`.
 
@@ -185,7 +186,7 @@ CustomUser 1 ─── N Membresia N ─── 1 Escuadron
 
 Entidades y restricciones principales:
 
-- `Escuadron`: `nombre`, `creador` (FK a usuario), `codigo_invitacion` único de 6 caracteres, `miembros` M2M through `Membresia`, `creado_en`.
+- `Escuadron`: `nombre`, `creador` (FK a usuario), `codigo_invitacion` único de 6 caracteres, `es_publico` (default `false`), `limite_miembros` (default `5`, mínimo `2`), `miembros` M2M through `Membresia`, `creado_en`.
 - `Membresia`: relación única `(escuadron, usuario)`, `es_administrador`, `unido_en`.
 - `HabitoDiario`: uno por `Membresia` (`OneToOneField`), opciones `gimnasio`, `leer`, `estudiar`, `otro`; `texto_personalizado` obligatorio para `otro`.
 - `RegistroDiario`: uno por `(habito, fecha)`, `cloudinary_public_id`, estado `pendiente` / `cumplido` / `no_cumplido`.
@@ -209,7 +210,10 @@ Todas las rutas cuelgan de `/api/`. Salvo las marcadas como públicas, requieren
 | `POST /api/auth/email-verification/confirm/` | Confirma el correo. | Pública + throttle anon |
 | `GET /api/escuadrones/` | Lista los escuadrones del usuario. | JWT |
 | `POST /api/escuadrones/` | Crea un escuadrón. | JWT |
+| `GET /api/escuadrones/publicos/` | Lista escuadrones públicos con ocupación y límite. | JWT |
 | `POST /api/escuadrones/unirse/` | Une al usuario mediante código. | JWT |
+| `POST /api/escuadrones/{id}/unirse/` | Une sin código a un escuadrón público. | JWT |
+| `GET/PATCH /api/escuadrones/{id}/configuracion/` | Consulta o modifica nombre, visibilidad y límite; solo administrador. | JWT + administrador |
 | `GET /api/escuadrones/{id}/` | Detalle con miembros, hábitos, pruebas, semana y racha. | JWT + pertenencia |
 | `GET /api/escuadrones/{id}/habito/` | Consulta el hábito propio. | JWT + pertenencia |
 | `PUT /api/escuadrones/{id}/habito/` | Crea o actualiza el hábito propio. | JWT + pertenencia |
@@ -632,10 +636,10 @@ No hay una carpeta de ADR formales; las decisiones están registradas en `docs/`
   - Rutas: `backend/autenticacion/*/api/urls.py`.
   - Lógica: `backend/autenticacion/*/services/`.
   - Contratos: `docs/REGISTRO.md`, `docs/AUTENTICACION_JWT.md`, `docs/RECUPERACION_CONTRASENA.md`.
-- **Escuadrones:** creación con código único, unión por código, listado y detalle con panel.
+- **Escuadrones:** creación con código único, configuración de visibilidad y límite, unión por código o sin código a grupos públicos, listado público y detalle con panel.
   - Rutas: `backend/escuadrones/*/api/urls.py`.
   - Lógica: `backend/escuadrones/crear/services/`, `unirse/services/`, `detalle/services.py`.
-  - Contratos: `docs/CREAR_ESCUADRON.md`, `docs/UNIRSE_ESCUADRON.md`, `docs/HABITOS.md`.
+  - Contratos: `docs/CREAR_ESCUADRON.md`, `docs/UNIRSE_ESCUADRON.md`, `docs/CONFIGURACION_ESCUADRON.md`, `docs/HABITOS.md`.
 - **Hábito diario:** asignación y consulta por membresía.
   - `backend/habitos/api/`, `backend/habitos/services/assignment.py`.
 - **Prueba fotográfica:** subida a Cloudinary, actualización del registro del día y visualización con URL firmada.
@@ -661,9 +665,10 @@ Hechos comprobados en el checkout actual:
    - `ResumenEscuadron.racha` cuenta jornadas cerradas anteriores a la fecha local actual; la jornada de hoy se incorpora al cambiar la fecha. El enlace de T48 está pendiente de confirmar.
    - Alertas: suscripción/VAPID en `backend/alertas/` y `docs/ALERTAS.md`; el envío Q2 reutiliza el worker; pytest de `alertas` está en CI con cobertura 100 %. Falta el frontend (permisos del navegador / service worker).
 
-3. **El límite de 5 miembros por escuadrón solo se muestra en el frontend.**
-   - `frontend/src/views/panelSeleccionado.js` calcula `5 - miembros.length` y `miembrosCard` muestra «de 5 miembros».
-   - El backend no impone ese máximo en `Membresia` ni en `unirse_escuadron`; un agente no debe asumir que la API lo aplica.
+3. **El backend aplica el límite configurable de miembros por escuadrón.**
+   - `Escuadron.limite_miembros` tiene valor inicial `5` y mínimo `2`; las uniones comprueban la capacidad dentro de una transacción con bloqueo de fila.
+   - Si se reduce por debajo de la ocupación actual, se conservan los miembros existentes y se bloquean nuevas incorporaciones.
+   - La configuración y el descubrimiento público están documentados en `docs/CONFIGURACION_ESCUADRON.md`.
 
 4. **Hay código frontend heredado o de demo no usado por las rutas activas.**
    - `frontend/src/auth/login.js` y `frontend/src/auth/registro.js` implementan un flujo antiguo con claves `habitsquad.access`/`habitsquad.refresh`; no los importa `routes.js`. El flujo activo usa `habitsquad.session` en `src/session.js`.
@@ -701,7 +706,6 @@ Hechos comprobados en el checkout actual:
 - Estado real del último workflow de CI y del despliegue en Azure (no se puede confirmar solo desde el código).
 - Comportamiento de la PWA en dispositivos reales y HTTPS (la documentación indica que se prueba manualmente).
 - Vigencia de los estados de validación escritos en `docs/DEPENDENCIAS.md`.
-- Si el límite de 5 miembros es un requisito de producto pendiente de implementar en backend o solo una decisión de UI.
 
 ---
 

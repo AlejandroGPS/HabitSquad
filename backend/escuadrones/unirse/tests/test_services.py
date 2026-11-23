@@ -6,9 +6,12 @@ from django.db import IntegrityError
 from escuadrones.models import Escuadron, Membresia
 from escuadrones.unirse.services.join import (
     AlreadyMemberError,
+    PrivateSquadError,
+    SquadronFullError,
     SquadronNotFoundError,
     normalize_invitation_code,
     unirse_escuadron,
+    unirse_escuadron_publico,
 )
 from usuarios.models import CustomUser
 
@@ -90,3 +93,68 @@ def test_unirse_escuadron_maps_integrity_error_to_already_member(escuadron, join
         unirse_escuadron(codigo_invitacion="X8K9QL", usuario=joiner)
 
     assert not Membresia.objects.filter(escuadron=escuadron, usuario=joiner).exists()
+
+
+@pytest.mark.django_db
+def test_unirse_escuadron_rejects_join_when_limit_is_reached(escuadron, joiner):
+    for index in range(4):
+        user = CustomUser.objects.create_user(
+            email=f"miembro{index}@example.com",
+            password="S0mething!Secure-497",
+        )
+        Membresia.objects.create(escuadron=escuadron, usuario=user)
+
+    with pytest.raises(SquadronFullError):
+        unirse_escuadron(codigo_invitacion="X8K9QL", usuario=joiner)
+
+    assert Membresia.objects.filter(escuadron=escuadron).count() == 5
+    assert not Membresia.objects.filter(escuadron=escuadron, usuario=joiner).exists()
+
+
+@pytest.mark.django_db
+def test_lowering_limit_keeps_existing_members_and_blocks_new_ones(
+    escuadron,
+    joiner,
+):
+    current_member = CustomUser.objects.create_user(
+        email="actual@example.com",
+        password="S0mething!Secure-497",
+    )
+    Membresia.objects.create(escuadron=escuadron, usuario=current_member)
+    escuadron.limite_miembros = 2
+    escuadron.save(update_fields=["limite_miembros"])
+
+    with pytest.raises(SquadronFullError):
+        unirse_escuadron(codigo_invitacion="X8K9QL", usuario=joiner)
+
+    assert Membresia.objects.filter(escuadron=escuadron).count() == 2
+    assert Membresia.objects.filter(
+        escuadron=escuadron,
+        usuario=current_member,
+    ).exists()
+    assert not Membresia.objects.filter(escuadron=escuadron, usuario=joiner).exists()
+
+
+@pytest.mark.django_db
+def test_unirse_escuadron_publico_adds_member(escuadron, joiner):
+    escuadron.es_publico = True
+    escuadron.save(update_fields=["es_publico"])
+
+    result = unirse_escuadron_publico(escuadron_id=escuadron.pk, usuario=joiner)
+
+    assert result.pk == escuadron.pk
+    assert Membresia.objects.filter(escuadron=escuadron, usuario=joiner).exists()
+
+
+@pytest.mark.django_db
+def test_unirse_escuadron_publico_rejects_private_squad(escuadron, joiner):
+    with pytest.raises(PrivateSquadError):
+        unirse_escuadron_publico(escuadron_id=escuadron.pk, usuario=joiner)
+
+    assert Membresia.objects.filter(escuadron=escuadron).count() == 1
+
+
+@pytest.mark.django_db
+def test_unirse_escuadron_publico_raises_when_squad_is_missing(joiner):
+    with pytest.raises(SquadronNotFoundError, match="No se ha encontrado"):
+        unirse_escuadron_publico(escuadron_id=999, usuario=joiner)

@@ -26,6 +26,8 @@ SQUAD_PANEL_KEYS = {
     "id",
     "nombre",
     "codigo_invitacion",
+    "es_publico",
+    "limite_miembros",
     "creador_id",
     "miembros",
     "racha",
@@ -394,6 +396,8 @@ def test_squad_detail_includes_invite_code_streak_and_week(
 
     assert response.status_code == 200
     assert response.data["codigo_invitacion"] == "X8K9QL"
+    assert response.data["es_publico"] is False
+    assert response.data["limite_miembros"] == 5
     # La racha solo cuenta jornadas anteriores a hoy.
     assert response.data["racha"] == 1
 

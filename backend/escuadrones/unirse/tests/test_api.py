@@ -82,12 +82,16 @@ def test_join_escuadron_with_valid_code_adds_member(
         "id",
         "nombre",
         "codigo_invitacion",
+        "es_publico",
+        "limite_miembros",
         "creador_id",
         "miembros",
     }
     assert response.data["id"] == escuadron.pk
     assert response.data["nombre"] == "Madrugadores"
     assert response.data["codigo_invitacion"] == "X8K9QL"
+    assert response.data["es_publico"] is False
+    assert response.data["limite_miembros"] == 5
     assert response.data["creador_id"] == creator.pk
     assert {"usuario_id": creator.pk, "es_administrador": True} in response.data[
         "miembros"
@@ -216,5 +220,5 @@ def test_join_escuadron_openapi_documents_code_validation_and_responses(api_clie
         "El código debe tener 6 caracteres alfanuméricos."
     )
     assert operation["responses"]["409"]["description"] == (
-        "El usuario autenticado ya es miembro del escuadrón."
+        "El usuario ya es miembro o el escuadrón alcanzó el límite."
     )
