@@ -75,6 +75,7 @@ están resumidos en [backend/README.md](backend/README.md).
 - `docs/CREAR_ESCUADRON.md`: contrato del endpoint de creación de escuadrones.
 - `docs/UNIRSE_ESCUADRON.md`: contrato del endpoint de unión a un escuadrón.
 - `docs/PERFIL_USUARIO.md`: contrato de consulta y actualización del perfil.
+- `docs/ALERTAS.md`: contrato de suscripción Web Push y avisos de falta de prueba.
 - `docs/REPORT.md`: informe del proyecto, que se completará según se acuerde.
 - `backend/README.md` y `frontend/README.md`: instrucciones específicas de cada
   aplicación cuando se implemente su configuración.

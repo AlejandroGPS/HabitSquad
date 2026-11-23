@@ -184,8 +184,9 @@ dominio público. No requiere `.env`: define valores locales de desarrollo y
 expone Redis únicamente en `127.0.0.1:6379`. La API queda disponible en
 `http://localhost:8000` y el WebSocket en
 `ws://localhost:8000/ws/escuadrones/{id}/`. API y Redis deben figurar como
-`healthy`, y el worker como `running`. El worker registra el horario de forma
-idempotente antes de ejecutar `qcluster`.
+`healthy`, y el worker como `running`. El worker registra los horarios de
+forma idempotente (`programar_cierre_diario` y `programar_alertas`) antes de
+ejecutar `qcluster`.
 
 Para comprobar el handshake del WebSocket localmente con `curl`:
 
@@ -213,3 +214,4 @@ y `/ws/` a la API y conserva el upgrade WebSocket.
 - Formato y publicación de eventos: `backend/escuadrones/tiempo_real/events.py`.
 - Cálculo de la racha: `backend/escuadrones/detalle/services.py`.
 - Cierre de pruebas y tarea de Q2: `backend/habitos/validacion/services/closing.py`, `backend/habitos/validacion/tasks.py` y `backend/habitos/management/commands/programar_cierre_diario.py`.
+- Avisos Web Push (mismo worker): `backend/alertas/tasks.py` y `backend/alertas/management/commands/programar_alertas.py` (contrato en `docs/ALERTAS.md`).

@@ -39,7 +39,7 @@ az vm start -g habitsquad-rg -n habitsquad-vm
 | `db` | `postgres:18.6-alpine` | Base de datos, con los datos en el volumen `postgres-data`. |
 | `redis` | `redis:8.10.3-alpine` | Capa compartida de Channels y broker del worker Q2. |
 | `api` | `backend/Dockerfile` | Django sobre uvicorn (ASGI). Al arrancar aplica las migraciones y ejecuta `collectstatic`. |
-| `worker` | `backend/Dockerfile` | Programa el cierre diario y ejecuta el cluster de Django Q2. |
+| `worker` | `backend/Dockerfile` | Programa el cierre diario y los avisos Web Push, y ejecuta el cluster de Django Q2. |
 | `web` | `frontend/Dockerfile` | Build de Vite servido por Caddy, con HTTPS. |
 
 Caddy reparte las peticiones según el `Caddyfile`:
@@ -51,7 +51,8 @@ Caddy reparte las peticiones según el `Caddyfile`:
 
 La API y el worker comparten `REDIS_URL` (en producción Compose los conecta a
 `redis://redis:6379/0`). El worker espera a que la API aplique las migraciones,
-crea el horario idempotente y ejecuta Q2. Channels usa Redis para enviar los
+crea los horarios idempotentes (`programar_cierre_diario` y
+`programar_alertas`) y ejecuta Q2. Channels usa Redis para enviar los
 eventos del panel entre procesos. En `.env.example` se documenta la variable;
 en el Compose de producción se fija a la dirección interna del servicio Redis.
 

@@ -27,7 +27,7 @@ Desde `backend/` con el entorno virtual activado:
 ```bash
 python manage.py migrate
 python manage.py check
-pytest --cov=usuarios --cov=autenticacion --cov=escuadrones --cov=habitos --cov-report=term-missing --cov-fail-under=100
+pytest --cov=usuarios --cov=autenticacion --cov=escuadrones --cov=habitos --cov=alertas --cov-report=term-missing --cov-fail-under=100
 ruff check .
 ruff format --check .
 python manage.py runserver
@@ -136,6 +136,20 @@ el perfil del usuario:
 El contrato completo está en
 [docs/PERFIL_USUARIO.md](../docs/PERFIL_USUARIO.md). La implementación vive en
 `usuarios/perfil/` (`api/`, `services/`, `tests/`).
+
+## API de alertas
+
+Los endpoints bajo `/api/alertas/` gestionan la suscripción Web Push y la
+clave pública VAPID:
+
+- `GET /api/alertas/vapid-public-key/` (`200` / `503` si falta la clave)
+- `POST /api/alertas/suscripcion/` y `DELETE /api/alertas/suscripcion/` (JWT)
+
+El criterio de envío y `pywebpush` están en `alertas/services/`. El worker
+Q2 programa `programar_alertas` (cada minuto) junto al cierre diario. La hora
+de aviso está en el perfil (`hora_aviso`). Contrato:
+[docs/ALERTAS.md](../docs/ALERTAS.md). Código y tests en `alertas/` (cobertura
+CI al 100 % con el resto de apps del backend).
 
 ## Organización por funcionalidad
 

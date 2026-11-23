@@ -55,7 +55,7 @@ services:
     command:
       - sh
       - -c
-      - python manage.py programar_cierre_diario && exec python manage.py qcluster
+      - python manage.py programar_cierre_diario && python manage.py programar_alertas && exec python manage.py qcluster
     depends_on:
       api:
         condition: service_healthy
