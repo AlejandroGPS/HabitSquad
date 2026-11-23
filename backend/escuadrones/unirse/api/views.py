@@ -1,12 +1,26 @@
 from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
-from rest_framework import generics
+from rest_framework import generics, status
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from escuadrones.unirse.services.join import (
+    AlreadyMemberError,
+    PrivateSquadError,
+    SquadronFullError,
+    SquadronNotFoundError,
+    unirse_escuadron_publico,
+)
+
 from .serializers import (
+    Conflict,
     ErrorDetalleSerializer,
     ErrorValidacionCodigoInvitacionSerializer,
     EscuadronJoinSerializer,
+    PrivateSquad,
+    SquadronFull,
 )
 
 
@@ -39,7 +53,9 @@ class EscuadronJoinView(generics.CreateAPIView):
             ),
             409: OpenApiResponse(
                 response=ErrorDetalleSerializer,
-                description="El usuario autenticado ya es miembro del escuadrón.",
+                description=(
+                    "El usuario ya es miembro o el escuadrón alcanzó el límite."
+                ),
             ),
         },
         description=(
@@ -80,3 +96,47 @@ class EscuadronJoinView(generics.CreateAPIView):
     )
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
+
+
+class PublicSquadJoinView(APIView):
+    authentication_classes = (JWTAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(
+        operation_id="unirseAUnEscuadronPublico",
+        tags=["Escuadrones"],
+        request=None,
+        summary="Unirse a un escuadrón público",
+        responses={
+            201: EscuadronJoinSerializer,
+            401: OpenApiResponse(description="Falta un access token válido."),
+            403: OpenApiResponse(description="El escuadrón es privado."),
+            404: OpenApiResponse(description="El escuadrón no existe."),
+            409: OpenApiResponse(
+                description="El usuario ya es miembro o se alcanzó el límite."
+            ),
+        },
+        description=(
+            "Incorpora al usuario autenticado a un escuadrón público sin código. "
+            "El escuadrón debe tener plazas disponibles."
+        ),
+    )
+    def post(self, request, escuadron_id):
+        try:
+            escuadron = unirse_escuadron_publico(
+                escuadron_id=escuadron_id,
+                usuario=request.user,
+            )
+        except SquadronNotFoundError as error:
+            raise NotFound(detail=str(error)) from error
+        except AlreadyMemberError as error:
+            raise Conflict(detail=str(error)) from error
+        except SquadronFullError as error:
+            raise SquadronFull(detail=str(error)) from error
+        except PrivateSquadError as error:
+            raise PrivateSquad(detail=str(error)) from error
+
+        return Response(
+            EscuadronJoinSerializer(escuadron).data,
+            status=status.HTTP_201_CREATED,
+        )

@@ -99,6 +99,8 @@ class EscuadronConMiembrosSerializer(serializers.ModelSerializer):
             "id",
             "nombre",
             "codigo_invitacion",
+            "es_publico",
+            "limite_miembros",
             "creador_id",
             "miembros",
         )

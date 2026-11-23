@@ -57,6 +57,8 @@ class EscuadronDetailView(APIView):
                     "id": 1,
                     "nombre": "Madrugadores",
                     "codigo_invitacion": "X8K9QL",
+                    "es_publico": False,
+                    "limite_miembros": 5,
                     "creador_id": 42,
                     "racha": 2,
                     "miembros": [
