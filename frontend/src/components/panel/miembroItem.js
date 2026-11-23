@@ -1,4 +1,4 @@
-import { iniciales } from '../avatar.js'
+import { fotoAvatar } from '../avatar.js'
 import { pillButtonClass } from '../card.js'
 import { button, element } from '../dom.js'
 import { icon } from '../icons.js'
@@ -13,31 +13,22 @@ function accion(miembro, { onVerFoto, onVotar }) {
   return null
 }
 
-function avatarSinFoto(miembro, estado) {
+function avatar(miembro, estado) {
+  const nombreIcono = ICONO_ESTADO[miembro.estado]
   return element(
     'span',
-    `grid h-10 w-10 shrink-0 place-items-center rounded-xl font-black ${estado.avatar}`,
-    miembro.estado === 'cumplido' ? icon('check', 'h-5 w-5 shrink-0', 3.2) : iniciales(miembro.nombre),
+    'relative shrink-0',
+    fotoAvatar({
+      nombre: miembro.nombre,
+      fotoUrl: miembro.fotoUrl,
+      className: 'h-11 w-11 rounded-full bg-accent-soft font-black text-accent',
+    }),
+    nombreIcono && element(
+      'span',
+      `absolute -right-0.5 -bottom-0.5 grid h-5 w-5 place-items-center rounded-full ring-2 ring-white ${estado.avatar}`,
+      icon(nombreIcono, 'h-3 w-3 shrink-0', 3.2),
+    ),
   )
-}
-
-// Con foto, el color del estado pasa a una insignia para no taparla.
-function avatar(miembro, estado) {
-  const sinFoto = avatarSinFoto(miembro, estado)
-  if (!miembro.fotoUrl) return sinFoto
-  const foto = element('img', 'h-10 w-10 rounded-xl bg-[#e5e5ea] object-cover')
-  foto.alt = ''
-  foto.referrerPolicy = 'no-referrer'
-  const nombreIcono = ICONO_ESTADO[miembro.estado]
-  const insignia = nombreIcono && element(
-    'span',
-    `absolute -right-1 -bottom-1 grid h-5 w-5 place-items-center rounded-full ring-2 ring-white ${estado.avatar}`,
-    icon(nombreIcono, 'h-3 w-3 shrink-0', 3.2),
-  )
-  const conFoto = element('span', 'relative shrink-0', foto, insignia)
-  foto.addEventListener('error', () => conFoto.replaceWith(sinFoto), { once: true })
-  foto.src = miembro.fotoUrl
-  return conFoto
 }
 
 export function miembroItem(miembro, acciones = {}) {

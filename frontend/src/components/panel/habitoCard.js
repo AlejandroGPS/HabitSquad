@@ -1,14 +1,43 @@
+import { fotoAvatar } from '../avatar.js'
 import { card, cardChip, cardLabel } from '../card.js'
 import { button, element } from '../dom.js'
 import { icon } from '../icons.js'
+import { ESTADOS } from './estados.js'
 
 const PRIMARY = [
   'mt-3 flex h-[3.25rem] items-center justify-center gap-2 rounded-full bg-white px-6',
   'text-[1.0625rem] font-bold text-accent disabled:opacity-60 lg:mt-auto',
 ].join(' ')
 
+function identidad({ nombre, fotoUrl, estado = 'sin-prueba' }) {
+  const { texto, barra } = ESTADOS[estado] ?? ESTADOS['sin-prueba']
+  const nickname = element('p', 'truncate text-[1.125rem] font-black', nombre)
+  nickname.title = nombre
+  return element(
+    'div',
+    'mb-4 flex items-center gap-3 pe-10',
+    fotoAvatar({
+      nombre,
+      fotoUrl,
+      className: 'h-12 w-12 rounded-full bg-white/20 text-[1.125rem] font-black text-white ring-2 ring-white/40',
+    }),
+    element(
+      'div',
+      'min-w-0',
+      nickname,
+      element(
+        'p',
+        'mt-0.5 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-0.5 text-[0.8125rem] font-extrabold whitespace-nowrap',
+        element('span', `h-2 w-2 rounded-full ring-1 ring-white/60 ${barra}`),
+        `Hoy: ${texto}`,
+      ),
+    ),
+  )
+}
+
 export function habitoCard({
   habito,
+  usuario,
   cierre = '23:59',
   onSubirPrueba,
   onVerPrueba,
@@ -31,6 +60,7 @@ export function habitoCard({
   return card(
     `${className} flex flex-col bg-gradient-to-br from-[#6a45f0] to-[#4c28cc] text-white`,
     cardChip('book', 'bg-white/20 text-white'),
+    usuario && identidad(usuario),
     cardLabel('Mi hábito', { className: 'text-white' }),
     ...contenido,
   )

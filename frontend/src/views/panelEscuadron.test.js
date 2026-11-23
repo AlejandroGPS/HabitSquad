@@ -64,7 +64,7 @@ describe('panelEscuadronScreen', () => {
     expect(card(screen, 'Esta semana')).toBeDefined()
     expect(card(screen, 'Mi hábito').textContent).toContain('Leer un libroSube una foto antes de las 22:00')
     expect(card(screen, 'Miembros').querySelector('h2').textContent).toBe('Miembros3 de 4 miembros')
-    expect(card(screen, 'Invita').textContent).toContain('K7P2QXQueda 1 plaza')
+    expect(card(screen, 'Invita').textContent).toContain('Queda 1 plazaK7P2QX')
   })
 
   it('conecta las acciones con las tarjetas', () => {

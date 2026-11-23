@@ -1,50 +1,93 @@
 import { semanaActual } from '../../tiempo.js'
 import { fotoAvatar } from '../avatar.js'
-import { card, cardLabel, progressBars } from '../card.js'
+import { card, cardLabel } from '../card.js'
 import { element } from '../dom.js'
 import { ESTADOS } from './estados.js'
 
-// Una cara por columna de barras; pl-14 es el ancho del día (w-11) más su separación (gap-3).
-function cabecera(miembros) {
-  return element(
-    'div',
-    'mt-3 flex gap-1 pl-14',
-    ...miembros.map((miembro) => {
-      const avatar = fotoAvatar({
-        nombre: miembro.nombre,
-        fotoUrl: miembro.fotoUrl,
-        className: 'h-6 w-6 rounded-full bg-accent-soft text-[0.625rem] font-black text-accent',
-      })
-      avatar.title = miembro.nombre ?? ''
-      return element('span', 'flex flex-1 justify-center', avatar)
-    }),
-  )
-}
+const NOMBRES_DIA = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
+const FUTURO = 'bg-[#f2f2f7]'
+const LEYENDA = ['cumplido', 'pendiente', 'no_cumplido']
 
 function estadoDelDia(miembro, indice, hoy) {
   return miembro.semana?.[indice]?.estado ?? (hoy ? miembro.estado : null) ?? 'sin-prueba'
 }
 
-export function semanaCard({ miembros = [], ahora = new Date(), className = 'hidden lg:row-span-2 lg:flex' } = {}) {
-  const filas = semanaActual(ahora).map(({ letra, numero, hoy }, indice) =>
+function soloLectores(texto) {
+  return element('span', 'sr-only', texto)
+}
+
+function cabecera(dias) {
+  return element(
+    'thead',
+    '',
     element(
-      'div',
-      'flex items-center gap-3',
-      element(
-        'span',
-        `w-11 text-[0.8125rem] font-extrabold ${hoy ? 'text-accent' : 'text-ink-muted'}`,
-        `${letra} ${numero}`,
-      ),
-      progressBars(
-        miembros.map((miembro) => (ESTADOS[estadoDelDia(miembro, indice, hoy)] ?? ESTADOS['sin-prueba']).barra),
-        'flex-1',
-      ),
+      'tr',
+      '',
+      element('th', 'w-8', soloLectores('Miembro')),
+      ...dias.map(({ letra, numero, hoy }, indice) => {
+        const visible = element(
+          'span',
+          `mx-auto grid h-6 w-6 place-items-center rounded-full ${hoy ? 'bg-accent text-white' : 'text-ink-muted'}`,
+          letra,
+        )
+        visible.setAttribute('aria-hidden', 'true')
+        const th = element('th', 'pb-1 text-center text-[0.75rem] font-extrabold', visible, soloLectores(`${NOMBRES_DIA[indice]} ${numero}`))
+        th.scope = 'col'
+        return th
+      }),
     ),
   )
+}
+
+function fila(miembro, dias, hoyIndice) {
+  const avatar = fotoAvatar({
+    nombre: miembro.nombre,
+    fotoUrl: miembro.fotoUrl,
+    className: 'h-7 w-7 rounded-full bg-accent-soft text-[0.6875rem] font-black text-accent',
+  })
+  avatar.title = miembro.nombre ?? ''
+  avatar.setAttribute('aria-hidden', 'true')
+  const nombre = element('th', 'py-0.5 pe-1 text-left', avatar, soloLectores(miembro.nombre ?? ''))
+  nombre.scope = 'row'
+
+  return element(
+    'tr',
+    '',
+    nombre,
+    ...dias.map(({ hoy }, indice) => {
+      const futuro = hoyIndice >= 0 && indice > hoyIndice
+      const estado = ESTADOS[estadoDelDia(miembro, indice, hoy)] ?? ESTADOS['sin-prueba']
+      return element(
+        'td',
+        'p-0.5',
+        element('span', `block h-6 rounded-md ${futuro ? FUTURO : estado.barra}`),
+        soloLectores(futuro ? 'Por llegar' : estado.texto),
+      )
+    }),
+  )
+}
+
+export function semanaCard({ miembros = [], ahora = new Date(), className = 'hidden lg:row-span-2 lg:flex' } = {}) {
+  const dias = semanaActual(ahora)
+  const hoyIndice = dias.findIndex(({ hoy }) => hoy)
+  const tabla = element(
+    'table',
+    'mt-3 w-full table-fixed',
+    element('caption', 'sr-only', 'Estado de cada miembro esta semana'),
+    cabecera(dias),
+    element('tbody', '', ...miembros.map((miembro) => fila(miembro, dias, hoyIndice))),
+  )
+
   return card(
     `${className} flex-col`,
     cardLabel('Esta semana', { icon: 'calendar' }),
-    miembros.length > 0 && cabecera(miembros),
-    element('div', `${miembros.length > 0 ? 'mt-2' : 'mt-4'} flex flex-1 flex-col justify-between gap-2`, ...filas),
+    tabla,
+    element(
+      'div',
+      'mt-auto flex flex-wrap gap-x-3 gap-y-1 pt-3 text-[0.75rem] font-bold text-ink-muted',
+      ...LEYENDA.map((clave) =>
+        element('span', 'inline-flex items-center gap-1.5', element('span', `h-2.5 w-2.5 rounded-sm ${ESTADOS[clave].barra}`), ESTADOS[clave].texto),
+      ),
+    ),
   )
 }

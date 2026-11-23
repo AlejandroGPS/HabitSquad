@@ -1,4 +1,4 @@
-import { card, cardChip, cardLabel, cardNote, pillButtonClass } from '../card.js'
+import { card, cardNote, pillButtonClass } from '../card.js'
 import { button, element } from '../dom.js'
 import { icon } from '../icons.js'
 
@@ -8,7 +8,7 @@ export function plazasLibres(libres) {
 }
 
 export function invitaCard({ codigo = '', libres = 0, className = 'hidden lg:flex' } = {}) {
-  const status = element('p', 'mt-2 hidden text-[0.8125rem] font-bold text-ink-muted')
+  const status = element('p', 'hidden w-full text-[0.8125rem] font-bold text-ink-muted')
   status.setAttribute('role', 'status')
 
   async function copiar() {
@@ -21,16 +21,21 @@ export function invitaCard({ codigo = '', libres = 0, className = 'hidden lg:fle
     status.classList.remove('hidden')
   }
 
-  const nota = cardNote(plazasLibres(libres))
-  nota.classList.add('mb-3')
-
   return card(
-    `${className} flex-col`,
-    cardChip('users', 'bg-[#e6f2ff] text-[#0066cc]'),
-    cardLabel('Invita'),
-    element('p', 'mt-1 text-[1.5rem] font-black tracking-[0.2em] select-all', codigo),
-    nota,
-    button(`mt-auto self-start ${pillButtonClass}`, copiar, icon('copy', 'h-4 w-4 shrink-0'), 'Copiar'),
+    `${className} flex-wrap items-center gap-x-4 gap-y-3`,
+    element('span', 'grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#e6f2ff] text-[#0066cc]', icon('users')),
+    element(
+      'div',
+      'min-w-[11rem] flex-1',
+      element('p', 'font-black', 'Invita a tu escuadrón'),
+      cardNote(plazasLibres(libres)),
+    ),
+    element(
+      'div',
+      'flex items-center gap-2',
+      element('p', 'rounded-xl bg-[#f2f2f7] px-3 py-2 text-[1.25rem] leading-tight font-black tracking-[0.2em] select-all', codigo),
+      button(pillButtonClass, copiar, icon('copy', 'h-4 w-4 shrink-0'), 'Copiar'),
+    ),
     status,
   )
 }

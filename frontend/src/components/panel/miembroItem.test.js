@@ -6,7 +6,7 @@ const foto = 'https://res.cloudinary.com/demo/perfiles/carlos.jpg'
 describe('miembroItem', () => {
   it('muestra el nombre, el hábito y el estado escrito', () => {
     expect(miembroItem({ nombre: 'Carlos', habito: 'Gimnasio', estado: 'cumplido' }).textContent).toBe(
-      'Carlos' + 'Gimnasio · Cumplido' + 'Ver foto',
+      'C' + 'Carlos' + 'Gimnasio · Cumplido' + 'Ver foto',
     )
     expect(miembroItem({ nombre: 'Laura', habito: 'Leer', estado: 'pendiente' }).textContent).toBe(
       'L' + 'Laura' + 'Leer · Pendiente' + 'Votar',
@@ -69,30 +69,37 @@ describe('miembroItem', () => {
     ['cumplido', 'bg-[#248a3d]'],
     ['pendiente', 'bg-[#c93400]'],
     ['no_cumplido', 'bg-red-100'],
-  ])('con foto, el estado %s se ve en una insignia de su color', (estado, color) => {
-    const item = miembroItem({ nombre: 'carlos', fotoUrl: foto, estado })
-    const insignia = item.querySelector('img + span')
+  ])('el estado %s se ve en una insignia de su color sobre la cara', (estado, color) => {
+    for (const fotoUrl of [foto, undefined]) {
+      const insignia = miembroItem({ nombre: 'carlos', fotoUrl, estado }).firstElementChild.lastElementChild
 
-    expect(insignia.classList.contains(color)).toBe(true)
-    expect(insignia.querySelector('svg')).not.toBeNull()
+      expect(insignia.classList.contains('absolute')).toBe(true)
+      expect(insignia.classList.contains(color)).toBe(true)
+      expect(insignia.querySelector('svg')).not.toBeNull()
+    }
   })
 
-  it('con foto y sin prueba no pinta insignia', () => {
-    expect(miembroItem({ nombre: 'carlos', fotoUrl: foto }).querySelector('img + span')).toBeNull()
+  it('sin prueba no pinta insignia', () => {
+    expect(miembroItem({ nombre: 'carlos', fotoUrl: foto }).firstElementChild.children).toHaveLength(1)
+    expect(miembroItem({ nombre: 'carlos' }).querySelector('.absolute')).toBeNull()
   })
 
-  it.each([
-    ['pendiente', 'L', 'bg-[#c93400]'],
-    ['cumplido', '', 'bg-[#248a3d]'],
-  ])('si la foto no carga vuelve al avatar del estado %s', (estado, iniciales, color) => {
-    const item = miembroItem({ nombre: 'lau', fotoUrl: foto, estado })
+  it('las caras son redondas y sin foto muestran las iniciales', () => {
+    const cara = miembroItem({ nombre: 'lau', estado: 'pendiente' }).firstElementChild.firstElementChild
+
+    expect(cara.classList.contains('rounded-full')).toBe(true)
+    expect(cara.textContent).toBe('L')
+  })
+
+  it('si la foto no carga vuelve a las iniciales y conserva la insignia', () => {
+    const item = miembroItem({ nombre: 'lau', fotoUrl: foto, estado: 'pendiente' })
 
     item.querySelector('img').dispatchEvent(new Event('error'))
 
-    const avatar = item.firstElementChild
+    const [cara, insignia] = item.firstElementChild.children
     expect(item.querySelector('img')).toBeNull()
-    expect(avatar.textContent).toBe(iniciales)
-    expect(avatar.classList.contains(color)).toBe(true)
+    expect(cara.textContent).toBe('L')
+    expect(insignia.classList.contains('bg-[#c93400]')).toBe(true)
   })
 
   it('pasa el miembro a las acciones de ver foto y votar', () => {
