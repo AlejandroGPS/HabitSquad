@@ -163,9 +163,7 @@ El panel del escuadrón se conecta por WebSocket a `/ws/escuadrones/{id}/`
 cuando termina de cargar (`src/tiempoReal.js`). El servidor solo avisa de que
 algo ha cambiado; el panel vuelve a pedir el detalle por REST y repinta la
 racha y los miembros sin recargar la página ni repetir las animaciones de
-entrada. Junto a «← Mis escuadrones» se ve «En directo» mientras la conexión
-está activa y «Reconectando…» si se corta. La conexión se cierra al salir del
-panel.
+entrada. La conexión se cierra al salir del panel.
 
 `runserver` no atiende WebSockets: para probar el panel en directo, la API
 tiene que ir con uvicorn o con `docker-compose.dev.yml`. El contrato, la

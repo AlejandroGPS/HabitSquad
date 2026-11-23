@@ -4,12 +4,10 @@ import { accountMenu } from '../components/accountMenu.js'
 import { element } from '../components/dom.js'
 import {
   cierreCard,
-  conexionEnDirecto,
   habitoCard,
   hoyCard,
   invitaCard,
   miembrosCard,
-  mostrarConexion,
   panelCargando,
   rachaCard,
   rachaChip,
@@ -29,11 +27,9 @@ export function panelSeleccionadoScreen({
 } = {}) {
   const id = new URLSearchParams(window.location.search).get('id')
   const root = element('div')
-  const back = element('a', 'inline-flex min-h-11 items-center font-bold text-accent', '← Mis escuadrones')
+  const back = element('a', `${ANCHO_COMPLETO} inline-flex min-h-11 items-center font-bold text-accent`, '← Mis escuadrones')
   back.href = '/escuadrones'
   back.dataset.link = ''
-  const conexion = conexionEnDirecto()
-  const barra = element('div', `${ANCHO_COMPLETO} flex items-center justify-between gap-3`, back, conexion)
   const status = element('p', `${ANCHO_COMPLETO} font-semibold text-ink-muted empty:hidden`)
   status.setAttribute('role', 'status')
   const error = element('p', `${ANCHO_COMPLETO} font-bold text-red-700 empty:hidden`)
@@ -42,7 +38,7 @@ export function panelSeleccionadoScreen({
   retry.type = 'button'
   retry.hidden = true
   const huecos = panelCargando()
-  const body = element('div', REJILLA, barra, status, error, retry)
+  const body = element('div', REJILLA, back, status, error, retry)
   const cuenta = accountMenu({ onLogout: async () => { await logout(); navigate('/login') } })
   root.append(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body, trailing: cuenta }))
   let loading = false
@@ -68,7 +64,6 @@ export function panelSeleccionadoScreen({
     enDirecto = conectar(id, {
       alActualizar: refrescar,
       alSuscribirse: refrescar,
-      alCambiarEstado: (estado) => mostrarConexion(conexion, estado),
     })
     const observador = new MutationObserver(() => {
       if (root.isConnected) return
@@ -137,7 +132,7 @@ export function panelSeleccionadoScreen({
         }
       }
       const devolverFoco = recordarFoco()
-      const content = element('div', REJILLA, barra, ...tarjetas)
+      const content = element('div', REJILLA, back, ...tarjetas)
       root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Escuadrón', title: squad.nombre, body: content,
         trailing: [rachaChip({ racha }), cuenta] }))
       devolverFoco()

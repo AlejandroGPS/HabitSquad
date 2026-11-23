@@ -1,6 +1,5 @@
 export { alertasBoton, escuadronResumen, rachaChip } from './cabecera.js'
 export { cierreCard } from './cierreCard.js'
-export { conexionEnDirecto, mostrarConexion } from './conexion.js'
 export { ESTADOS } from './estados.js'
 export { habitoCard } from './habitoCard.js'
 export { hoyCard } from './hoyCard.js'

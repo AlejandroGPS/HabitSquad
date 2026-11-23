@@ -233,16 +233,13 @@ mediante `conectarEscuadron()` de `frontend/src/tiempoReal.js`:
 - Si la conexión se corta por otro motivo, reintenta tras 1, 2, 4, 8 y 16 s, y
   después cada 30 s. Al recuperar la red (`online`) o volver a la aplicación
   (`visibilitychange`) reintenta sin esperar.
-- Junto a «← Mis escuadrones» muestra «En directo», «Reconectando…» o
-  «Desconectado». Durante el primer intento no muestra nada.
 - Al salir del panel cierra la conexión con `1000`.
 
 En desarrollo, `npm run dev` y `npm run preview` reenvían `/ws` al backend en
 `127.0.0.1:8000` igual que `/api`. `python manage.py runserver` no atiende
-WebSockets (responde `404` a `/ws/`), así que el panel se queda en
-«Reconectando…». Para probar la sincronización hay que levantar la API con
-`docker compose -f docker-compose.dev.yml up --build -d` o, con Redis en
-marcha, con uvicorn desde `backend/`:
+WebSockets (responde `404` a `/ws/`). Para probar la sincronización hay que
+levantar la API con `docker compose -f docker-compose.dev.yml up --build -d` o,
+con Redis en marcha, con uvicorn desde `backend/`:
 
 ```bash
 uvicorn config.asgi:application --host 127.0.0.1 --port 8000 --reload
@@ -255,4 +252,4 @@ uvicorn config.asgi:application --host 127.0.0.1 --port 8000 --reload
 - Cálculo de la racha: `backend/escuadrones/detalle/services.py`.
 - Cierre de pruebas y tarea de Q2: `backend/habitos/validacion/services/closing.py`, `backend/habitos/validacion/tasks.py` y `backend/habitos/management/commands/programar_cierre_diario.py`.
 - Avisos Web Push (mismo worker): `backend/alertas/tasks.py` y `backend/alertas/management/commands/programar_alertas.py` (contrato en `docs/ALERTAS.md`).
-- Cliente web: `frontend/src/tiempoReal.js`, `frontend/src/views/panelSeleccionado.js` y `frontend/src/components/panel/conexion.js`.
+- Cliente web: `frontend/src/tiempoReal.js` y `frontend/src/views/panelSeleccionado.js`.

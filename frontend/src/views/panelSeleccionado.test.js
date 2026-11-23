@@ -254,7 +254,6 @@ describe('panel del escuadrón: sincronización en tiempo real', () => {
   }
   const loaded = (view) => vi.waitFor(() => expect(view.querySelector('h1').textContent).toBe('Lectores'))
   const settle = () => new Promise((resolve) => setTimeout(resolve))
-  const indicador = (view) => view.querySelector('[aria-live="polite"]')
 
   it('se conecta al canal del escuadrón cuando el panel ha cargado, y una sola vez', async () => {
     const view = mount()
@@ -264,7 +263,6 @@ describe('panel del escuadrón: sincronización en tiempo real', () => {
     expect(conectar).toHaveBeenCalledWith('7', {
       alActualizar: expect.any(Function),
       alSuscribirse: expect.any(Function),
-      alCambiarEstado: expect.any(Function),
     })
     api.getSquad.mockResolvedValue({ ...squad, racha: 1 })
     avisos.alActualizar(aviso)
@@ -304,25 +302,6 @@ describe('panel del escuadrón: sincronización en tiempo real', () => {
     await vi.waitFor(() => expect(api.getDailyHabit).toHaveBeenCalled())
     await settle()
     expect(conectar).not.toHaveBeenCalled()
-  })
-
-  it('muestra junto a «Mis escuadrones» si el panel está en directo', async () => {
-    const view = mount()
-    await loaded(view)
-    expect(indicador(view).textContent).toBe('')
-    avisos.alCambiarEstado('conectado')
-    expect(indicador(view).textContent).toBe('En directo')
-    expect(indicador(view).parentElement.firstElementChild.textContent).toBe('← Mis escuadrones')
-    avisos.alCambiarEstado('reconectando')
-    expect(indicador(view).textContent).toBe('Reconectando…')
-    avisos.alCambiarEstado('desconectado')
-    expect(indicador(view).textContent).toBe('Desconectado')
-
-    avisos.alCambiarEstado('conectado')
-    api.getSquad.mockResolvedValue({ ...squad, racha: 9 })
-    avisos.alActualizar(aviso)
-    await vi.waitFor(() => expect(view.textContent).toContain('9días seguidos'))
-    expect(indicador(view).textContent).toBe('En directo')
   })
 
   it('con cada aviso pinta la racha y los miembros nuevos sin huecos ni animaciones de entrada', async () => {
