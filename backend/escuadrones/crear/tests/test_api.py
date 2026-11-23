@@ -56,11 +56,15 @@ def test_create_escuadron_assigns_authenticated_user_as_creator_and_admin(
         "id",
         "nombre",
         "codigo_invitacion",
+        "es_publico",
+        "limite_miembros",
         "creador_id",
         "miembros",
     }
     assert response.data["id"] == escuadron.pk
     assert response.data["nombre"] == "Madrugadores"
+    assert response.data["es_publico"] is False
+    assert response.data["limite_miembros"] == 5
     assert response.data["creador_id"] == user.pk
     assert response.data["miembros"] == [
         {"usuario_id": user.pk, "es_administrador": True},

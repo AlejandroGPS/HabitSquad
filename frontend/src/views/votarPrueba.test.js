@@ -10,9 +10,9 @@ const squad = {
   nombre: 'Lectores',
   codigo_invitacion: 'ABC123',
   miembros: [
-    { usuario_id: 1, nombre: 'Laura', habito: { opcion: 'leer' }, prueba_hoy: { id: 21, estado: 'pendiente' } },
-    { usuario_id: 2, nombre: 'Carlos' },
-    { usuario_id: 3, nombre: 'Ana', es_usuario: true },
+    { usuario_id: 1, nickname: 'Laura', foto_url: null, habito: { opcion: 'leer' }, prueba_hoy: { id: 21, estado: 'pendiente' } },
+    { usuario_id: 2, nickname: 'Carlos', foto_url: null },
+    { usuario_id: 3, nickname: 'Ana', foto_url: null, es_usuario: true },
   ],
 }
 const proof = { id: 21, usuario_id: 1, fecha: '2026-11-09', foto_url: 'https://example.com/prueba.jpg' }
@@ -183,6 +183,16 @@ describe('validación de una prueba desde el escuadrón', () => {
     expect(button('Sí, cuenta')).toBeUndefined()
     expect(button('No cuenta')).toBeUndefined()
     expect(posts()).toHaveLength(0)
+  })
+
+  it('nombra «Miembro N» a quien no tiene nickname, en el título y en los votos', async () => {
+    squadResponse = {
+      ...squad,
+      miembros: [{ ...squad.miembros[0], nickname: '' }, { ...squad.miembros[1], nickname: null }, squad.miembros[2]],
+    }
+    start()
+    await vi.waitFor(() => expect(votes().textContent).toContain('Miembro 2ha dicho que sí'))
+    expect(document.body.textContent).toContain('Prueba de Miembro 1')
   })
 
   it('requiere sesión para acceder directamente a una prueba', () => {

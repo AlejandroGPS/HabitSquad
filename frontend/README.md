@@ -38,12 +38,16 @@ crear elementos y lanzar eventos.
 
 ## Registro y sesión
 
-`/registro` envía el correo y la contraseña a `POST /api/auth/register/`. Tras
+`/registro` envía el correo, el nickname, la contraseña y su confirmación
+(`email`, `nickname`, `password`, `password_confirm`) a `POST /api/auth/register/`.
+El nickname se recorta y ambas contraseñas deben coincidir exactamente. Los
+errores del backend se muestran junto a cada campo. Tras crear la cuenta se
+pide verificar el correo, según el contrato de `docs/REGISTRO.md`. Tras
 verificar el correo, `/login` pide `POST /api/auth/token/` y guarda la sesión
 en `localStorage` con la clave `habitsquad.session`.
 
-A continuación la aplicación abre `/`. La ruta `/menu` se conserva por
-compatibilidad. En desarrollo, Vite reenvía `/api` a
+A continuación la aplicación abre `/escuadrones`, «Mis escuadrones». La presentación
+está en `/`. En desarrollo, Vite reenvía `/api` a
 `http://127.0.0.1:8000`. El contrato de la API está en
 OpenAPI y el recorrido de la sesión, en `docs/AUTENTICACION_JWT.md`.
 
@@ -186,3 +190,9 @@ HTTPS, así que se prueba con la versión desplegada.
 - `public/`: ficheros estáticos que se copian tal cual al build, incluidos los
   iconos de la PWA.
 - `vite.config.js`: configuración de Vite, Tailwind, la PWA y Vitest.
+
+## Perfil de usuario
+
+El menú de cuenta enlaza a `/perfil` y `/perfil/editar`. La integración, las
+pruebas y las dependencias pendientes del backend se describen en
+[PERFIL_USUARIO_FRONTEND.md](../docs/PERFIL_USUARIO_FRONTEND.md).

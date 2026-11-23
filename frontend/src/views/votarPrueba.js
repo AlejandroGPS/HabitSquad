@@ -75,7 +75,7 @@ export function votarPruebaScreen() {
   const proofId = params.get('registro')
   const validId = (value) => /^[1-9]\d*$/.test(value ?? '')
   const back = element('a', 'glass grid h-10 w-10 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-accent', icon('back'))
-  back.href = validId(squadId) ? `/escuadrones/panel?id=${squadId}` : '/'
+  back.href = validId(squadId) ? `/escuadrones/panel?id=${squadId}` : '/escuadrones'
   back.dataset.link = ''
   back.setAttribute('aria-label', 'Volver al escuadrón')
 
@@ -93,7 +93,7 @@ export function votarPruebaScreen() {
     active: 'escuadron', kicker: 'Votación', title, leading: back,
     trailing: [alertasBoton()], sidebarFooter: footer, body, detail: true,
   })
-  for (const link of screen.querySelectorAll('nav a[href="/"]')) link.href = back.href
+  for (const link of screen.querySelectorAll('nav a[href="/"], nav a[href="/escuadrones"]')) link.href = back.href
   for (const link of screen.querySelectorAll('nav a[href="/habito"]')) {
     if (validId(squadId)) link.href = `/habito?escuadron=${squadId}`
   }
@@ -116,7 +116,7 @@ export function votarPruebaScreen() {
       ])
       const members = new Map(squad.miembros.map((member) => [member.usuario_id, member]))
       const viewer = squad.miembros.find(({ es_usuario }) => es_usuario)
-      const nameFor = (id) => members.get(id)?.nombre || `Miembro ${id}`
+      const nameFor = (id) => members.get(id)?.nickname || `Miembro ${id}`
       const author = nameFor(proof.usuario_id)
       title.textContent = `Prueba de ${author}`
       footer.replaceChildren(escuadronResumen({ nombre: squad.nombre, miembros: members.size }))

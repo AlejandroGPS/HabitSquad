@@ -5,6 +5,7 @@ const FLAME_PATH =
 
 const OUTLINE_PATHS = {
   back: ['m15 18-6-6 6-6'],
+  forward: ['m9 18 6-6-6-6'],
   dumbbell: ['M6 5v14M3 8v8M18 5v14M21 8v8M6 12h12'],
   leaf: ['M20 4C9 2 3 8 6 16c8 5 15-2 14-12z', 'M7 17 16 8'],
   route: ['M4 6h12a3 3 0 0 1 0 6H8a3 3 0 0 0 0 6h12', 'm17 15 3 3-3 3'],
