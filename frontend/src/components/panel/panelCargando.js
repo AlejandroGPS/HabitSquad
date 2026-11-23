@@ -41,7 +41,12 @@ export function panelCargando() {
       hueco('h-3.5 w-24'),
       element(
         'div',
-        'mt-4 flex flex-1 flex-col justify-between gap-2',
+        'mt-3 flex gap-1 pl-14',
+        ...Array.from({ length: 3 }, () => element('span', 'flex flex-1 justify-center', hueco('h-6 w-6'))),
+      ),
+      element(
+        'div',
+        'mt-2 flex flex-1 flex-col justify-between gap-2',
         ...Array.from({ length: 7 }, () =>
           element('div', 'flex items-center gap-3', hueco('h-3 w-8'), hueco('h-2.5 flex-1')),
         ),
