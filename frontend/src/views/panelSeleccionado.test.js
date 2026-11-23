@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError } from '../api.js'
+import { ApiError, logout } from '../api.js'
 import { panelSeleccionadoScreen } from './panelSeleccionado.js'
+
+vi.mock('../api.js', async (importOriginal) => ({ ...(await importOriginal()), logout: vi.fn().mockResolvedValue() }))
 
 const squad = {
   id: 7,
@@ -132,6 +134,26 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     await vi.waitFor(() => expect(cuenta().querySelector('img')?.getAttribute('src'))
       .toBe('https://res.cloudinary.com/demo/perfiles/ana.jpg'))
     expect(view.querySelector('[id^="menu-cuenta-"]').textContent).toContain('ana')
+  })
+
+  it('si el foco está en la cuenta mientras carga, sigue ahí al pintar el escuadrón', async () => {
+    const pending = deferred()
+    api.getSquad.mockReturnValue(pending.promise)
+    const view = mount()
+    const cuenta = view.querySelector('[aria-label="Tu cuenta"]')
+    cuenta.focus()
+    pending.resolve(squad)
+    await loaded(view)
+    expect(document.activeElement).toBe(cuenta)
+  })
+
+  it('«Cerrar sesión» desde la cuenta cierra la sesión y lleva al login', async () => {
+    const view = mount()
+    await loaded(view)
+    view.querySelector('[aria-label="Tu cuenta"]').click()
+    button(view, 'Cerrar sesión').click()
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith('/login'))
+    expect(logout).toHaveBeenCalledOnce()
   })
 
   it('la cuenta usa las iniciales del nickname si el usuario no tiene foto', async () => {

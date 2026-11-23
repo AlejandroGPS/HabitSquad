@@ -37,6 +37,14 @@ describe('semanaCard', () => {
     expect(colores(dias[0]).every((color) => color.includes('bg-[#e5e5ea]'))).toBe(true)
   })
 
+  it('trata como sin prueba un estado que no conoce', () => {
+    const dias = filas(semanaCard({ miembros: [{ estado: 'desconocido', semana: [{ estado: 'otro' }] }], ahora: AHORA }))
+    const color = (dia) => dia.nextSibling.firstElementChild.className
+
+    expect(color(dias[0])).toContain('bg-[#e5e5ea]')
+    expect(color(dias[6])).toContain('bg-[#e5e5ea]')
+  })
+
   it('pone encima de cada columna de barras la cara del miembro al que corresponde', () => {
     const card = semanaCard({
       miembros: [

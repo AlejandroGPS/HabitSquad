@@ -185,6 +185,16 @@ describe('validación de una prueba desde el escuadrón', () => {
     expect(posts()).toHaveLength(0)
   })
 
+  it('nombra «Miembro N» a quien no tiene nickname, en el título y en los votos', async () => {
+    squadResponse = {
+      ...squad,
+      miembros: [{ ...squad.miembros[0], nickname: '' }, { ...squad.miembros[1], nickname: null }, squad.miembros[2]],
+    }
+    start()
+    await vi.waitFor(() => expect(votes().textContent).toContain('Miembro 2ha dicho que sí'))
+    expect(document.body.textContent).toContain('Prueba de Miembro 1')
+  })
+
   it('requiere sesión para acceder directamente a una prueba', () => {
     clearSession()
     start()
