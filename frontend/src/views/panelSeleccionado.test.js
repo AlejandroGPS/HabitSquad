@@ -77,7 +77,7 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     api.getSquad.mockReturnValue(pending.promise)
     const view = mount()
     expect(view.querySelector('[role="status"]').classList.contains('sr-only')).toBe(true)
-    expect(view.querySelectorAll('main [aria-hidden="true"]:has(.hueco)')).toHaveLength(5)
+    expect(view.querySelectorAll('main [aria-hidden="true"]:has(.hueco)')).toHaveLength(7)
     pending.resolve(squad)
     await loaded(view)
     expect(view.querySelector('.hueco')).toBeNull()
@@ -87,8 +87,8 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     const view = mount()
     await loaded(view)
     const tarjetas = [...view.querySelectorAll('.entrada')]
-    expect(tarjetas).toHaveLength(5)
-    expect(tarjetas.map((tarjeta) => tarjeta.style.getPropertyValue('--orden'))).toEqual(['0', '1', '2', '3', '4'])
+    expect(tarjetas).toHaveLength(7)
+    expect(tarjetas.map((tarjeta) => tarjeta.style.getPropertyValue('--orden'))).toEqual(['0', '1', '2', '3', '4', '5', '6'])
     expect(view.querySelector('a[href="/escuadrones"]').classList.contains('entrada')).toBe(false)
   })
 
@@ -160,49 +160,18 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     await loaded(view)
 
     const tarjeta = (titulo) => [...view.querySelectorAll('section')].find((item) => item.textContent.startsWith(titulo))
-    expect(tarjeta('Racha').textContent).toBe(
-      'Racha' + '4días seguidos' + 'Hoy 1 de 3 ha cumplido' + 'Cierra a las 23:59' + 'Quedan 03:29 h para subir la prueba',
-    )
+    expect(view.textContent).toContain('4días seguidos')
+    expect(view.textContent).toContain('1/3')
+    expect(view.textContent).toContain('23:59')
+    expect(view.textContent).toContain('Quedan 03:29 h')
 
-    const semanaTabla = tarjeta('Esta semana').querySelector('table')
-    expect([...semanaTabla.querySelectorAll('thead th[scope="col"]')].map((dia) => dia.textContent)).toEqual([
-      'Llunes 9', 'Mmartes 10', 'Xmiércoles 11', 'Jjueves 12', 'Vviernes 13', 'Ssábado 14', 'Ddomingo 15',
-    ])
-    const filas = [...semanaTabla.querySelectorAll('tbody tr')]
-    const casillas = (fila) => [...fila.querySelectorAll('td')].map((celda) => celda.textContent)
-    const futuro = Array(4).fill('Por llegar')
-    expect(filas.map((fila) => fila.querySelector('th').textContent)).toEqual(['ana', 'Llau', 'Miembro 3'])
-    expect(casillas(filas[0])).toEqual(['Cumplido', 'No cumplido', 'Sin prueba', ...futuro])
-    expect(casillas(filas[1])).toEqual(['Cumplido', 'Cumplido', 'Pendiente', ...futuro])
-    expect(casillas(filas[2])).toEqual(['Sin prueba', 'Sin prueba', 'Cumplido', ...futuro])
-  })
-
-  it('reparte las tarjetas en la rejilla y todas se ven también en el móvil', async () => {
-    const view = mount()
-    await loaded(view)
-    const tarjetas = [...view.querySelectorAll('.entrada')]
-    const columnas = tarjetas.map((tarjeta) => tarjeta.className.match(/(lg|xl):col-span-\d/g)?.join(' ') ?? null)
-    expect(columnas).toEqual(['xl:col-span-2', null, 'xl:col-span-2', null, 'lg:col-span-2 xl:col-span-3'])
-    expect(tarjetas.some((tarjeta) => tarjeta.classList.contains('hidden'))).toBe(false)
-  })
-
-  it('la tarjeta del hábito lleva la foto, el nickname y el estado de hoy del usuario', async () => {
-    api.getSquad.mockResolvedValue({
-      ...squad,
-      miembros: [{ ...squad.miembros[0], prueba_hoy: { id: 30, estado: 'pendiente' } }, ...squad.miembros.slice(1)],
-    })
-    const view = mount()
-    await loaded(view)
-    const habito = [...view.querySelectorAll('section')].find((item) => item.textContent.includes('Mi hábito'))
-    expect(habito.textContent).toContain('anaHoy: PendienteMi hábitoLeer')
-    expect(habito.querySelector('img').getAttribute('src')).toBe('https://res.cloudinary.com/demo/perfiles/ana.jpg')
-  })
-
-  it('el escuadrón se resume en la barra lateral y la racha ya no se repite en la cabecera', async () => {
-    const view = mount()
-    await loaded(view)
-    expect(view.querySelector('aside').textContent).toContain('Lectores3 de 5 miembros')
-    expect(view.querySelector('header .text-streak')).toBeNull()
+    const filas = [...tarjeta('Esta semana').querySelectorAll('.flex.items-center.gap-3')]
+    expect(filas.map((fila) => fila.querySelector('span').textContent)).toEqual(['L 9', 'M 10', 'X 11', 'J 12', 'V 13', 'S 14', 'D 15'])
+    const barras = (fila) => [...fila.querySelectorAll('.rounded-full')].map((barra) => barra.className.split(' ').at(-1))
+    expect(barras(filas[0])).toEqual(['bg-[#248a3d]', 'bg-[#248a3d]', 'bg-[#e5e5ea]'])
+    expect(barras(filas[1])).toEqual(['bg-red-600', 'bg-[#248a3d]', 'bg-[#e5e5ea]'])
+    expect(barras(filas[2])).toEqual(['bg-[#e5e5ea]', 'bg-[#c93400]', 'bg-[#248a3d]'])
+    expect(barras(filas[6])).toEqual(['bg-[#e5e5ea]', 'bg-[#e5e5ea]', 'bg-[#e5e5ea]'])
   })
 
   it('sin racha ni semana del servidor empieza en cero y pinta solo hoy', async () => {

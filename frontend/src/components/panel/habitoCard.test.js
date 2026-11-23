@@ -35,39 +35,4 @@ describe('habitoCard', () => {
   it('ocupa dos columnas por defecto', () => {
     expect(habitoCard().classList.contains('col-span-2')).toBe(true)
   })
-
-  it('sin usuario no pinta la cabecera con su cara', () => {
-    expect(habitoCard({ habito: 'Leer' }).querySelector('.rounded-full.ring-2')).toBeNull()
-  })
-
-  it('encabeza la tarjeta con la foto, el nickname y el estado de hoy del usuario', () => {
-    const card = habitoCard({
-      habito: 'Leer',
-      usuario: { nombre: 'ale', fotoUrl: 'https://res.cloudinary.com/demo/perfiles/ale.jpg', estado: 'pendiente' },
-    })
-    const foto = card.querySelector('img')
-
-    expect(foto.getAttribute('src')).toBe('https://res.cloudinary.com/demo/perfiles/ale.jpg')
-    expect(foto.getAttribute('alt')).toBe('')
-    expect(card.textContent).toContain('aleHoy: PendienteMi hábitoLeer')
-    expect(card.querySelector('.truncate').title).toBe('ale')
-  })
-
-  it.each([
-    [undefined, 'Hoy: Sin prueba'],
-    ['cumplido', 'Hoy: Cumplido'],
-    ['no_cumplido', 'Hoy: No cumplido'],
-  ])('escribe el estado %s del usuario', (estado, texto) => {
-    expect(habitoCard({ usuario: { nombre: 'ale', estado } }).textContent).toContain(texto)
-  })
-
-  it('sin foto muestra las iniciales del nickname y vuelve a ellas si la foto falla', () => {
-    expect(habitoCard({ usuario: { nombre: 'lau' } }).querySelector('.ring-2').textContent).toBe('L')
-
-    const card = habitoCard({ usuario: { nombre: 'ale', fotoUrl: 'https://res.cloudinary.com/demo/roto.jpg' } })
-    card.querySelector('img').dispatchEvent(new Event('error'))
-
-    expect(card.querySelector('img')).toBeNull()
-    expect(card.querySelector('.ring-2').textContent).toBe('A')
-  })
 })

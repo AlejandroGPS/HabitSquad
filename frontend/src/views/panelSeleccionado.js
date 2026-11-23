@@ -3,19 +3,20 @@ import { appLayout } from '../components/appLayout.js'
 import { accountMenu } from '../components/accountMenu.js'
 import { element } from '../components/dom.js'
 import {
-  escuadronResumen,
+  cierreCard,
   habitoCard,
+  hoyCard,
   invitaCard,
   miembrosCard,
   panelCargando,
-  resumenCard,
+  rachaCard,
+  rachaChip,
   semanaCard,
 } from '../components/panel/index.js'
 import { habitText } from './habitoDiario.js'
 
-const ANCHO_COMPLETO = 'lg:col-span-2 xl:col-span-3'
-const REJILLA = 'mt-4 grid grid-cols-1 gap-3 px-4 lg:mt-6 lg:grid-cols-2 lg:gap-4 lg:px-0 xl:grid-cols-3'
-const PLAZAS = 5
+const ANCHO_COMPLETO = 'col-span-2 lg:col-span-4'
+const REJILLA = 'mt-4 grid grid-cols-2 gap-3 px-4 lg:mt-6 lg:grid-cols-4 lg:gap-4 lg:px-0'
 
 export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHabit }, ahora = () => new Date() } = {}) {
   const id = new URLSearchParams(window.location.search).get('id')
@@ -70,20 +71,20 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
       const abrirPrueba = ({ pruebaId }) => navigate(`/escuadrones/prueba?escuadron=${id}&registro=${pruebaId}`)
       const propio = squad.miembros.find(({ es_usuario }) => es_usuario)
       mostrarIdentidad(propio && { nickname: propio.nickname, foto_url: propio.foto_url })
-      const usuario = miembros.find(({ esUsuario }) => esUsuario)
+      const pruebaPropia = miembros.find(({ esUsuario }) => esUsuario)?.pruebaId
       const tarjetas = [
-        resumenCard({ racha, miembros, ahora: momento, className: 'xl:col-span-2' }),
+        rachaCard({ racha }),
+        hoyCard({ miembros }),
+        cierreCard({ ahora: momento }),
+        semanaCard({ miembros, ahora: momento }),
         habitoCard({
           habito: habitText(ownHabit),
-          usuario,
-          className: '',
           onElegirHabito: () => navigate(`/habito?escuadron=${id}`),
           onSubirPrueba: () => navigate(`/prueba?escuadron=${id}`),
-          onVerPrueba: usuario?.pruebaId ? () => abrirPrueba(usuario) : undefined,
+          onVerPrueba: pruebaPropia ? () => abrirPrueba({ pruebaId: pruebaPropia }) : undefined,
         }),
-        miembrosCard({ miembros, plazas: PLAZAS, onVerFoto: abrirPrueba, onVotar: abrirPrueba, className: 'xl:col-span-2' }),
-        semanaCard({ miembros, ahora: momento, className: 'flex' }),
-        invitaCard({ codigo: squad.codigo_invitacion, libres: PLAZAS - squad.miembros.length, className: `flex ${ANCHO_COMPLETO}` }),
+        miembrosCard({ miembros, onVerFoto: abrirPrueba, onVotar: abrirPrueba }),
+        invitaCard({ codigo: squad.codigo_invitacion, libres: 5 - squad.miembros.length }),
       ]
       for (const [orden, tarjeta] of tarjetas.entries()) {
         tarjeta.classList.add('entrada')
@@ -92,7 +93,7 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
       const content = element('div', REJILLA, back, ...tarjetas)
       const focus = cuenta.contains(document.activeElement) ? document.activeElement : null
       root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Escuadrón', title: squad.nombre, body: content,
-        trailing: cuenta, sidebarFooter: escuadronResumen({ nombre: squad.nombre, miembros: miembros.length, plazas: PLAZAS }) }))
+        trailing: [rachaChip({ racha }), cuenta] }))
       focus?.focus()
       for (const link of root.querySelectorAll('a[href="/habito"]')) {
         link.href = `/habito?escuadron=${id}`

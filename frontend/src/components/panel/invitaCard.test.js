@@ -19,10 +19,7 @@ describe('plazasLibres', () => {
 
 describe('invitaCard', () => {
   it('muestra el código y las plazas libres', () => {
-    const card = invitaCard({ codigo: 'K7P2QX', libres: 2 })
-
-    expect(card.textContent).toBe('Invita a tu escuadrónQuedan 2 plazasK7P2QXCopiar')
-    expect(card.querySelector('.select-all').textContent).toBe('K7P2QX')
+    expect(invitaCard({ codigo: 'K7P2QX', libres: 2 }).textContent).toBe('InvitaK7P2QXQuedan 2 plazasCopiar')
   })
 
   it('copia el código al portapapeles', async () => {
