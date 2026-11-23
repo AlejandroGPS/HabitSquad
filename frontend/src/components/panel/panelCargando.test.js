@@ -26,6 +26,7 @@ describe('panelCargando', () => {
     const [, , , semana, , miembros] = panelCargando()
 
     expect(semana.querySelectorAll('.items-center')).toHaveLength(7)
+    expect(semana.querySelectorAll('.pl-14 .hueco')).toHaveLength(3)
     expect(miembros.querySelectorAll('.h-10.w-10')).toHaveLength(3)
   })
 })
