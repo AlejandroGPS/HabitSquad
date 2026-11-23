@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from unittest.mock import patch
 
 import pytest
@@ -368,18 +368,17 @@ def test_squad_detail_prueba_hoy_matches_registro_estado(
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    "today", [date(2026, 11, 23), date(2026, 11, 25)], ids=["lunes", "miercoles"]
+)
 def test_squad_detail_includes_invite_code_streak_and_week(
-    api_client, creator, member, squad
+    api_client, creator, member, squad, today, monkeypatch
 ):
-    today = timezone.localdate()
-    today += timedelta(days=(1 - today.weekday()) % 7)
+    now = datetime.combine(today, time(12), tzinfo=UTC)
+    monkeypatch.setattr(timezone, "now", lambda: now)
     monday = lunes_de(today)
-    Escuadron.objects.filter(pk=squad.pk).update(
-        creado_en=timezone.now() - timedelta(days=10)
-    )
-    Membresia.objects.filter(escuadron=squad).update(
-        unido_en=timezone.now() - timedelta(days=10)
-    )
+    Escuadron.objects.filter(pk=squad.pk).update(creado_en=now - timedelta(days=10))
+    Membresia.objects.filter(escuadron=squad).update(unido_en=now - timedelta(days=10))
     for user in (creator, member):
         habit = HabitoDiario.objects.create(
             membresia=Membresia.objects.get(escuadron=squad, usuario=user),
@@ -393,19 +392,12 @@ def test_squad_detail_includes_invite_code_streak_and_week(
                 cloudinary_public_id=f"pruebas/{user.pk}-{days}",
             )
 
-    localdate_actual = timezone.localdate
-
-    def localdate_determinista(value=None):
-        return today if value is None else localdate_actual(value)
-
-    with patch(
-        "escuadrones.detalle.api.views.timezone.localdate",
-        side_effect=localdate_determinista,
-    ):
-        response = authenticated_client(api_client, member).get(detail_url(squad))
+    response = authenticated_client(api_client, member).get(detail_url(squad))
 
     assert response.status_code == 200
     assert response.data["codigo_invitacion"] == "X8K9QL"
+    assert response.data["es_publico"] is False
+    assert response.data["limite_miembros"] == 5
     # La racha solo cuenta jornadas anteriores a hoy.
     assert response.data["racha"] == 1
 
