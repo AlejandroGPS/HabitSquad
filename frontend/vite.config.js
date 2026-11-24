@@ -42,6 +42,7 @@ export default defineConfig({
         // En producción la API y el admin de Django comparten dominio con el
         // frontend: sus rutas nunca deben responderse con index.html.
         navigateFallbackDenylist: [/^\/api\//, /^\/admin\//],
+        importScripts: ['sw-avisos.js'],
       },
     }),
   ],

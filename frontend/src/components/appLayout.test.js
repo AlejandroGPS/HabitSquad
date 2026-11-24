@@ -41,13 +41,15 @@ describe('appLayout', () => {
   it('enlaza las secciones con ruta y desactiva las que aún no existen', () => {
     const screen = mount()
     const [sidebarNav] = screen.querySelectorAll('nav[aria-label="Secciones"]')
-    const [escuadron, racha] = sidebarNav.children
+    const [escuadron, racha, alertas] = sidebarNav.children
 
     expect(escuadron.tagName).toBe('A')
     expect(escuadron.getAttribute('href')).toBe('/escuadrones')
     expect(escuadron.hasAttribute('data-link')).toBe(true)
     expect(racha.tagName).toBe('SPAN')
     expect(racha.getAttribute('aria-disabled')).toBe('true')
+    expect(alertas.getAttribute('href')).toBe('/alertas')
+    expect(alertas.hasAttribute('data-link')).toBe(true)
   })
 
   it('marca la sección activa', () => {
