@@ -113,6 +113,28 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     }
   })
 
+  it('incluye Configuración en el menú del panel y en la cabecera móvil, conservando el escuadrón', async () => {
+    const view = mount()
+    await loaded(view)
+    const nav = view.querySelector('aside nav')
+    const settings = nav.querySelector('a[href="/escuadrones/configuracion?origen=7"]')
+    expect(settings.textContent).toBe('Configuración')
+    expect(settings.hasAttribute('data-link')).toBe(true)
+    expect(nav.querySelector('[aria-current="page"]').getAttribute('href')).toBe('/escuadrones/panel?id=7')
+    expect(nav.querySelector('a[href="/habito?escuadron=7"]')).not.toBeNull()
+    expect(view.querySelector('header a[aria-label="Configuración del escuadrón"]').getAttribute('href')).toBe(settings.getAttribute('href'))
+    expect(view.textContent).not.toContain('Configuración · demo')
+  })
+
+  it('muestra el límite guardado en la API y los nicknames del detalle', async () => {
+    api.getSquad.mockResolvedValue({ ...squad, limite_miembros: 8, miembros: squad.miembros.map((member) => ({ ...member, nickname: `nick${member.usuario_id}` })) })
+    const view = mount()
+    await loaded(view)
+    expect(view.textContent).toContain('3 de 8 miembros')
+    expect(view.textContent).toContain('Quedan 5 plazas')
+    expect(view.textContent).toContain('nick2')
+  })
+
   it('pinta la foto de perfil de cada miembro que la tiene y las iniciales del resto', async () => {
     const view = mount()
     await loaded(view)
@@ -379,7 +401,7 @@ describe('panel del escuadrón: sincronización en tiempo real', () => {
         squad.miembros[0],
         { ...squad.miembros[1], prueba_hoy: { id: 21, estado: 'cumplido' } },
         squad.miembros[2],
-        { usuario_id: 4, nombre: 'Marta', es_usuario: false, habito: { opcion: 'gimnasio', texto_personalizado: '' }, prueba_hoy: null },
+        { usuario_id: 4, nickname: 'Marta', foto_url: null, es_usuario: false, habito: { opcion: 'gimnasio', texto_personalizado: '' }, prueba_hoy: null },
       ],
     })
     await vi.waitFor(() => expect(view.textContent).toContain('5días seguidos'))
@@ -398,7 +420,7 @@ describe('panel del escuadrón: sincronización en tiempo real', () => {
     const racha = view.querySelector('section')
     api.getSquad.mockResolvedValue({
       ...squad,
-      miembros: squad.miembros.map((miembro) => ({ ...miembro, foto_url: `https://res.cloudinary.com/firmada-${miembro.usuario_id}` })),
+      miembros: squad.miembros.map((miembro) => ({ ...miembro, unido_en: '2026-11-24T10:00:00Z' })),
     })
     avisos.alSuscribirse()
     await vi.waitFor(() => expect(api.getDailyHabit).toHaveBeenCalledTimes(2))
@@ -413,6 +435,37 @@ describe('panel del escuadrón: sincronización en tiempo real', () => {
     api.getDailyHabit.mockResolvedValue({ opcion: 'gimnasio', texto_personalizado: '' })
     avisos.alActualizar({ ...aviso, motivo: 'habito_actualizado' })
     await vi.waitFor(() => expect(view.textContent).toContain('Ir al gimnasio'))
+  })
+
+  it.each([
+    ['nickname', 'laura.actualizada'],
+    ['foto_url', 'https://res.cloudinary.com/demo/perfiles/laura-nueva.jpg'],
+  ])('repinta cuando solo cambia %s de un miembro', async (campo, valor) => {
+    const view = mount()
+    await loaded(view)
+    const anterior = view.querySelector('section')
+    api.getSquad.mockResolvedValue({
+      ...squad,
+      miembros: squad.miembros.map((miembro, indice) => indice === 1 ? { ...miembro, [campo]: valor } : miembro),
+    })
+    avisos.alActualizar(aviso)
+    await vi.waitFor(() => expect(anterior.isConnected).toBe(false))
+    const miembro = view.querySelectorAll('li')[1]
+    if (campo === 'nickname') expect(miembro.textContent).toContain(valor)
+    else expect(miembro.querySelector('img').getAttribute('src')).toBe(valor)
+    expect(view.querySelector('.hueco')).toBeNull()
+    expect(view.querySelectorAll('.entrada')).toHaveLength(0)
+  })
+
+  it('actualiza las plazas en directo cuando solo cambia la configuración y conserva su menú', async () => {
+    const view = mount()
+    await loaded(view)
+    api.getSquad.mockResolvedValue({ ...squad, limite_miembros: 8 })
+    avisos.alActualizar({ ...aviso, motivo: 'configuracion_actualizada' })
+    await vi.waitFor(() => expect(view.textContent).toContain('3 de 8 miembros'))
+    expect(view.textContent).toContain('Quedan 5 plazas')
+    expect(view.querySelector('aside a[href="/escuadrones/configuracion?origen=7"]')).not.toBeNull()
+    expect(view.querySelector('header a[aria-label="Configuración del escuadrón"]')).not.toBeNull()
   })
 
   it('junta los avisos que llegan mientras carga en una sola petición más', async () => {

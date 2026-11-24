@@ -210,3 +210,36 @@ HTTPS, así que se prueba con la versión desplegada.
 El menú de cuenta enlaza a `/perfil` y `/perfil/editar`. La integración, las
 pruebas y las dependencias pendientes del backend se describen en
 [PERFIL_USUARIO_FRONTEND.md](../docs/PERFIL_USUARIO_FRONTEND.md).
+
+## Configuración del escuadrón
+
+«Configuración» se abre desde el menú lateral del panel o desde el botón de
+ajustes de la cabecera móvil. La ruta `/escuadrones/configuracion?origen=ID`
+requiere sesión y conserva el escuadrón seleccionado en el menú y al volver.
+Sin un ID válido se pide abrirla desde el panel, sin consultar la API.
+
+La aplicación usa el adaptador `src/configuracion-api.js`, con JWT y renovación
+de sesión a través de `authFetch`. Consulta la configuración con GET y guarda
+nombre, visibilidad y límite mediante PATCH en
+`/api/escuadrones/{id}/configuracion/`. El detalle del escuadrón aporta miembros,
+fotos, papeles y código. El contrato está en
+[CONFIGURACION_ESCUADRON.md](../docs/CONFIGURACION_ESCUADRON.md).
+
+- General mantiene el borrador hasta guardar o descartar. El resumen refleja
+  los valores guardados y el servidor valida las modificaciones.
+- El límite empieza en 5 y admite enteros desde 2. Se permite reducirlo por
+  debajo de la ocupación; se avisa de que nadie será expulsado y que no habrá
+  nuevas incorporaciones hasta que queden plazas. No hay máximo de 10 en la API.
+- Solo administra quien autoriza el backend. Un 403 retira los controles y
+  muestra el aviso correspondiente, también si se pierde el permiso al guardar.
+- Miembros muestra los datos reales. Invitaciones permite copiar el código.
+  Expulsar, eliminar y regenerar no aparecen porque aún no existen sus endpoints.
+- Los errores de validación o red conservan el borrador para reintentar.
+  Los controles se bloquean durante el guardado para evitar peticiones duplicadas.
+- El panel y el selector muestran `limite_miembros` en vez de asumir cinco plazas.
+
+`npm run dev` también sirve `/previews/configuracion.html`, una vista previa
+independiente que inyecta explícitamente `demo: true`, el ID de ejemplo y
+`createMockSquadSettings()`. `?rol=miembro` muestra la vista sin permisos.
+Solo esta demo conserva las operaciones simuladas de expulsión, eliminación y
+regeneración y los límites de la propuesta visual (2–10). No modifica la API.

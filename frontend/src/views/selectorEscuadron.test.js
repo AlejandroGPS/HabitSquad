@@ -65,6 +65,13 @@ describe('selectorEscuadronScreen', () => {
     await vi.waitFor(() => expect(view.querySelector('[role="status"]').textContent).toBe('Tienes 1 escuadrón. Ábrelo para ver cómo va el día.'))
   })
 
+  it('muestra en las tarjetas la capacidad configurada en el backend', async () => {
+    const view = mount({ loadSquads: async () => [{ ...squads[0], limite_miembros: 8 }] })
+    await vi.waitFor(() => expect(tarjetas(view)).toHaveLength(1))
+    expect(tarjetas(view)[0].textContent).toContain('1 de 8 miembros')
+    expect(tarjetas(view)[0].textContent).toContain('Quedan 7 plazas')
+  })
+
   it('sin escuadrones cambia el saludo e invita a crear o unirse', async () => {
     const view = mount({ loadSquads: async () => [] })
     await vi.waitFor(() => expect(view.querySelector('[role="status"]').textContent).toContain('Todavía no perteneces'))

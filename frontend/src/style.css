@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
+@theme static {
+  --color-danger: #d70015;
+}
+
 @theme {
+  --color-positive: #248a3d;
   --font-rounded: "Nunito Variable", ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
   --color-canvas: #ede6ff;
   --color-surface: rgb(255 255 255 / 0.85);

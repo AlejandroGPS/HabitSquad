@@ -15,6 +15,7 @@ import {
 } from '../components/panel/index.js'
 import { conectarEscuadron } from '../tiempoReal.js'
 import { habitText } from './habitoDiario.js'
+import { squadNavigation, squadSettingsLink } from '../components/panel/navigation.js'
 
 const ANCHO_COMPLETO = 'col-span-2 lg:col-span-4'
 const REJILLA = 'mt-4 grid grid-cols-2 gap-3 px-4 lg:mt-6 lg:grid-cols-4 lg:gap-4 lg:px-0'
@@ -102,7 +103,7 @@ export function panelSeleccionadoScreen({
       const squad = await api.getSquad(id)
       const ownHabit = await api.getDailyHabit(id)
       const miembros = squad.miembros.map((miembro) => ({
-        nombre: miembro.nickname || `Miembro ${miembro.usuario_id}`,
+        nombre: miembro.nickname || miembro.nombre || `Miembro ${miembro.usuario_id}`,
         fotoUrl: miembro.foto_url,
         esUsuario: miembro.es_usuario,
         habito: habitText(miembro.habito),
@@ -112,7 +113,7 @@ export function panelSeleccionadoScreen({
       }))
       const racha = squad.racha ?? 0
       const habitoPropio = habitText(ownHabit)
-      const visible = JSON.stringify([squad.nombre, squad.codigo_invitacion, racha, habitoPropio, miembros])
+      const visible = JSON.stringify([squad.nombre, squad.codigo_invitacion, squad.limite_miembros, racha, habitoPropio, miembros])
       if (enVivo && visible === pintado) return
       pintado = visible
       const momento = ahora()
@@ -131,8 +132,8 @@ export function panelSeleccionadoScreen({
           onSubirPrueba: () => navigate(`/prueba?escuadron=${id}`),
           onVerPrueba: pruebaPropia ? () => abrirPrueba({ pruebaId: pruebaPropia }) : undefined,
         }),
-        miembrosCard({ miembros, onVerFoto: abrirPrueba, onVotar: abrirPrueba }),
-        invitaCard({ codigo: squad.codigo_invitacion, libres: 5 - squad.miembros.length }),
+        miembrosCard({ miembros, plazas: squad.limite_miembros ?? 5, onVerFoto: abrirPrueba, onVotar: abrirPrueba }),
+        invitaCard({ codigo: squad.codigo_invitacion, libres: (squad.limite_miembros ?? 5) - squad.miembros.length }),
       ]
       if (!enVivo) {
         for (const [orden, tarjeta] of tarjetas.entries()) {
@@ -143,7 +144,8 @@ export function panelSeleccionadoScreen({
       const devolverFoco = recordarFoco()
       const content = element('div', REJILLA, back, ...tarjetas)
       root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Escuadrón', title: squad.nombre, body: content,
-        trailing: [rachaChip({ racha }), cuenta] }))
+        navItems: squadNavigation(id),
+        trailing: [rachaChip({ racha }), squadSettingsLink(id), cuenta] }))
       devolverFoco()
       for (const link of root.querySelectorAll('a[href="/habito"]')) {
         link.href = `/habito?escuadron=${id}`

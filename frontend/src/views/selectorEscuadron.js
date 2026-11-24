@@ -22,7 +22,7 @@ function mensajeError(error) {
 }
 
 function listaEscuadrones(squads) {
-  const tarjetas = squads.map(({ id, nombre, miembros }) => escuadronCard({ id, nombre, miembros: miembros.length }))
+  const tarjetas = squads.map(({ id, nombre, miembros, limite_miembros }) => escuadronCard({ id, nombre, miembros: miembros.length, plazas: limite_miembros ?? 5 }))
   return element(
     'ul',
     'grid gap-4 sm:grid-cols-2 lg:grid-cols-3',

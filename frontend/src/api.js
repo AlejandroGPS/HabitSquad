@@ -143,6 +143,22 @@ export async function getSquad(squadId) {
   return readJson(response)
 }
 
+export async function getSquadConfiguration(squadId) {
+  const response = await authFetch(`/api/escuadrones/${squadId}/configuracion/`)
+  if (!response.ok) throw new ApiError(response.status, await readJson(response))
+  return readJson(response)
+}
+
+export async function updateSquadConfiguration(squadId, changes) {
+  const response = await authFetch(`/api/escuadrones/${squadId}/configuracion/`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(changes),
+  })
+  if (!response.ok) throw new ApiError(response.status, await readJson(response))
+  return readJson(response)
+}
+
 function proofPath(squadId, proofId) {
   return `/api/escuadrones/${squadId}/pruebas/${proofId}/`
 }

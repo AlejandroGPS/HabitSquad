@@ -16,6 +16,7 @@ import { hasSession } from './session.js'
 import { accountMenu } from './components/accountMenu.js'
 import { loginScreen, registroScreen } from './views/acceso.js'
 import { crearEscuadronScreen } from './views/crearEscuadron.js'
+import { configuracionEscuadronScreen } from './views/configuracionEscuadron.js'
 import { habitoDiarioScreen } from './views/habitoDiario.js'
 import { panelSeleccionadoScreen } from './views/panelSeleccionado.js'
 import { presentacionScreen } from './views/presentacion.js'
@@ -194,6 +195,19 @@ export const routes = [
     title: 'Panel del escuadrón',
     private: true,
     view: ({ navigate } = {}) => panelSeleccionadoScreen({ navigate }),
+  },
+  {
+    path: '/escuadrones/configuracion',
+    title: 'Configuración del escuadrón',
+    private: true,
+    view: ({ navigate } = {}) => {
+      const origen = new URLSearchParams(window.location.search).get('origen')
+      return configuracionEscuadronScreen({
+        id: origen,
+        panelHref: /^[1-9]\d*$/.test(origen ?? '') ? `/escuadrones/panel?id=${origen}` : '/escuadrones',
+        onLogout: async () => { await logout(); navigate?.('/login') },
+      })
+    },
   },
   {
     path: '/login',
