@@ -188,6 +188,31 @@ En Chrome, la pestaña Application de las herramientas de desarrollo muestra el
 manifest y el estado del service worker. Para instalarla en un móvil hace falta
 HTTPS, así que se prueba con la versión desplegada.
 
+## Alertas
+
+La pantalla `/alertas` (sección «Alertas» del menú) activa los avisos push de
+este navegador y enseña la hora de aviso del perfil. «Cambiar hora» lleva a
+`/perfil/editar#recordatorio`, donde se guarda con `PATCH /api/perfil/`.
+
+- `src/avisos.js` pide el permiso de notificaciones, se suscribe con la clave
+  VAPID de `GET /api/alertas/vapid-public-key/` y registra o borra la
+  suscripción en `/api/alertas/suscripcion/`. Si el servidor cambia de clave,
+  rehace la suscripción.
+- `public/sw-avisos.js` lo importa el service worker de Workbox: muestra la
+  notificación con el texto que manda el servidor y, al pulsarla, abre
+  «Mis escuadrones».
+- «Ahora no» se recuerda en este navegador hasta que se activan los avisos.
+- Al cerrar sesión se borra la suscripción del navegador y del servidor, para
+  que los avisos no le lleguen a quien entre después.
+
+Como necesitan el service worker, los avisos solo funcionan con el build
+(`npm run build && npm run preview`); con `npm run dev` la pantalla indica que
+no están disponibles. El backend tiene que tener las variables `VAPID_*` (ver
+[`docs/ALERTAS.md`](../docs/ALERTAS.md)) y, para que se envíen solos a su hora,
+el worker de Django Q2 en marcha. En iPhone y iPad solo llegan si la app está
+añadida a la pantalla de inicio. Chrome no permite avisos push en ventanas de
+incógnito.
+
 ## Estructura
 
 - `index.html`: punto de entrada de la aplicación.
@@ -198,11 +223,12 @@ HTTPS, así que se prueba con la versión desplegada.
 - `src/api.js`: inicio y cierre de sesión, renovación de tokens y `authFetch`.
 - `src/session.js`: guarda los tokens en el navegador.
 - `src/tiempoReal.js`: conexión WebSocket del panel del escuadrón.
+- `src/avisos.js`: permiso de notificaciones y suscripción Web Push.
 - `src/components/`: piezas reutilizables de diseño, formularios y navegación.
 - `src/views/`: pantallas de la aplicación.
 - `src/style.css`: importa Tailwind CSS.
 - `public/`: ficheros estáticos que se copian tal cual al build, incluidos los
-  iconos de la PWA.
+  iconos de la PWA y `sw-avisos.js` (avisos push del service worker).
 - `vite.config.js`: configuración de Vite, Tailwind, la PWA y Vitest.
 
 ## Perfil de usuario
