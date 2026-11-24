@@ -401,7 +401,7 @@ describe('panel del escuadrón: sincronización en tiempo real', () => {
         squad.miembros[0],
         { ...squad.miembros[1], prueba_hoy: { id: 21, estado: 'cumplido' } },
         squad.miembros[2],
-        { usuario_id: 4, nombre: 'Marta', es_usuario: false, habito: { opcion: 'gimnasio', texto_personalizado: '' }, prueba_hoy: null },
+        { usuario_id: 4, nickname: 'Marta', foto_url: null, es_usuario: false, habito: { opcion: 'gimnasio', texto_personalizado: '' }, prueba_hoy: null },
       ],
     })
     await vi.waitFor(() => expect(view.textContent).toContain('5días seguidos'))
@@ -435,6 +435,26 @@ describe('panel del escuadrón: sincronización en tiempo real', () => {
     api.getDailyHabit.mockResolvedValue({ opcion: 'gimnasio', texto_personalizado: '' })
     avisos.alActualizar({ ...aviso, motivo: 'habito_actualizado' })
     await vi.waitFor(() => expect(view.textContent).toContain('Ir al gimnasio'))
+  })
+
+  it.each([
+    ['nickname', 'laura.actualizada'],
+    ['foto_url', 'https://res.cloudinary.com/demo/perfiles/laura-nueva.jpg'],
+  ])('repinta cuando solo cambia %s de un miembro', async (campo, valor) => {
+    const view = mount()
+    await loaded(view)
+    const anterior = view.querySelector('section')
+    api.getSquad.mockResolvedValue({
+      ...squad,
+      miembros: squad.miembros.map((miembro, indice) => indice === 1 ? { ...miembro, [campo]: valor } : miembro),
+    })
+    avisos.alActualizar(aviso)
+    await vi.waitFor(() => expect(anterior.isConnected).toBe(false))
+    const miembro = view.querySelectorAll('li')[1]
+    if (campo === 'nickname') expect(miembro.textContent).toContain(valor)
+    else expect(miembro.querySelector('img').getAttribute('src')).toBe(valor)
+    expect(view.querySelector('.hueco')).toBeNull()
+    expect(view.querySelectorAll('.entrada')).toHaveLength(0)
   })
 
   it('actualiza las plazas en directo cuando solo cambia la configuración y conserva su menú', async () => {
