@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { iniciales, squadAvatar } from './avatar.js'
+import { fotoAvatar, iniciales, squadAvatar } from './avatar.js'
 
 describe('iniciales', () => {
   it('coge la primera letra de las dos primeras palabras', () => {
@@ -26,5 +26,31 @@ describe('squadAvatar', () => {
 
   it('acepta otro tamaño', () => {
     expect(squadAvatar({ nombre: 'Leones', className: 'h-10 w-10' }).classList.contains('h-10')).toBe(true)
+  })
+})
+
+describe('fotoAvatar', () => {
+  it('pinta las iniciales si no hay foto', () => {
+    const avatar = fotoAvatar({ nombre: 'lau' })
+
+    expect(avatar.textContent).toBe('L')
+    expect(avatar.querySelector('img')).toBeNull()
+  })
+
+  it('pinta la foto sin mandar el origen a Cloudinary', () => {
+    const foto = fotoAvatar({ nombre: 'ale', fotoUrl: 'https://res.cloudinary.com/demo/ale.jpg' }).querySelector('img')
+
+    expect(foto.getAttribute('src')).toBe('https://res.cloudinary.com/demo/ale.jpg')
+    expect(foto.alt).toBe('')
+    expect(foto.referrerPolicy).toBe('no-referrer')
+  })
+
+  it('vuelve a las iniciales si la foto no carga', () => {
+    const avatar = fotoAvatar({ nombre: 'carlos', fotoUrl: 'https://res.cloudinary.com/demo/rota.jpg' })
+
+    avatar.querySelector('img').dispatchEvent(new Event('error'))
+
+    expect(avatar.querySelector('img')).toBeNull()
+    expect(avatar.textContent).toBe('C')
   })
 })
