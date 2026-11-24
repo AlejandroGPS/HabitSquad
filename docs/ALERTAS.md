@@ -254,7 +254,11 @@ Si falta la clave pública, `GET /api/alertas/vapid-public-key/` responde
    una se identifica por `endpoint`.
 2. Cambiar `hora_aviso` en el perfil no requiere volver a suscribirse.
 3. El frontend gestiona permisos del navegador y el service worker; este
-   documento solo cubre la API y el criterio de envío.
+   documento solo cubre la API y el criterio de envío. La pantalla `/alertas`,
+   la suscripción y el service worker del cliente se describen en la sección
+   «Alertas» de [frontend/README.md](../frontend/README.md). Al cerrar sesión,
+   el cliente llama a `DELETE /api/alertas/suscripcion/` antes de revocar el
+   refresh.
 4. El worker Q2 de alertas reutiliza la infra documentada en
    [SINCRONIZACION_TIEMPO_REAL.md](SINCRONIZACION_TIEMPO_REAL.md) y
    [DESPLIEGUE.md](DESPLIEGUE.md); no exige Channels ni WebSockets. Al

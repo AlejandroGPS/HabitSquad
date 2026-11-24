@@ -15,8 +15,11 @@ describe('rachaChip', () => {
   })
 })
 
-it('alertasBoton tiene nombre accesible', () => {
-  expect(alertasBoton().querySelector('.sr-only').textContent).toBe('Alertas')
+it('alertasBoton tiene nombre accesible y lleva a Alertas', () => {
+  const boton = alertasBoton()
+  expect(boton.querySelector('.sr-only').textContent).toBe('Alertas')
+  expect(boton.getAttribute('href')).toBe('/alertas')
+  expect(boton.hasAttribute('data-link')).toBe(true)
 })
 
 describe('escuadronResumen', () => {

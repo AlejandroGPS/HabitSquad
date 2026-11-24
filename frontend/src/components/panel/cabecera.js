@@ -11,14 +11,16 @@ export function rachaChip({ racha = 0 } = {}) {
   )
 }
 
-// TODO: enlazar con la pantalla de alertas cuando exista (PBI de alertas).
 export function alertasBoton() {
-  return element(
-    'span',
-    'glass relative grid h-11 w-11 shrink-0 place-items-center rounded-full',
+  const enlace = element(
+    'a',
+    'glass relative grid h-11 w-11 shrink-0 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
     element('span', 'sr-only', 'Alertas'),
     icon('bell'),
   )
+  enlace.href = '/alertas'
+  enlace.dataset.link = ''
+  return enlace
 }
 
 export function escuadronResumen({ nombre, miembros = 0, plazas = 5 }) {
