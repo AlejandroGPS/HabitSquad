@@ -15,6 +15,7 @@ import {
 import { hasSession } from './session.js'
 import { accountMenu } from './components/accountMenu.js'
 import { loginScreen, registroScreen } from './views/acceso.js'
+import { alertasScreen } from './views/alertas.js'
 import { crearEscuadronScreen } from './views/crearEscuadron.js'
 import { configuracionEscuadronScreen } from './views/configuracionEscuadron.js'
 import { habitoDiarioScreen } from './views/habitoDiario.js'
@@ -153,6 +154,12 @@ export const routes = [
     title: 'Editar perfil',
     private: true,
     view: ({ navigate } = {}) => editarPerfilScreen({ onLogout: async () => { await logout(); navigate?.('/login') } }),
+  },
+  {
+    path: '/alertas',
+    title: 'Alertas',
+    private: true,
+    view: ({ navigate } = {}) => alertasScreen({ onLogout: async () => { await logout(); navigate?.('/login') } }),
   },
   {
     path: '/perfil/confirmar-email',
