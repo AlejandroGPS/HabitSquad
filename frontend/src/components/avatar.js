@@ -17,3 +17,16 @@ export function squadAvatar({ nombre, className = 'h-12 w-12' }) {
     iniciales(nombre),
   )
 }
+
+export function fotoAvatar({ nombre, fotoUrl, className = 'h-10 w-10 rounded-full' }) {
+  const avatar = element('span', `grid ${className} shrink-0 place-items-center overflow-hidden`, iniciales(nombre))
+  if (fotoUrl) {
+    const foto = element('img', 'h-full w-full object-cover')
+    foto.alt = ''
+    foto.referrerPolicy = 'no-referrer'
+    foto.addEventListener('error', () => avatar.replaceChildren(iniciales(nombre)), { once: true })
+    foto.src = fotoUrl
+    avatar.replaceChildren(foto)
+  }
+  return avatar
+}

@@ -1,15 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError } from '../api.js'
+import { ApiError, logout } from '../api.js'
 import { panelSeleccionadoScreen } from './panelSeleccionado.js'
+
+vi.mock('../api.js', async (importOriginal) => ({ ...(await importOriginal()), logout: vi.fn().mockResolvedValue() }))
 
 const squad = {
   id: 7,
   nombre: 'Lectores',
   codigo_invitacion: 'ABC123',
   miembros: [
-    { usuario_id: 1, nombre: 'Ana', es_usuario: true, habito: { opcion: 'leer', texto_personalizado: '' }, prueba_hoy: null },
-    { usuario_id: 2, nombre: 'Laura', es_usuario: false, habito: { opcion: 'otro', texto_personalizado: 'Correr 5 km' }, prueba_hoy: { id: 21, estado: 'pendiente' } },
-    { usuario_id: 3, nombre: '', es_usuario: false, habito: null, prueba_hoy: { id: 22, estado: 'cumplido' } },
+    { usuario_id: 1, nickname: 'ana', foto_url: 'https://res.cloudinary.com/demo/perfiles/ana.jpg', es_usuario: true, habito: { opcion: 'leer', texto_personalizado: '' }, prueba_hoy: null },
+    { usuario_id: 2, nickname: 'lau', foto_url: null, es_usuario: false, habito: { opcion: 'otro', texto_personalizado: 'Correr 5 km' }, prueba_hoy: { id: 21, estado: 'pendiente' } },
+    { usuario_id: 3, nickname: '', foto_url: 'https://res.cloudinary.com/demo/perfiles/3.jpg', es_usuario: false, habito: null, prueba_hoy: { id: 22, estado: 'cumplido' } },
   ],
 }
 const ownHabit = squad.miembros[0].habito
@@ -99,17 +101,70 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     expect(view.textContent).toContain('Leer')
     expect(view.textContent).toContain('3 de 5 miembros')
     const items = [...view.querySelectorAll('li')].map((item) => item.textContent)
-    expect(items[0]).toContain('Tú')
-    expect(items[0]).toContain('Leer · Sin prueba')
-    expect(items[1]).toContain('Laura')
-    expect(items[1]).toContain('Correr 5 km · Pendiente')
-    expect(items[2]).toContain('Miembro 3')
-    expect(items[2]).toContain('Sin hábito · Cumplido')
+    expect(items[0]).toBe('anaTúLeer · Sin prueba')
+    expect(items[1]).toBe('Llau' + 'Correr 5 km · Pendiente' + 'Votar')
+    expect(items[2]).toBe('Miembro 3' + 'Sin hábito · Cumplido' + 'Ver foto')
     expect(view.textContent).toContain('ABC123')
     expect(view.textContent).toContain('Quedan 2 plazas')
+    const invita = [...view.querySelectorAll('section')].find((item) => item.textContent.includes('ABC123'))
+    expect(invita.classList.contains('hidden')).toBe(false)
     for (const link of view.querySelectorAll('a[href^="/habito"]')) {
       expect(link.getAttribute('href')).toBe('/habito?escuadron=7')
     }
+  })
+
+  it('pinta la foto de perfil de cada miembro que la tiene y las iniciales del resto', async () => {
+    const view = mount()
+    await loaded(view)
+    const items = [...view.querySelectorAll('li')]
+    expect(items[0].querySelector('img').getAttribute('src')).toBe('https://res.cloudinary.com/demo/perfiles/ana.jpg')
+    expect(items[1].querySelector('img')).toBeNull()
+    expect(items[2].querySelector('img').getAttribute('src')).toBe('https://res.cloudinary.com/demo/perfiles/3.jpg')
+  })
+
+  it('la cuenta muestra el nickname y la foto del usuario que vienen con el escuadrón', async () => {
+    const pending = deferred()
+    api.getSquad.mockReturnValue(pending.promise)
+    const view = mount()
+    const cuenta = () => view.querySelector('[aria-label="Tu cuenta"]')
+    expect(cuenta().querySelector('img')).toBeNull()
+    expect(cuenta().querySelector('svg')).not.toBeNull()
+    pending.resolve(squad)
+    await loaded(view)
+    await vi.waitFor(() => expect(cuenta().querySelector('img')?.getAttribute('src'))
+      .toBe('https://res.cloudinary.com/demo/perfiles/ana.jpg'))
+    expect(view.querySelector('[id^="menu-cuenta-"]').textContent).toContain('ana')
+  })
+
+  it('si el foco está en la cuenta mientras carga, sigue ahí al pintar el escuadrón', async () => {
+    const pending = deferred()
+    api.getSquad.mockReturnValue(pending.promise)
+    const view = mount()
+    const cuenta = view.querySelector('[aria-label="Tu cuenta"]')
+    cuenta.focus()
+    pending.resolve(squad)
+    await loaded(view)
+    expect(document.activeElement).toBe(cuenta)
+  })
+
+  it('«Cerrar sesión» desde la cuenta cierra la sesión y lleva al login', async () => {
+    const view = mount()
+    await loaded(view)
+    view.querySelector('[aria-label="Tu cuenta"]').click()
+    button(view, 'Cerrar sesión').click()
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith('/login'))
+    expect(logout).toHaveBeenCalledOnce()
+  })
+
+  it('la cuenta usa las iniciales del nickname si el usuario no tiene foto', async () => {
+    api.getSquad.mockResolvedValue({
+      ...squad,
+      miembros: [{ ...squad.miembros[0], foto_url: null }, ...squad.miembros.slice(1)],
+    })
+    const view = mount()
+    await loaded(view)
+    await vi.waitFor(() => expect(view.querySelector('[aria-label="Tu cuenta"]').textContent).toBe('A'))
+    expect(view.querySelector('[aria-label="Tu cuenta"] img')).toBeNull()
   })
 
   it('pinta el resumen: racha, cumplidos de hoy, cierre y semana de cada miembro', async () => {

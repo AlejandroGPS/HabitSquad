@@ -116,7 +116,7 @@ export function votarPruebaScreen() {
       ])
       const members = new Map(squad.miembros.map((member) => [member.usuario_id, member]))
       const viewer = squad.miembros.find(({ es_usuario }) => es_usuario)
-      const nameFor = (id) => members.get(id)?.nombre || `Miembro ${id}`
+      const nameFor = (id) => members.get(id)?.nickname || `Miembro ${id}`
       const author = nameFor(proof.usuario_id)
       title.textContent = `Prueba de ${author}`
       footer.replaceChildren(escuadronResumen({ nombre: squad.nombre, miembros: members.size }))
