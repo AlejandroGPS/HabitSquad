@@ -208,6 +208,43 @@ del escuadrón. Para detener el entorno usa
 En producción, `docker-compose.yml` añade Caddy, que envía `/api/`, `/admin/`
 y `/ws/` a la API y conserva el upgrade WebSocket.
 
+## Cliente web (PWA)
+
+El panel del escuadrón (`/escuadrones/panel?id={id}`) usa este contrato
+mediante `conectarEscuadron()` de `frontend/src/tiempoReal.js`:
+
+- Abre la conexión cuando la primera carga REST del panel ha ido bien, con
+  `wss:` en HTTPS y `ws:` en HTTP, en el mismo dominio que la aplicación. Si la
+  carga falla (por ejemplo, `403` o `404`), no se conecta.
+- Al abrirse envía `{"tipo":"autenticar","access":"<access JWT>"}` con el
+  access de la sesión guardada.
+- Con cada `autenticado`, también tras una reconexión, y con cada
+  `panel.actualizado`, vuelve a pedir `GET /api/escuadrones/{id}/` y
+  `GET /api/escuadrones/{id}/habito/`. Los avisos que llegan mientras hay una
+  carga en curso se juntan en una sola petición más.
+- Repinta la racha, los miembros y el resto de tarjetas sin huecos de carga ni
+  animaciones de entrada, solo si cambia algo de lo que se ve, y devuelve el
+  foco al mismo control. Si la petición falla, mantiene el panel anterior hasta
+  el siguiente aviso.
+- Si el servidor cierra con `4401` antes de autenticar (el access dura cinco
+  minutos), renueva la sesión con el refresh y vuelve a conectar. Si también
+  rechaza el access nuevo, deja de intentarlo; si el refresh ya no vale, la
+  sesión caduca y la aplicación vuelve a `/login`.
+- Si la conexión se corta por otro motivo, reintenta tras 1, 2, 4, 8 y 16 s, y
+  después cada 30 s. Al recuperar la red (`online`) o volver a la aplicación
+  (`visibilitychange`) reintenta sin esperar.
+- Al salir del panel cierra la conexión con `1000`.
+
+En desarrollo, `npm run dev` y `npm run preview` reenvían `/ws` al backend en
+`127.0.0.1:8000` igual que `/api`. `python manage.py runserver` no atiende
+WebSockets (responde `404` a `/ws/`). Para probar la sincronización hay que
+levantar la API con `docker compose -f docker-compose.dev.yml up --build -d` o,
+con Redis en marcha, con uvicorn desde `backend/`:
+
+```bash
+uvicorn config.asgi:application --host 127.0.0.1 --port 8000 --reload
+```
+
 ## Referencias de implementación
 
 - Ruta ASGI y autenticación: `backend/config/asgi.py` y `backend/escuadrones/tiempo_real/consumers.py`.
@@ -215,3 +252,4 @@ y `/ws/` a la API y conserva el upgrade WebSocket.
 - Cálculo de la racha: `backend/escuadrones/detalle/services.py`.
 - Cierre de pruebas y tarea de Q2: `backend/habitos/validacion/services/closing.py`, `backend/habitos/validacion/tasks.py` y `backend/habitos/management/commands/programar_cierre_diario.py`.
 - Avisos Web Push (mismo worker): `backend/alertas/tasks.py` y `backend/alertas/management/commands/programar_alertas.py` (contrato en `docs/ALERTAS.md`).
+- Cliente web: `frontend/src/tiempoReal.js` y `frontend/src/views/panelSeleccionado.js`.

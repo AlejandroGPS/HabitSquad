@@ -278,3 +278,219 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     await loaded(view)
   })
 })
+
+describe('panel del escuadrón: sincronización en tiempo real', () => {
+  const aviso = { tipo: 'panel.actualizado', escuadron_id: 7, motivo: 'voto_emitido', registro_id: 21 }
+  let api
+  let navigate
+  let conexion
+  let conectar
+  let avisos
+
+  beforeEach(() => {
+    window.history.replaceState({}, '', '/escuadrones/panel?id=7')
+    api = { getSquad: vi.fn().mockResolvedValue(squad), getDailyHabit: vi.fn().mockResolvedValue(ownHabit) }
+    navigate = vi.fn()
+    conexion = { cerrar: vi.fn() }
+    conectar = vi.fn((_, opciones) => {
+      avisos = opciones
+      return conexion
+    })
+  })
+  afterEach(() => {
+    document.body.replaceChildren()
+    window.history.replaceState({}, '', '/')
+  })
+
+  function mount() {
+    const view = panelSeleccionadoScreen({ navigate, api, conectar })
+    document.body.replaceChildren(view)
+    return view
+  }
+  const loaded = (view) => vi.waitFor(() => expect(view.querySelector('h1').textContent).toBe('Lectores'))
+  const settle = () => new Promise((resolve) => setTimeout(resolve))
+
+  it('se conecta al canal del escuadrón cuando el panel ha cargado, y una sola vez', async () => {
+    const view = mount()
+    expect(conectar).not.toHaveBeenCalled()
+    await loaded(view)
+    expect(conectar).toHaveBeenCalledOnce()
+    expect(conectar).toHaveBeenCalledWith('7', {
+      alActualizar: expect.any(Function),
+      alSuscribirse: expect.any(Function),
+    })
+    api.getSquad.mockResolvedValue({ ...squad, racha: 1 })
+    avisos.alActualizar(aviso)
+    await vi.waitFor(() => expect(view.textContent).toContain('1día seguido'))
+    expect(conectar).toHaveBeenCalledOnce()
+  })
+
+  it.each([
+    ['la URL no es válida', '/escuadrones/panel?id=abc', null],
+    ['el escuadrón no está disponible', '/escuadrones/panel?id=7', new ApiError(403)],
+    ['falla la carga', '/escuadrones/panel?id=7', new TypeError('Failed to fetch')],
+  ])('no se conecta si %s', async (_, url, cause) => {
+    window.history.replaceState({}, '', url)
+    if (cause) api.getSquad.mockRejectedValue(cause)
+    const view = mount()
+    if (cause) await vi.waitFor(() => expect(view.querySelector('[role="alert"]').textContent).not.toBe(''))
+    await settle()
+    expect(conectar).not.toHaveBeenCalled()
+  })
+
+  it('se conecta cuando «Reintentar» consigue cargar el panel', async () => {
+    api.getSquad.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+    const view = mount()
+    await vi.waitFor(() => expect(view.querySelector('[role="alert"]').textContent).not.toBe(''))
+    expect(conectar).not.toHaveBeenCalled()
+    ;[...view.querySelectorAll('button')].find((item) => item.textContent === 'Reintentar').click()
+    await loaded(view)
+    expect(conectar).toHaveBeenCalledOnce()
+  })
+
+  it('si se sale del panel antes de que cargue, no llega a conectarse', async () => {
+    const pending = deferred()
+    api.getSquad.mockReturnValue(pending.promise)
+    mount()
+    document.body.replaceChildren()
+    pending.resolve(squad)
+    await vi.waitFor(() => expect(api.getDailyHabit).toHaveBeenCalled())
+    await settle()
+    expect(conectar).not.toHaveBeenCalled()
+  })
+
+  it('con cada aviso pinta la racha y los miembros nuevos sin huecos ni animaciones de entrada', async () => {
+    const view = mount()
+    await loaded(view)
+    expect(view.textContent).toContain('0días seguidos')
+    expect(view.textContent).toContain('1/3')
+
+    const pending = deferred()
+    api.getSquad.mockReturnValueOnce(pending.promise)
+    avisos.alActualizar(aviso)
+    expect(api.getSquad).toHaveBeenCalledTimes(2)
+    expect(view.querySelector('.hueco')).toBeNull()
+    expect(view.textContent).not.toContain('Cargando escuadrón…')
+
+    pending.resolve({
+      ...squad,
+      racha: 5,
+      miembros: [
+        squad.miembros[0],
+        { ...squad.miembros[1], prueba_hoy: { id: 21, estado: 'cumplido' } },
+        squad.miembros[2],
+        { usuario_id: 4, nombre: 'Marta', es_usuario: false, habito: { opcion: 'gimnasio', texto_personalizado: '' }, prueba_hoy: null },
+      ],
+    })
+    await vi.waitFor(() => expect(view.textContent).toContain('5días seguidos'))
+    expect(view.textContent).toContain('2/4')
+    expect(view.textContent).toContain('4 de 5 miembros')
+    const items = [...view.querySelectorAll('li')].map((item) => item.textContent)
+    expect(items[1]).toContain('Correr 5 km · Cumplido')
+    expect(items[3]).toContain('Marta')
+    expect(view.querySelectorAll('.entrada')).toHaveLength(0)
+    expect(view.querySelector('.hueco')).toBeNull()
+  })
+
+  it('al suscribirse o reconectar vuelve a pedir el panel, pero no lo repinta si no ha cambiado nada visible', async () => {
+    const view = mount()
+    await loaded(view)
+    const racha = view.querySelector('section')
+    api.getSquad.mockResolvedValue({
+      ...squad,
+      miembros: squad.miembros.map((miembro) => ({ ...miembro, foto_url: `https://res.cloudinary.com/firmada-${miembro.usuario_id}` })),
+    })
+    avisos.alSuscribirse()
+    await vi.waitFor(() => expect(api.getDailyHabit).toHaveBeenCalledTimes(2))
+    await settle()
+    expect(racha.isConnected).toBe(true)
+    expect(view.querySelectorAll('.entrada')).toHaveLength(7)
+  })
+
+  it('si cambia el hábito propio, lo repinta', async () => {
+    const view = mount()
+    await loaded(view)
+    api.getDailyHabit.mockResolvedValue({ opcion: 'gimnasio', texto_personalizado: '' })
+    avisos.alActualizar({ ...aviso, motivo: 'habito_actualizado' })
+    await vi.waitFor(() => expect(view.textContent).toContain('Ir al gimnasio'))
+  })
+
+  it('junta los avisos que llegan mientras carga en una sola petición más', async () => {
+    const view = mount()
+    await loaded(view)
+    const pending = deferred()
+    api.getSquad.mockReturnValueOnce(pending.promise)
+    avisos.alActualizar(aviso)
+    avisos.alActualizar({ ...aviso, motivo: 'prueba_actualizada' })
+    avisos.alSuscribirse()
+    expect(api.getSquad).toHaveBeenCalledTimes(2)
+    pending.resolve(squad)
+    await vi.waitFor(() => expect(api.getSquad).toHaveBeenCalledTimes(3))
+    await settle()
+    expect(api.getSquad).toHaveBeenCalledTimes(3)
+  })
+
+  it('si falla una actualización en vivo mantiene el panel sin mostrar errores', async () => {
+    const view = mount()
+    await loaded(view)
+    api.getSquad.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+    avisos.alActualizar(aviso)
+    await vi.waitFor(() => expect(api.getSquad).toHaveBeenCalledTimes(2))
+    await settle()
+    expect(view.querySelector('h1').textContent).toBe('Lectores')
+    expect(view.textContent).not.toContain('No se ha podido cargar')
+    expect(view.querySelector('.hueco')).toBeNull()
+
+    api.getSquad.mockResolvedValue({ ...squad, racha: 2 })
+    avisos.alActualizar(aviso)
+    await vi.waitFor(() => expect(view.textContent).toContain('2días seguidos'))
+  })
+
+  it('al repintar devuelve el foco al mismo botón', async () => {
+    const view = mount()
+    await loaded(view)
+    const votar = [...view.querySelectorAll('button')].find((item) => item.textContent === 'Votar')
+    votar.focus()
+    api.getSquad.mockResolvedValue({ ...squad, racha: 3 })
+    avisos.alActualizar(aviso)
+    await vi.waitFor(() => expect(view.textContent).toContain('3días seguidos'))
+    expect(votar.isConnected).toBe(false)
+    expect(document.activeElement.textContent).toBe('Votar')
+    expect(view.contains(document.activeElement)).toBe(true)
+  })
+
+  it('el foco se queda en «Mis escuadrones» aunque el enlace pase al panel nuevo', async () => {
+    const view = mount()
+    await loaded(view)
+    const back = [...view.querySelectorAll('a')].find((link) => link.textContent === '← Mis escuadrones')
+    back.focus()
+    api.getSquad.mockResolvedValue({ ...squad, racha: 3 })
+    avisos.alActualizar(aviso)
+    await vi.waitFor(() => expect(view.textContent).toContain('3días seguidos'))
+    expect(document.activeElement).toBe(back)
+  })
+
+  it('si el botón que tenía el foco ya no existe, no enfoca otro', async () => {
+    const view = mount()
+    await loaded(view)
+    ;[...view.querySelectorAll('button')].find((item) => item.textContent === 'Votar').focus()
+    api.getSquad.mockResolvedValue({
+      ...squad,
+      miembros: [squad.miembros[0], { ...squad.miembros[1], prueba_hoy: { id: 21, estado: 'cumplido' } }, squad.miembros[2]],
+    })
+    avisos.alActualizar(aviso)
+    await vi.waitFor(() => expect(view.textContent).toContain('2/3'))
+    expect(document.activeElement).toBe(document.body)
+  })
+
+  it('al salir del panel cierra la conexión', async () => {
+    const view = mount()
+    await loaded(view)
+    expect(conexion.cerrar).not.toHaveBeenCalled()
+    document.body.append(document.createElement('div'))
+    await settle()
+    expect(conexion.cerrar).not.toHaveBeenCalled()
+    document.body.replaceChildren(document.createElement('div'))
+    await vi.waitFor(() => expect(conexion.cerrar).toHaveBeenCalledOnce())
+  })
+})
