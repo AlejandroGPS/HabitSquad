@@ -111,8 +111,8 @@ export function alertasScreen({
   )
 
   const hora = element('p', 'mt-1 text-[2.5rem] leading-none font-black tabular-nums', '—')
-  const notaHora = element('p', 'mt-2 text-[0.8125rem] font-bold text-ink-muted', 'Cada uno elige su hora en el perfil.')
-  const cambiarHora = element('a', `${pillButtonClass} mt-4 self-start`, icon('pencil', 'h-4 w-4 shrink-0'), 'Cambiar hora')
+  const notaHora = element('p', 'mt-2 mb-4 text-[0.8125rem] font-bold text-ink-muted', 'Cada uno elige su hora en el perfil.')
+  const cambiarHora = element('a', `${pillButtonClass} mt-auto self-start`, icon('pencil', 'h-4 w-4 shrink-0'), 'Cambiar hora')
   cambiarHora.href = '/perfil/editar#recordatorio'
   cambiarHora.dataset.link = ''
   const tuAviso = card('flex flex-col', cardLabel('Tu aviso', { icon: 'clock' }), hora, notaHora, cambiarHora)
