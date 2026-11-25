@@ -5,6 +5,7 @@ import { appLayout } from '../components/appLayout.js'
 import { card, cardLabel, pillButtonClass } from '../components/card.js'
 import { button, element } from '../components/dom.js'
 import { icon } from '../components/icons.js'
+import { squadNavigation } from '../components/panel/navigation.js'
 import { PROFILE_BUTTON } from '../components/perfil.js'
 
 const AHORA_NO = 'habitsquad.avisos'
@@ -119,7 +120,8 @@ export function alertasScreen({
 
   const body = element('div', 'mt-4 grid gap-3 px-4 lg:mt-6 lg:grid-cols-4 lg:gap-4 lg:px-0', permiso, tuAviso)
   const cuenta = accountMenu({ loadProfile: () => perfil, onLogout })
-  const root = appLayout({ active: 'alertas', kicker: 'Tu cuenta', title: 'Alertas', body, trailing: cuenta })
+  const root = appLayout({ active: 'alertas', kicker: 'Tu cuenta', title: 'Alertas', body, trailing: cuenta,
+    navItems: squadNavigation() })
 
   perfil.then(
     (datos) => { hora.textContent = datos.hora_aviso },

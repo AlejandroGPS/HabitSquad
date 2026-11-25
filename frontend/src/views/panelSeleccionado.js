@@ -47,7 +47,8 @@ export function panelSeleccionadoScreen({
     loadProfile: () => identidad,
     onLogout: async () => { await logout(); navigate('/login') },
   })
-  root.append(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body, trailing: cuenta }))
+  root.append(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body, trailing: cuenta,
+    navItems: squadNavigation(id) }))
   let loading = false
   let pendiente = false
   let pintado = null

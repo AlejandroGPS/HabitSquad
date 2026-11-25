@@ -68,6 +68,7 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     expect(view.querySelector('[role="status"]').textContent).toBe('Cargando escuadrón…')
     expect(view.querySelector('[role="alert"]').textContent).toBe('')
     expect(retry(view).hidden).toBe(true)
+    expect(view.querySelector('aside a[href="/escuadrones/configuracion?origen=7"]')?.textContent).toBe('Configuración')
     expect(api.getSquad).toHaveBeenCalledWith('7')
     pending.resolve(squad)
     await loaded(view)
