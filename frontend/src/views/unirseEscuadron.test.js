@@ -305,4 +305,10 @@ describe('alternativa a unirse', () => {
     expect(link.getAttribute('href')).toBe('/escuadrones/nuevo')
     expect(link.textContent).toBe('¿No tienes código? Crea tu escuadrón')
   })
+
+  it('en la barra de arriba marca la sección Mis escuadrones', () => {
+    const actual = unirseEscuadronScreen().querySelector('header [aria-current]')
+    expect(actual.textContent).toBe('Mis escuadrones')
+    expect(actual.getAttribute('href')).toBe('/escuadrones')
+  })
 })

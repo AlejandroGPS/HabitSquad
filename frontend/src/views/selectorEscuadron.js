@@ -94,7 +94,7 @@ export function selectorEscuadronScreen({ onLogout, loadSquads = listSquads, loa
     'div',
     'relative isolate flex min-h-dvh flex-col overflow-x-clip font-rounded text-ink antialiased',
     fondo,
-    landingNav({ cuenta: accountMenu({ onLogout, loadProfile }) }),
+    landingNav({ cuenta: accountMenu({ onLogout, loadProfile }), zona: 'escuadrones' }),
     element('main', 'flex flex-col', seccion),
   )
 }
