@@ -10,6 +10,7 @@ from escuadrones.crear.services.invitation_code import (
 from escuadrones.models import Escuadron
 from escuadrones.unirse.services.join import (
     AlreadyMemberError,
+    SquadronFullError,
     SquadronNotFoundError,
     normalize_invitation_code,
     unirse_escuadron,
@@ -20,6 +21,18 @@ class Conflict(APIException):
     status_code = status.HTTP_409_CONFLICT
     default_detail = "Ya perteneces a este escuadrón."
     default_code = "conflict"
+
+
+class SquadronFull(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = "El escuadrón ha alcanzado el límite de miembros."
+    default_code = "squadron_full"
+
+
+class PrivateSquad(APIException):
+    status_code = status.HTTP_403_FORBIDDEN
+    default_detail = "Solo puedes unirte sin código a escuadrones públicos."
+    default_code = "private_squad"
 
 
 @extend_schema_field(
@@ -50,12 +63,16 @@ class EscuadronJoinSerializer(serializers.ModelSerializer):
             "id",
             "nombre",
             "codigo_invitacion",
+            "es_publico",
+            "limite_miembros",
             "creador_id",
             "miembros",
         )
         read_only_fields = (
             "id",
             "nombre",
+            "es_publico",
+            "limite_miembros",
             "creador_id",
             "miembros",
         )
@@ -82,6 +99,8 @@ class EscuadronJoinSerializer(serializers.ModelSerializer):
             raise NotFound(detail=str(error)) from error
         except AlreadyMemberError as error:
             raise Conflict(detail=str(error)) from error
+        except SquadronFullError as error:
+            raise SquadronFull(detail=str(error)) from error
 
 
 @extend_schema_serializer(component_name="ErrorValidacionCodigoInvitacion")

@@ -4,6 +4,7 @@ import cloudinary.uploader
 import cloudinary.utils
 from django.utils import timezone
 
+from escuadrones.tiempo_real.events import programar_actualizacion_panel
 from habitos.models import HabitoDiario, RegistroDiario
 
 # Tipos y tamaño acordados para la foto de prueba de hábito diario
@@ -94,5 +95,10 @@ def guardar_prueba_foto(
             "cloudinary_public_id": public_id,
             "estado": RegistroDiario.Estado.PENDIENTE,
         },
+    )
+    programar_actualizacion_panel(
+        escuadron_id=habito.membresia.escuadron_id,
+        motivo="prueba_actualizada",
+        registro_id=registro.pk,
     )
     return registro, created

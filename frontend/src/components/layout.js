@@ -73,6 +73,7 @@ export function accessLayout({
   description,
   bubble,
   showAccountLinks = true,
+  zona,
   hideGreetingOnShortScreens = false,
   cardClassName = 'glass w-full max-w-[25rem] rounded-[2rem] p-6 sm:p-7',
 }) {
@@ -123,6 +124,6 @@ export function accessLayout({
   )
   body.append(squadBadges(), greeting, card)
 
-  main.append(backdrop, accessNavbar({ active, showAccountLinks }), body)
+  main.append(backdrop, accessNavbar({ active, showAccountLinks, zona }), body)
   return { main, content }
 }

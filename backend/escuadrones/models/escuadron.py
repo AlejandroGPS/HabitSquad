@@ -1,7 +1,9 @@
 from typing import ClassVar
 
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import Q
 
 
 class Escuadron(models.Model):
@@ -12,6 +14,11 @@ class Escuadron(models.Model):
         related_name="escuadrones_creados",
     )
     codigo_invitacion = models.CharField(max_length=6, unique=True)
+    es_publico = models.BooleanField(default=False)
+    limite_miembros = models.PositiveIntegerField(
+        default=5,
+        validators=[MinValueValidator(2)],
+    )
     miembros = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         through="Membresia",
@@ -20,6 +27,12 @@ class Escuadron(models.Model):
     creado_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        constraints: ClassVar[list] = [
+            models.CheckConstraint(
+                condition=Q(limite_miembros__gte=2),
+                name="escuadron_limite_miembros_minimo_2",
+            ),
+        ]
         verbose_name = "escuadrón"
         verbose_name_plural = "escuadrones"
 

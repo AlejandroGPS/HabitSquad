@@ -37,6 +37,12 @@ function fillLogin(element, { email, password }) {
   element.querySelector('input[name="password"]').value = password
 }
 
+function fillRegistration(element, { nickname = '  HabitHero  ', ...credentials }) {
+  fillLogin(element, credentials)
+  element.querySelector('[name="nickname"]').value = nickname
+  element.querySelector('[name="password_confirm"]').value = credentials.password
+}
+
 function submit(element) {
   element.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true }))
 }
@@ -92,22 +98,22 @@ describe('sesión', () => {
     expect(home.view().querySelector('h1').textContent).toBe('Cumple tu hábito. Que no caiga la racha.')
   })
 
-  it('con sesión el inicio muestra la pantalla de la app', () => {
+  it('con sesión el inicio sigue mostrando la presentación', () => {
     saveSession({ access: 'access-token', refresh: 'refresh-token' })
     const home = routes.find((route) => route.path === '/')
 
     expect(guard(home)).toBeNull()
-    expect(home.view().querySelector('h1').textContent).toBe('HabitSquad')
+    expect(home.view().querySelector('h1').textContent).toBe('Cumple tu hábito. Que no caiga la racha.')
   })
 
-  it('con sesión, /login y /registro llevan al inicio', () => {
+  it('con sesión, /login y /registro llevan al selector', () => {
     saveSession({ access: 'access-token', refresh: 'refresh-token' })
 
     const loginRoute = routes.find((route) => route.path === '/login')
     const registroRoute = routes.find((route) => route.path === '/registro')
 
-    expect(guard(loginRoute)).toBe('/')
-    expect(guard(registroRoute)).toBe('/')
+    expect(guard(loginRoute)).toBe('/escuadrones')
+    expect(guard(registroRoute)).toBe('/escuadrones')
   })
 
   it('con sesión las rutas privadas no redirigen', () => {
@@ -117,7 +123,7 @@ describe('sesión', () => {
     expect(guard(privateRoute)).toBeNull()
   })
 
-  it('un login correcto guarda los tokens y abre el inicio', async () => {
+  it('un login correcto guarda los tokens y abre el selector', async () => {
     login.mockImplementation(async () => {
       saveSession({ access: 'access-token', refresh: 'refresh-token' })
     })
@@ -135,7 +141,7 @@ describe('sesión', () => {
         password: 'secreta',
       })
       expect(hasSession()).toBe(true)
-      expect(navigate).toHaveBeenCalledWith('/')
+      expect(navigate).toHaveBeenCalledWith('/escuadrones')
     })
   })
 
@@ -159,7 +165,7 @@ describe('sesión', () => {
     register.mockResolvedValue({ id: 1, email: 'persona@example.com' })
     const { element, navigate } = mount('/registro')
 
-    fillLogin(element, {
+    fillRegistration(element, {
       email: ' Persona@Example.com ',
       password: 'S0mething!Secure-497',
     })
@@ -168,7 +174,9 @@ describe('sesión', () => {
     await vi.waitFor(() => {
       expect(register).toHaveBeenCalledWith({
         email: 'persona@example.com',
+        nickname: 'HabitHero',
         password: 'S0mething!Secure-497',
+        password_confirm: 'S0mething!Secure-497',
       })
       expect(element.querySelector('[role="status"]').textContent).toContain('Cuenta creada')
     })
@@ -250,7 +258,7 @@ describe('sesión', () => {
     )
     const { element, navigate } = mount('/registro')
 
-    fillLogin(element, {
+    fillRegistration(element, {
       email: 'persona@example.com',
       password: 'S0mething!Secure-497',
     })
@@ -269,7 +277,7 @@ describe('sesión', () => {
     register.mockRejectedValue(new ApiError(429, { detail: 'throttled' }))
     const { element, navigate } = mount('/registro')
 
-    fillLogin(element, {
+    fillRegistration(element, {
       email: 'persona@example.com',
       password: 'S0mething!Secure-497',
     })
@@ -303,7 +311,7 @@ describe('sesión', () => {
   it('cerrar sesión llama a logout y vuelve a /login', async () => {
     saveSession({ access: 'access-token', refresh: 'refresh-token' })
     logout.mockResolvedValue(undefined)
-    const { element, navigate } = mount('/')
+    const { element, navigate } = mount('/escuadrones')
 
     const logoutButton = [...element.querySelectorAll('button')].find(
       (button) => button.textContent === 'Cerrar sesión',

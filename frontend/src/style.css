@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
+@theme static {
+  --color-danger: #d70015;
+}
+
 @theme {
+  --color-positive: #248a3d;
   --font-rounded: "Nunito Variable", ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
   --color-canvas: #ede6ff;
   --color-surface: rgb(255 255 255 / 0.85);
@@ -42,6 +47,30 @@
 }
 
 @layer components {
+  .profile-card {
+    min-width: 0;
+    border-radius: 1.75rem;
+    background: white;
+    padding: 1.5rem;
+    box-shadow: 0 6px 16px -10px rgb(60 30 140 / 0.22);
+    scroll-margin-top: 7rem;
+  }
+
+  .profile-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  @media (width >= 64rem) {
+    .profile-grid {
+      grid-template-columns: minmax(15rem, 0.9fr) minmax(0, 2fr);
+      align-items: start;
+    }
+    .profile-identity { grid-column: 1; grid-row: 1; }
+    .profile-account { grid-column: 1; grid-row: 2; }
+    .profile-summary { grid-column: 2; grid-row: 1 / span 3; }
+  }
+
   .access-backdrop {
     background:
       radial-gradient(ellipse 45% 40% at 8% 10%, rgb(255 122 26 / 0.55), transparent 70%),
@@ -112,6 +141,56 @@
     from {
       opacity: 0;
       translate: 0 2rem;
+    }
+  }
+
+  /* Huecos de carga: un brillo los recorre mientras llegan los datos. */
+  .hueco {
+    background-color: var(--color-fill);
+  }
+
+  /* Al pintar el panel, las tarjetas entran una detrás de otra (--orden) y las barras se llenan
+     después. Sin movimiento, todo aparece ya en su sitio. */
+  @media (prefers-reduced-motion: no-preference) {
+    .hueco {
+      background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.75), transparent);
+      background-repeat: no-repeat;
+      background-size: 50% 100%;
+      animation: hueco-brillo 1.3s ease-in-out infinite;
+    }
+
+    .entrada {
+      animation: entrada 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      animation-delay: calc(var(--orden, 0) * 60ms);
+    }
+
+    .entrada [data-barras] > * {
+      transform-origin: left;
+      animation: barra-llenar 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      animation-delay: calc(var(--orden, 0) * 60ms + 0.25s);
+    }
+  }
+
+  @keyframes hueco-brillo {
+    from {
+      background-position: -100% 0;
+    }
+    to {
+      background-position: 200% 0;
+    }
+  }
+
+  @keyframes entrada {
+    from {
+      opacity: 0;
+      translate: 0 0.75rem;
+      scale: 0.98;
+    }
+  }
+
+  @keyframes barra-llenar {
+    from {
+      scale: 0 1;
     }
   }
 
@@ -474,37 +553,5 @@
     50% {
       scale: 1.08;
     }
-  }
-}
-
-/* Pantallas de selección y panel: tokens locales para conservar las otras vistas. */
-@layer components {
-  .squad-page {
-    color-scheme: light;
-    --squad-card: #fff;
-    --squad-text: #1d1d1f;
-    --squad-muted: #6e6e73;
-    --squad-soft: #f2f2f7;
-    --squad-purple: #5b32ea;
-    color: var(--squad-text);
-    background: radial-gradient(ellipse at 5% 5%, #ffdcc6 0, transparent 38%), radial-gradient(ellipse at 95% 90%, #d6c8ff 0, transparent 45%), #ece8f6;
-  }
-  .squad-muted { color: var(--squad-muted); }
-  .squad-card { background: var(--squad-card); border-radius: 1.75rem; box-shadow: 0 12px 32px -22px #39237066; }
-  .squad-nav { background: rgb(255 255 255 / .55); border: 1px solid rgb(255 255 255 / .6); backdrop-filter: blur(18px); }
-  .squad-choice { background: var(--squad-soft); border: 2px solid transparent; }
-  .squad-choice:hover { border-color: var(--squad-purple); }
-  .squad-avatar, .squad-demo { background: #efeaff; color: #4c28cc; }
-  .squad-create { background: linear-gradient(135deg, #6a45f0, #4c28cc); }
-  .squad-streak { background: linear-gradient(135deg, #d4460c, #a83400); }
-  .squad-primary, .squad-white-button, .squad-logout { display: inline-flex; min-height: 52px; align-items: center; justify-content: center; border-radius: 999px; padding: 12px 24px; font-weight: 800; font-size: 17px; text-align: center; }
-  .squad-primary { background: var(--squad-purple); color: white; }
-  .squad-white-button { background: white; color: #4c28cc; }
-  .squad-logout { background: var(--squad-soft); color: #d70015; cursor: pointer; }
-  .squad-logout:disabled { opacity: .5; cursor: wait; }
-  .squad-page :is(a, button):focus-visible { outline: 3px solid var(--squad-purple); outline-offset: 4px; }
-  .squad-back { color: var(--squad-purple); }
-  @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-    .squad-nav { background: var(--squad-card); backdrop-filter: none; }
   }
 }

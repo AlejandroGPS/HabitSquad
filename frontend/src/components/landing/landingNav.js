@@ -1,5 +1,6 @@
 import { appMark } from '../brand.js'
 import { element } from '../dom.js'
+import { icon } from '../icons.js'
 import { mechaScroll } from '../mechaScroll.js'
 import { selectorCuenta } from '../selectorCuenta.js'
 import { SECCIONES } from './textos.js'
@@ -10,8 +11,8 @@ const ACTIVO = ['bg-black/[0.07]', 'text-accent']
 
 // En la portada, los enlaces a secciones no cambian la URL: el enrutador repintaría la página
 // al cambiar el hash. Desde otras pantallas llevan a la portada, que baja sola a la sección.
-function enlaceSeccion({ id, label }, enPortada) {
-  if (!enPortada) return enlaceRuta(`/#${id}`, `px-4 ${INACTIVO.join(' ')}`, label)
+function enlaceSeccion({ id, label }, enPortada, portada) {
+  if (!enPortada) return enlaceRuta(`${portada}#${id}`, `px-4 ${INACTIVO.join(' ')}`, label)
   const link = element('a', `${ENLACE} px-4 ${INACTIVO.join(' ')}`, label)
   link.href = `#${id}`
   link.dataset.seccion = id
@@ -56,6 +57,26 @@ function seguirSecciones(header, enlaces, secciones) {
   for (const seccion of secciones) observer.observe(seccion)
 }
 
+export const ZONAS = [
+  { id: 'escuadrones', label: 'Mis escuadrones', href: '/escuadrones', icon: 'users' },
+  { id: 'alertas', label: 'Alertas', href: '/alertas', icon: 'bell' },
+]
+
+// El perfil no está aquí: ya se abre desde el menú de la cuenta, que lo marca cuando estás en él.
+// En el móvil no caben los textos junto a la marca y la cuenta: se queda el icono con su nombre accesible.
+function enlaceZona({ id, label, href, icon: nombreIcono }, zona) {
+  const actual = id === zona
+  const link = enlaceRuta(
+    href,
+    `gap-2 px-3 sm:px-4 ${(actual ? ACTIVO : INACTIVO).join(' ')}`,
+    icon(nombreIcono, 'h-5 w-5 shrink-0'),
+    element('span', 'sr-only sm:not-sr-only', label),
+  )
+  link.dataset.zona = id
+  if (actual) link.setAttribute('aria-current', window.location.pathname === href ? 'page' : 'true')
+  return link
+}
+
 function marcaCompacta(className) {
   const link = enlaceRuta(
     '/',
@@ -68,19 +89,23 @@ function marcaCompacta(className) {
 }
 
 // `secciones` solo se pasa en la portada. Fuera de ella, `cuenta` sustituye a los enlaces de la derecha.
-export function landingNav({ secciones = [], cuenta, conSecciones = true } = {}) {
+// La portada vive en `/`. Fuera de ella, `portada` antepone esa ruta a los anclajes.
+// `zona` se pasa en las pantallas de la app: en vez de las secciones de la portada enlaza a las de la app y marca la actual.
+export function landingNav({ secciones = [], cuenta, conSecciones = true, portada = '/', zona } = {}) {
   const enPortada = secciones.length > 0
   const claseMarca =
     'me-auto shrink-0 justify-self-start text-[1.25rem] font-black tracking-tight text-accent lg:me-0 lg:text-[1.5rem]'
   const marca = marcaCompacta(claseMarca)
-  const enlaces = conSecciones ? SECCIONES.map((seccion) => enlaceSeccion(seccion, enPortada)) : []
+  const enlaces = zona
+    ? ZONAS.map((item) => enlaceZona(item, zona))
+    : conSecciones ? SECCIONES.map((seccion) => enlaceSeccion(seccion, enPortada, portada)) : []
   const derecha = cuenta === undefined ? selectorCuenta({ resaltada: 'register', conFondo: false }) : cuenta
 
   const nav = element(
     'nav',
     'nav-portada relative mx-auto flex w-full items-center gap-1 rounded-full p-1.5 ps-4 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:ps-6',
     marca,
-    element('div', 'hidden items-center gap-0.5 lg:flex', ...enlaces),
+    element('div', zona ? 'flex items-center gap-0.5' : 'hidden items-center gap-0.5 lg:flex', ...enlaces),
     derecha && element('div', 'flex shrink-0 justify-self-end', derecha),
   )
   nav.setAttribute('aria-label', 'Principal')

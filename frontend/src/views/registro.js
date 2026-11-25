@@ -12,6 +12,7 @@ const COMMON_PASSWORDS = new Set([
 ])
 
 const MESSAGES = {
+  nicknameRequired: 'Introduce tu nickname.',
   emailRequired: 'Introduce tu email.',
   emailInvalid: 'Introduce un email válido.',
   passwordRequired: 'Introduce una contraseña.',
@@ -19,6 +20,8 @@ const MESSAGES = {
   passwordNumeric: 'La contraseña no puede ser solo números.',
   passwordCommon: 'Esta contraseña es demasiado común.',
   passwordSimilar: 'La contraseña es demasiado parecida al email.',
+  confirmationRequired: 'Confirma tu contraseña.',
+  confirmationMismatch: 'Las contraseñas no coinciden.',
 }
 
 function tooSimilar(password, email) {
@@ -29,10 +32,18 @@ function tooSimilar(password, email) {
   )
 }
 
-export function validateRegistration({ email = '', password = '' } = {}) {
+export function validateRegistration({
+  email = '',
+  nickname = '',
+  password = '',
+  password_confirm = '',
+} = {}) {
   const errors = {}
   const normalizedEmail = String(email).trim().toLowerCase()
+  const normalizedNickname = String(nickname).trim()
   const emailOk = EMAIL_PATTERN.test(normalizedEmail)
+
+  if (!normalizedNickname) errors.nickname = MESSAGES.nicknameRequired
 
   if (!normalizedEmail) {
     errors.email = MESSAGES.emailRequired
@@ -52,10 +63,18 @@ export function validateRegistration({ email = '', password = '' } = {}) {
     errors.password = MESSAGES.passwordSimilar
   }
 
+  if (password_confirm === '') {
+    errors.password_confirm = MESSAGES.confirmationRequired
+  } else if (password_confirm !== password) {
+    errors.password_confirm = MESSAGES.confirmationMismatch
+  }
+
   return {
-    ok: !errors.email && !errors.password,
+    ok: Object.keys(errors).length === 0,
     email: normalizedEmail,
+    nickname: normalizedNickname,
     password,
+    password_confirm,
     errors,
   }
 }
