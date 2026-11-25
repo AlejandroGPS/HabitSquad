@@ -8,4 +8,5 @@ urlpatterns = [
     path("", include("escuadrones.crear.api.urls")),
     path("", include("escuadrones.configuracion.api.urls")),
     path("", include("escuadrones.detalle.api.urls")),
+    path("", include("escuadrones.expulsar.api.urls")),
 ]
