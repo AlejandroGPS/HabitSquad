@@ -44,6 +44,7 @@ describe('alertasScreen', () => {
 
     expect([...screen.querySelectorAll('[aria-current="page"]')].map((item) => item.textContent)).toContain('Alertas')
     expect(screen.querySelector('h1').textContent).toBe('Alertas')
+    expect([...screen.querySelector('aside nav').children].map((item) => item.textContent)).toContain('Configuración')
   })
 
   it('mientras comprueba los avisos no ofrece acciones', () => {

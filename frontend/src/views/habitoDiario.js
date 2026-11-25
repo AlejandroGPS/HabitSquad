@@ -2,6 +2,7 @@ import { ApiError, getDailyHabit, getSquad, saveDailyHabit } from '../api.js'
 import { appLayout } from '../components/appLayout.js'
 import { element } from '../components/dom.js'
 import { icon } from '../components/icons.js'
+import { squadNavigation } from '../components/panel/navigation.js'
 import mascotUrl from '../assets/mascota.webp'
 
 const HABIT_MAX_LENGTH = 60
@@ -208,7 +209,8 @@ export function habitoDiarioScreen({ navigate, api = { getSquad, getDailyHabit, 
   })
   sync()
   void loadHabit()
-  const page = appLayout({ active: 'habito', kicker: squadName, title: 'Tu hábito diario', leading: back, body, detail: true })
+  const page = appLayout({ active: 'habito', kicker: squadName, title: 'Tu hábito diario', leading: back, body, detail: true,
+    navItems: squadNavigation(squadId) })
   if (validSquadId) {
     for (const link of page.querySelectorAll('a[href="/habito"]')) {
       link.href = `/habito?escuadron=${squadId}`
