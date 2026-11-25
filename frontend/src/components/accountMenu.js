@@ -17,7 +17,7 @@ function link(href, iconName, text) {
   return node
 }
 
-export function accountMenu({ nombre, fotoUrl, onLogout, loadProfile }) {
+export function accountMenu({ nombre, fotoUrl, onLogout, loadProfile, enPerfil = false }) {
   const root = document.createElement('div')
   root.className = 'relative'
 
@@ -27,7 +27,8 @@ export function accountMenu({ nombre, fotoUrl, onLogout, loadProfile }) {
   toggle.className = [
     'grid h-11 w-11 cursor-pointer place-items-center rounded-full bg-accent font-black text-white',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
-  ].join(' ')
+    enPerfil ? 'ring-2 ring-accent ring-offset-2 ring-offset-white' : '',
+  ].join(' ').trim()
   toggle.setAttribute('aria-label', 'Tu cuenta')
   toggle.setAttribute('aria-expanded', 'false')
   toggle.setAttribute('aria-controls', panelId)
@@ -85,9 +86,16 @@ export function accountMenu({ nombre, fotoUrl, onLogout, loadProfile }) {
     }
   })
 
+  const perfil = link('/perfil', 'users', 'Ver perfil')
+  if (enPerfil) {
+    perfil.classList.replace('text-ink', 'text-accent')
+    perfil.classList.add('bg-black/[0.05]')
+    perfil.setAttribute('aria-current', window.location.pathname === '/perfil' ? 'page' : 'true')
+  }
+
   panel.append(
     heading,
-    link('/perfil', 'users', 'Ver perfil'),
+    perfil,
     link('/escuadrones/nuevo', 'plus', 'Crear un escuadrón'),
     link('/escuadrones/unirse', 'join', 'Unirme a un escuadrón'),
     separator,

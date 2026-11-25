@@ -40,12 +40,12 @@ export function profileShell(title, onLogout) {
   content.append(element('h1', 'mb-6 text-3xl font-black tracking-tight sm:text-4xl', title))
   const background = element('div', 'access-backdrop pointer-events-none fixed inset-0 -z-10')
   background.setAttribute('aria-hidden', 'true')
-  const nav = landingNav({ cuenta: accountMenu({ onLogout }) })
+  const nav = landingNav({ cuenta: accountMenu({ onLogout, enPerfil: true }), zona: 'perfil' })
   const root = element('div', 'relative isolate min-h-dvh overflow-x-clip font-rounded text-ink antialiased', background, nav, content)
   return {
     root, content,
     updateAccount(profile) {
-      const next = landingNav({ cuenta: accountMenu({ nombre: profile.nickname, fotoUrl: profile.foto_url, onLogout }) })
+      const next = landingNav({ cuenta: accountMenu({ nombre: profile.nickname, fotoUrl: profile.foto_url, onLogout, enPerfil: true }), zona: 'perfil' })
       root.querySelector('header').replaceWith(next)
     },
   }
