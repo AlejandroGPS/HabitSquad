@@ -9,7 +9,7 @@ const squad = {
   nombre: 'Lectores',
   codigo_invitacion: 'ABC123',
   miembros: [
-    { usuario_id: 1, nickname: 'ana', foto_url: 'https://res.cloudinary.com/demo/perfiles/ana.jpg', es_usuario: true, habito: { opcion: 'leer', texto_personalizado: '' }, prueba_hoy: null },
+    { usuario_id: 1, nickname: 'ana', foto_url: 'https://res.cloudinary.com/demo/perfiles/ana.jpg', es_usuario: true, es_administrador: true, habito: { opcion: 'leer', texto_personalizado: '' }, prueba_hoy: null },
     { usuario_id: 2, nickname: 'lau', foto_url: null, es_usuario: false, habito: { opcion: 'otro', texto_personalizado: 'Correr 5 km' }, prueba_hoy: { id: 21, estado: 'pendiente' } },
     { usuario_id: 3, nickname: '', foto_url: 'https://res.cloudinary.com/demo/perfiles/3.jpg', es_usuario: false, habito: null, prueba_hoy: { id: 22, estado: 'cumplido' } },
   ],
@@ -68,7 +68,7 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     expect(view.querySelector('[role="status"]').textContent).toBe('Cargando escuadrón…')
     expect(view.querySelector('[role="alert"]').textContent).toBe('')
     expect(retry(view).hidden).toBe(true)
-    expect(view.querySelector('aside a[href="/escuadrones/configuracion?origen=7"]')?.textContent).toBe('Configuración')
+    expect(view.querySelector('aside a[href="/escuadrones/configuracion?origen=7"]')).toBeNull()
     expect(api.getSquad).toHaveBeenCalledWith('7')
     pending.resolve(squad)
     await loaded(view)
@@ -114,7 +114,7 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     }
   })
 
-  it('incluye Configuración en el menú del panel y en la cabecera móvil, conservando el escuadrón', async () => {
+  it('incluye Configuración para el administrador en los menús de escritorio y móvil', async () => {
     const view = mount()
     await loaded(view)
     const nav = view.querySelector('aside nav')
@@ -123,8 +123,29 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     expect(settings.hasAttribute('data-link')).toBe(true)
     expect(nav.querySelector('[aria-current="page"]').getAttribute('href')).toBe('/escuadrones/panel?id=7')
     expect(nav.querySelector('a[href="/habito?escuadron=7"]')).not.toBeNull()
-    expect(view.querySelector('header a[aria-label="Configuración del escuadrón"]').getAttribute('href')).toBe(settings.getAttribute('href'))
+    const alerts = nav.querySelector('a[href="/alertas?escuadron=7"]')
+    expect(alerts.textContent).toBe('Alertas')
+    expect(alerts.hasAttribute('data-link')).toBe(true)
+    expect(alerts.hasAttribute('aria-disabled')).toBe(false)
+    expect(view.querySelector('header a[href="/alertas?escuadron=7"]')).not.toBeNull()
+    const mobile = view.querySelector('nav.lg\\:hidden')
+    expect([...mobile.children].map((item) => item.textContent)).toEqual(['Escuadrón', 'Configuración', 'Alertas'])
+    expect(mobile.querySelector('a[href="/escuadrones/configuracion?origen=7"]')).not.toBeNull()
+    expect([...nav.children].map((item) => item.textContent)).not.toContain('Racha')
     expect(view.textContent).not.toContain('Configuración · demo')
+  })
+
+  it.each([false, undefined])('oculta Configuración al miembro con rol %s y elimina Racha de ambos menús', async (role) => {
+    api.getSquad.mockResolvedValue({ ...squad, miembros: squad.miembros.map((member) => ({
+      ...member, es_administrador: member.es_usuario ? role : true,
+    })) })
+    const view = mount()
+    await loaded(view)
+    for (const nav of view.querySelectorAll('nav[aria-label="Secciones"]')) {
+      expect([...nav.children].map((item) => item.textContent)).not.toContain('Racha')
+      expect(nav.textContent).not.toContain('Configuración')
+    }
+    expect(view.querySelector('a[href^="/escuadrones/configuracion"]')).toBeNull()
   })
 
   it('muestra el límite guardado en la API y los nicknames del detalle', async () => {
@@ -466,7 +487,18 @@ describe('panel del escuadrón: sincronización en tiempo real', () => {
     await vi.waitFor(() => expect(view.textContent).toContain('3 de 8 miembros'))
     expect(view.textContent).toContain('Quedan 5 plazas')
     expect(view.querySelector('aside a[href="/escuadrones/configuracion?origen=7"]')).not.toBeNull()
-    expect(view.querySelector('header a[aria-label="Configuración del escuadrón"]')).not.toBeNull()
+    expect(view.querySelector('nav.lg\\:hidden a[href="/escuadrones/configuracion?origen=7"]')).not.toBeNull()
+  })
+
+  it('actualiza el acceso a Configuración cuando cambia el rol en directo', async () => {
+    const view = mount()
+    await loaded(view)
+    api.getSquad.mockResolvedValue({ ...squad, miembros: squad.miembros.map((member) => ({ ...member, es_administrador: false })) })
+    avisos.alActualizar(aviso)
+    await vi.waitFor(() => expect(view.querySelector('a[href^="/escuadrones/configuracion"]')).toBeNull())
+    api.getSquad.mockResolvedValue(squad)
+    avisos.alActualizar(aviso)
+    await vi.waitFor(() => expect(view.querySelectorAll('a[href^="/escuadrones/configuracion"]')).toHaveLength(2))
   })
 
   it('junta los avisos que llegan mientras carga en una sola petición más', async () => {

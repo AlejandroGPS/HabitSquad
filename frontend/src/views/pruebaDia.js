@@ -2,7 +2,7 @@ import { ApiError, getDailyHabit, getSquad, uploadProof } from '../api.js'
 import { appLayout } from '../components/appLayout.js'
 import { element } from '../components/dom.js'
 import { icon } from '../components/icons.js'
-import { squadNavigation } from '../components/panel/navigation.js'
+import { isSquadAdmin, squadNavigation, squadSettingsSlot, updateSquadNavigation } from '../components/panel/navigation.js'
 import { tiempoRestante } from '../tiempo.js'
 
 const CIERRE = '23:59'
@@ -186,6 +186,7 @@ export function pruebaDiaScreen({
     sync()
     try {
       const squad = await api.getSquad(squadId)
+      updateSquadNavigation(page, squadId, 'habito', isSquadAdmin(squad))
       voters.textContent = votantes(squad.miembros)
       const habit = habitText(await api.getDailyHabit(squadId))
       if (!habit) {
@@ -257,11 +258,7 @@ export function pruebaDiaScreen({
   sync()
   void load()
   const page = appLayout({ active: 'habito', kicker: 'Mi hábito', title: habitTitle, leading: back, body, detail: true,
-    navItems: squadNavigation(squadId) })
-  if (validSquadId) {
-    for (const link of page.querySelectorAll('a[href="/habito"]')) {
-      link.href = `/habito?escuadron=${squadId}`
-    }
-  }
+    navItems: squadNavigation(squadId),
+    trailing: validSquadId ? squadSettingsSlot() : undefined })
   return page
 }
