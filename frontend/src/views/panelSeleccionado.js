@@ -80,6 +80,18 @@ export function panelSeleccionadoScreen({
     observador.observe(document.body, { childList: true, subtree: true })
   }
 
+  // Tras una expulsión el aviso en directo sigue llegando, pero el detalle ya responde 403.
+  function sinAcceso() {
+    enDirecto?.cerrar()
+    pendiente = false
+    pintado = null
+    status.textContent = ''
+    error.textContent = 'Ya no formas parte de este escuadrón. Vuelve a Mis escuadrones.'
+    retry.hidden = true
+    body.replaceChildren(back, status, error, retry)
+    root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body, trailing: cuenta }))
+  }
+
   // En vivo se repinta sin huecos ni animaciones, y solo si cambia algo de lo que se ve.
   // Si falla, se mantiene el panel que ya había hasta el siguiente aviso.
   async function load({ enVivo = false } = {}) {
@@ -152,7 +164,10 @@ export function panelSeleccionadoScreen({
       }
       conectarEnDirecto()
     } catch (cause) {
-      if (enVivo) return
+      if (enVivo) {
+        if (cause instanceof ApiError && [403, 404].includes(cause.status)) sinAcceso()
+        return
+      }
       status.textContent = ''
       status.classList.remove('sr-only')
       for (const hueco of huecos) hueco.remove()
