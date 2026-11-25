@@ -7,7 +7,7 @@ import { button, element } from '../components/dom.js'
 import { icon } from '../components/icons.js'
 import { clearFieldError, labeledField, setFieldError } from '../components/forms.js'
 import { settingsTabs } from '../components/configuracion/tabs.js'
-import { squadNavigation } from '../components/panel/navigation.js'
+import { squadNavigation, updateSquadNavigation } from '../components/panel/navigation.js'
 import { ApiError, getProfile } from '../api.js'
 import { squadSettingsApi } from '../configuracion-api.js'
 
@@ -82,6 +82,7 @@ export function configuracionEscuadronScreen({ api = squadSettingsApi, id, panel
     return cause instanceof Error ? cause.message : 'No se ha podido guardar. Vuelve a intentarlo.'
   }
   function forbidden() {
+    updateSquadNavigation(layout, originId, 'configuracion', false)
     tabs.node.hidden = true
     panel.removeAttribute('role')
     panel.removeAttribute('aria-labelledby')
@@ -306,6 +307,7 @@ export function configuracionEscuadronScreen({ api = squadSettingsApi, id, panel
         forbidden()
         return
       }
+      updateSquadNavigation(layout, originId, 'configuracion', true)
       resetDraft()
       layout.querySelector('header p').textContent = saved.nombre
       tabs.node.hidden = false

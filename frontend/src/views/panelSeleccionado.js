@@ -3,6 +3,7 @@ import { appLayout } from '../components/appLayout.js'
 import { accountMenu } from '../components/accountMenu.js'
 import { element } from '../components/dom.js'
 import {
+  alertasBoton,
   cierreCard,
   habitoCard,
   hoyCard,
@@ -15,7 +16,7 @@ import {
 } from '../components/panel/index.js'
 import { conectarEscuadron } from '../tiempoReal.js'
 import { habitText } from './habitoDiario.js'
-import { squadNavigation, squadSettingsLink } from '../components/panel/navigation.js'
+import { isSquadAdmin, squadNavigation } from '../components/panel/navigation.js'
 
 const ANCHO_COMPLETO = 'col-span-2 lg:col-span-4'
 const REJILLA = 'mt-4 grid grid-cols-2 gap-3 px-4 lg:mt-6 lg:grid-cols-4 lg:gap-4 lg:px-0'
@@ -47,7 +48,8 @@ export function panelSeleccionadoScreen({
     loadProfile: () => identidad,
     onLogout: async () => { await logout(); navigate('/login') },
   })
-  root.append(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body, trailing: cuenta }))
+  root.append(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body,
+    navItems: squadNavigation(id), trailing: [alertasBoton(id), cuenta] }))
   let loading = false
   let pendiente = false
   let pintado = null
@@ -112,8 +114,9 @@ export function panelSeleccionadoScreen({
         semana: miembro.semana,
       }))
       const racha = squad.racha ?? 0
+      const isAdmin = isSquadAdmin(squad)
       const habitoPropio = habitText(ownHabit)
-      const visible = JSON.stringify([squad.nombre, squad.codigo_invitacion, squad.limite_miembros, racha, habitoPropio, miembros])
+      const visible = JSON.stringify([squad.nombre, squad.codigo_invitacion, squad.limite_miembros, racha, habitoPropio, miembros, isAdmin])
       if (enVivo && visible === pintado) return
       pintado = visible
       const momento = ahora()
@@ -144,8 +147,8 @@ export function panelSeleccionadoScreen({
       const devolverFoco = recordarFoco()
       const content = element('div', REJILLA, back, ...tarjetas)
       root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Escuadrón', title: squad.nombre, body: content,
-        navItems: squadNavigation(id),
-        trailing: [rachaChip({ racha }), squadSettingsLink(id), cuenta] }))
+        navItems: squadNavigation(id, isAdmin),
+        trailing: [rachaChip({ racha }), alertasBoton(id), cuenta] }))
       devolverFoco()
       for (const link of root.querySelectorAll('a[href="/habito"]')) {
         link.href = `/habito?escuadron=${id}`

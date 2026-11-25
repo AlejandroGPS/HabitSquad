@@ -1,4 +1,4 @@
-import { ApiError, getProfile } from '../api.js'
+import { ApiError, getProfile, getSquad } from '../api.js'
 import { crearAvisos } from '../avisos.js'
 import { accountMenu } from '../components/accountMenu.js'
 import { appLayout } from '../components/appLayout.js'
@@ -6,6 +6,7 @@ import { card, cardLabel, pillButtonClass } from '../components/card.js'
 import { button, element } from '../components/dom.js'
 import { icon } from '../components/icons.js'
 import { PROFILE_BUTTON } from '../components/perfil.js'
+import { isSquadAdmin, squadNavigation, updateSquadNavigation } from '../components/panel/navigation.js'
 
 const AHORA_NO = 'habitsquad.avisos'
 
@@ -81,10 +82,12 @@ function muestraAviso() {
 
 export function alertasScreen({
   onLogout,
-  api = { getProfile },
+  api = { getProfile, getSquad },
   avisos = crearAvisos(),
   almacen = window.localStorage,
 } = {}) {
+  const squadId = new URLSearchParams(window.location.search).get('escuadron')
+  const validSquadId = /^[1-9]\d*$/.test(squadId ?? '')
   const perfil = api.getProfile()
 
   const titulo = element('h2', 'text-[1.25rem] leading-tight font-black focus:outline-none lg:text-[1.5rem]')
@@ -119,7 +122,16 @@ export function alertasScreen({
 
   const body = element('div', 'mt-4 grid gap-3 px-4 lg:mt-6 lg:grid-cols-4 lg:gap-4 lg:px-0', permiso, tuAviso)
   const cuenta = accountMenu({ loadProfile: () => perfil, onLogout })
-  const root = appLayout({ active: 'alertas', kicker: 'Tu cuenta', title: 'Alertas', body, trailing: cuenta })
+  const root = appLayout({ active: 'alertas', kicker: 'Tu cuenta', title: 'Alertas', body,
+    navItems: validSquadId ? squadNavigation(squadId) : undefined,
+    trailing: cuenta })
+
+  if (validSquadId) {
+    api.getSquad(squadId).then(
+      (squad) => updateSquadNavigation(root, squadId, 'alertas', isSquadAdmin(squad)),
+      () => updateSquadNavigation(root, squadId, 'alertas', false),
+    )
+  }
 
   perfil.then(
     (datos) => { hora.textContent = datos.hora_aviso },

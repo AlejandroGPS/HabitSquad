@@ -34,29 +34,28 @@ describe('appLayout', () => {
     const [sidebarNav, tabBar] = screen.querySelectorAll('nav[aria-label="Secciones"]')
 
     expect(navLabels(sidebarNav)).toEqual(APP_NAV.map(({ label }) => label))
-    expect(navLabels(tabBar)).toEqual(['Escuadrón', 'Racha', 'Alertas'])
+    expect(navLabels(tabBar)).toEqual(['Escuadrón', 'Alertas'])
     expect(screen.querySelector('aside a[href="/"]').textContent).toBe('HabitSquad')
   })
 
-  it('enlaza las secciones con ruta y desactiva las que aún no existen', () => {
+  it('enlaza las secciones disponibles sin mostrar Racha', () => {
     const screen = mount()
     const [sidebarNav] = screen.querySelectorAll('nav[aria-label="Secciones"]')
-    const [escuadron, racha, alertas] = sidebarNav.children
+    const [escuadron, alertas] = sidebarNav.children
 
     expect(escuadron.tagName).toBe('A')
     expect(escuadron.getAttribute('href')).toBe('/escuadrones')
     expect(escuadron.hasAttribute('data-link')).toBe(true)
-    expect(racha.tagName).toBe('SPAN')
-    expect(racha.getAttribute('aria-disabled')).toBe('true')
+    expect(navLabels(sidebarNav)).not.toContain('Racha')
     expect(alertas.getAttribute('href')).toBe('/alertas')
     expect(alertas.hasAttribute('data-link')).toBe(true)
   })
 
   it('marca la sección activa', () => {
-    const screen = mount({ active: 'racha' })
+    const screen = mount({ active: 'alertas' })
     const current = [...screen.querySelectorAll('[aria-current="page"]')]
 
-    expect(current.map((item) => item.textContent)).toEqual(['Racha', 'Racha'])
+    expect(current.map((item) => item.textContent)).toEqual(['Alertas', 'Alertas'])
   })
 
   it('añade los elementos opcionales de la cabecera y de la barra lateral', () => {

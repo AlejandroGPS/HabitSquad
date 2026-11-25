@@ -1,6 +1,7 @@
 import { squadAvatar } from '../avatar.js'
 import { element } from '../dom.js'
 import { icon } from '../icons.js'
+import { squadNavigation } from './navigation.js'
 
 export function rachaChip({ racha = 0 } = {}) {
   return element(
@@ -11,14 +12,14 @@ export function rachaChip({ racha = 0 } = {}) {
   )
 }
 
-export function alertasBoton() {
+export function alertasBoton(squadId) {
   const enlace = element(
     'a',
     'glass relative grid h-11 w-11 shrink-0 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
     element('span', 'sr-only', 'Alertas'),
     icon('bell'),
   )
-  enlace.href = '/alertas'
+  enlace.href = squadNavigation(squadId).find(({ id }) => id === 'alertas').href
   enlace.dataset.link = ''
   return enlace
 }
