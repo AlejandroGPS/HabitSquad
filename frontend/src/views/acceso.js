@@ -94,6 +94,7 @@ function accesoScreen({ mode, onSubmit, notice: noticeMessage } = {}) {
   function clearField(field) {
     clearFieldError(field.input, field.error)
     clearFormAlert(alert)
+    content.querySelector('a[href="/reenviar-verificacion"]')?.remove()
   }
 
   for (const field of fields) {
@@ -104,6 +105,7 @@ function accesoScreen({ mode, onSubmit, notice: noticeMessage } = {}) {
     event.preventDefault()
     if (submit.disabled) return
     clearFormAlert(alert)
+    content.querySelector('a[href="/reenviar-verificacion"]')?.remove()
 
     const values = Object.fromEntries(fields.map(({ input }) => [input.name, input.value]))
     const result = isLogin ? validateLogin(values) : validateRegistration(values)
@@ -155,6 +157,16 @@ function accesoScreen({ mode, onSubmit, notice: noticeMessage } = {}) {
       }
       showFormAlert(alert, error.message, submit)
       if (isLogin) {
+        // Solo cuando el fallo apunta a correo sin verificar: el 401 del login
+        // mezcla credenciales incorrectas y verificación pendiente.
+        const resend = content.querySelector('a[href="/reenviar-verificacion"]')
+        if (String(error.message).includes('verificar')) {
+          if (!resend) {
+            content.append(backLink({ href: '/reenviar-verificacion', label: 'Reenviar correo de verificación' }))
+          }
+        } else {
+          resend?.remove()
+        }
         password.input.focus()
         password.input.select()
       }
@@ -174,11 +186,6 @@ function accesoScreen({ mode, onSubmit, notice: noticeMessage } = {}) {
     content.append(noticeWrapper)
   }
   content.append(form, note)
-  if (isLogin) {
-    content.append(
-      backLink({ href: '/reenviar-verificacion', label: 'Reenviar correo de verificación' }),
-    )
-  }
   return main
 }
 
