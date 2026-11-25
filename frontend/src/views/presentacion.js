@@ -8,7 +8,7 @@ import {
   pasosSection,
 } from '../components/landing/index.js'
 
-export function presentacionScreen({ navigate } = {}) {
+export function presentacionScreen({ navigate, cuenta } = {}) {
   const pasos = pasosSection()
   const escuadron = escuadronSection()
   const empezar = empezarSection({ navigate })
@@ -27,7 +27,7 @@ export function presentacionScreen({ navigate } = {}) {
     'div',
     'relative isolate flex min-h-dvh flex-col overflow-x-clip font-rounded text-ink antialiased',
     backdrop,
-    landingNav({ secciones: [pasos, escuadron, tengoCodigo] }),
+    landingNav({ secciones: [pasos, escuadron, tengoCodigo], cuenta }),
     element('main', 'flex flex-col', heroSection(), pasos, escuadron, empezar),
     landingFooter(),
   )

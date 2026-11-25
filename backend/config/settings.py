@@ -59,6 +59,10 @@ EMAIL_VERIFICATION_FRONTEND_URL = os.environ.get(
     "EMAIL_VERIFICATION_FRONTEND_URL",
     "http://localhost:5173/verify-email",
 )
+PROFILE_EMAIL_CHANGE_FRONTEND_URL = os.environ.get(
+    "PROFILE_EMAIL_CHANGE_FRONTEND_URL",
+    "http://localhost:5173/perfil/confirmar-email",
+)
 PASSWORD_RESET_TIMEOUT = int(os.environ.get("PASSWORD_RESET_TIMEOUT", "3600"))
 
 
@@ -73,6 +77,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "cloudinary_storage",
     "cloudinary",
+    "channels",
+    "django_q",
     "rest_framework",
     "drf_spectacular",
     "rest_framework_simplejwt.token_blacklist",
@@ -80,6 +86,7 @@ INSTALLED_APPS = [
     "usuarios.apps.UsuariosConfig",
     "escuadrones.apps.EscuadronesConfig",
     "habitos.apps.HabitosConfig",
+    "alertas.apps.AlertasConfig",
 ]
 
 MIDDLEWARE = [
@@ -201,6 +208,25 @@ REST_FRAMEWORK = {
     },
 }
 
+ASGI_APPLICATION = "config.asgi.application"
+REDIS_URL = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379/0")
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [REDIS_URL]},
+    },
+}
+Q_CLUSTER = {
+    "name": "habitsquad",
+    "workers": 1,
+    "timeout": 300,
+    "retry": 360,
+    "queue_limit": 25,
+    "redis": REDIS_URL,
+    "time_zone": TIME_ZONE,
+    "catch_up": False,
+}
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
@@ -213,3 +239,8 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "API de HabitSquad.",
     "VERSION": "1.0.0",
 }
+
+# Web Push (alertas). Solo la clave pública se expone por API; ver docs/ALERTAS.md.
+VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
+VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
+VAPID_ADMIN_EMAIL = os.environ.get("VAPID_ADMIN_EMAIL", "")

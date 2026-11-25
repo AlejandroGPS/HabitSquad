@@ -41,6 +41,7 @@ describe('perfil conectado', () => {
   it('protege perfil y edición; la confirmación es pública', () => {
     for (const path of ['/perfil', '/perfil/editar']) expect(guard(routes.find((route) => route.path === path))).toContain('/login')
     expect(guard(routes.find((route) => route.path === '/perfil/email/confirmar'))).toBeNull()
+    expect(guard(routes.find((route) => route.path === '/perfil/confirmar-email'))).toBeNull()
   })
   it('muestra identidad real y hábitos sin inventar estadísticas', async () => {
     api.listSquads.mockResolvedValue([{ id: 7, nombre: 'Lectores' }])
@@ -66,6 +67,21 @@ describe('perfil conectado', () => {
     document.body.replaceChildren(root)
     await vi.waitFor(() => expect(root.textContent).toContain('No se han podido cargar tus hábitos.'))
     expect(root.textContent).toContain('ana@example.com')
+  })
+  it('el menú de la cuenta marca el perfil también después de cargar la foto, y en la edición', async () => {
+    window.history.replaceState(null, '', '/perfil')
+    const root = perfilScreen({ api: { ...api, getProfile: vi.fn(async () => ({ ...profile, foto_url: 'https://example.com/ana.png' })) } })
+    document.body.replaceChildren(root)
+    await vi.waitFor(() => expect(root.querySelector('header img[src="https://example.com/ana.png"]')).not.toBeNull())
+    expect(root.querySelectorAll('header')).toHaveLength(1)
+    expect(root.querySelector('header [aria-label="Tu cuenta"]').className).toContain('ring-accent')
+    expect([...root.querySelectorAll('header [aria-current]')].map((node) => node.textContent)).toEqual(['Ver perfil'])
+    expect(root.querySelector('header a[data-zona="escuadrones"]')).not.toBeNull()
+
+    window.history.replaceState(null, '', '/perfil/editar')
+    const edicion = await edit()
+    expect(edicion.querySelector('header [aria-current="true"]').textContent).toBe('Ver perfil')
+    window.history.replaceState(null, '', '/')
   })
 })
 

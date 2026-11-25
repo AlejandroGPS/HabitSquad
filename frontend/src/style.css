@@ -48,6 +48,14 @@
   }
 }
 
+/* Tailwind v4 ya no pone mano en los button del preflight. */
+@layer base {
+  button:not(:disabled),
+  input:where([type='button'], [type='submit'], [type='reset']):not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 @layer components {
   .squad-search {
     display: flex;

@@ -27,7 +27,12 @@ la resolución comprobada con Python 3.12.x.
 | djangorestframework-simplejwt | 5.5.1 | Autenticación JWT. |
 | drf-spectacular | 0.30.0 | Generación de documentación OpenAPI. |
 | cloudinary | 1.47.0 | Cliente de Cloudinary para subir y firmar fotos. |
+| channels | 4.3.2 | Enrutamiento ASGI y conexiones WebSocket de Django. |
+| channels-redis | 4.3.0 | Capa de canales compartida mediante Redis. |
+| django-q2 | 1.11.1 | Worker y programación de tareas periódicas. |
+| django-picklefield | 3.4.0 | Campo persistente requerido por Django Q2. |
 | django-cloudinary-storage | 0.3.0 | Integración de Cloudinary como almacenamiento de ficheros en Django. |
+| pywebpush | 2.5.0 | Envío Web Push (VAPID) para alertas de falta de prueba. |
 | pytest | 9.1.1 | Ejecución de pruebas. |
 | pytest-django | 4.14.0 | Integración de pytest con Django. |
 | pytest-cov | 7.1.0 | Informes de cobertura para pytest. |
@@ -43,18 +48,31 @@ transitivas que resolvió pip:
 | PyJWT | 2.15.1 |
 | PyYAML | 6.0.3 |
 | Pygments | 2.21.0 |
+| aiohappyeyeballs | 2.7.1 |
+| aiohttp | 3.14.5 |
+| aiosignal | 1.4.0 |
 | asgiref | 3.12.1 |
 | attrs | 26.1.0 |
 | certifi | 2026.10.23 |
+| cffi | 2.1.1 |
 | charset_normalizer | 3.5.2 |
 | coverage | 7.16.2 |
+| cryptography | 50.0.2 |
+| frozenlist | 1.8.0 |
+| http-ece | 1.2.1 |
 | idna | 3.20 |
 | inflection | 0.5.1 |
 | iniconfig | 2.3.1 |
 | jsonschema | 4.26.0 |
 | jsonschema-specifications | 2025.9.1 |
+| msgpack | 1.2.4 |
+| multidict | 7.2.1 |
 | packaging | 26.3 |
 | pluggy | 1.6.0 |
+| propcache | 0.5.4 |
+| py-vapid | 1.9.6 |
+| pycparser | 3.12 |
+| redis | 8.1.0 |
 | referencing | 0.37.0 |
 | requests | 2.34.2 |
 | rpds-py | 2026.9.1 |
@@ -63,6 +81,7 @@ transitivas que resolvió pip:
 | typing_extensions | 4.16.0 |
 | uritemplate | 4.2.0 |
 | urllib3 | 2.8.0 |
+| yarl | 1.25.1 |
 
 ### Dependencias de producción
 
@@ -76,10 +95,13 @@ transitivas que resolvió pip:
 | click | 8.5.0 | Dependencia de uvicorn. |
 | h11 | 0.16.0 | Dependencia de uvicorn. |
 
-Las dependencias de otras áreas previstas por la arquitectura —como Channels,
-Redis, Django Q2 y Web Push— se incorporarán cuando se trabaje en las fases
-correspondientes, con sus versiones y cambios documentados. Cloudinary ya está
-incluido para el almacenamiento de las fotos de prueba diaria.
+El contrato de alertas Web Push está en [ALERTAS.md](ALERTAS.md) (suscripción,
+VAPID y criterio de envío con Q2). El envío usa `pywebpush` 2.5.0 (equivalente
+práctico a `django-webpush`, con modelo propio `SuscripcionPush`). Channels usa
+`channels-redis` para distribuir eventos entre procesos; Django Q2 usa Redis
+como broker (cierre diario y, cuando exista, el envío programado de avisos).
+Cloudinary ya está incluido para el almacenamiento de las fotos de prueba
+diaria.
 
 ### Instalación local
 
@@ -130,6 +152,7 @@ despliegue está descrito en [DESPLIEGUE.md](DESPLIEGUE.md).
 | node (solo para el build) | 22.23.3-alpine |
 | caddy | 2.11.7-alpine |
 | postgres | 18.6-alpine |
+| redis | 8.1.0-alpine |
 
 ## Frontend
 

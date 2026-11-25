@@ -10,15 +10,28 @@ class CustomUserAdmin(UserAdmin):
     list_display = (
         "email",
         "nickname",
+        "hora_aviso",
         "first_name",
         "last_name",
         "is_staff",
         "is_active",
     )
-    search_fields = ("email", "nickname", "first_name", "last_name")
+    search_fields = ("email", "nickname", "email_pendiente", "first_name", "last_name")
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        ("Personal info", {"fields": ("nickname", "first_name", "last_name")}),
+        (
+            "Personal info",
+            {
+                "fields": (
+                    "nickname",
+                    "first_name",
+                    "last_name",
+                    "foto_perfil_public_id",
+                    "email_pendiente",
+                    "hora_aviso",
+                )
+            },
+        ),
         (
             "Permissions",
             {

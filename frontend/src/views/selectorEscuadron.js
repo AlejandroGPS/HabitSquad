@@ -24,7 +24,7 @@ function mensajeError(error) {
 }
 
 function listaEscuadrones(squads) {
-  const tarjetas = squads.map(({ id, nombre, miembros }) => escuadronCard({ id, nombre, miembros: miembros.length }))
+  const tarjetas = squads.map(({ id, nombre, miembros, limite_miembros }) => escuadronCard({ id, nombre, miembros: miembros.length, plazas: limite_miembros ?? 5 }))
   return element(
     'ul',
     'grid gap-4 sm:grid-cols-2 lg:grid-cols-3',
@@ -32,7 +32,7 @@ function listaEscuadrones(squads) {
   )
 }
 
-export function selectorEscuadronScreen({ onLogout, loadSquads = listSquads } = {}) {
+export function selectorEscuadronScreen({ onLogout, loadSquads = listSquads, loadProfile } = {}) {
   const bocadillo = element(
     'p',
     'glass speech-bubble rounded-2xl px-4 py-2.5 text-[1rem] font-extrabold text-balance text-ink',
@@ -97,7 +97,7 @@ export function selectorEscuadronScreen({ onLogout, loadSquads = listSquads } = 
     'div',
     'relative isolate flex min-h-dvh flex-col overflow-x-clip font-rounded text-ink antialiased',
     fondo,
-    landingNav({ cuenta: accountMenu({ onLogout }) }),
+    landingNav({ cuenta: accountMenu({ onLogout, loadProfile }), zona: 'escuadrones' }),
     element('main', 'flex flex-col', seccion),
   )
 }

@@ -14,7 +14,7 @@ const changeName = (value) => {
 }
 const submit = () => page.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true }))
 async function mount(value = api) {
-  page = configuracionEscuadronScreen({ api: value })
+  page = configuracionEscuadronScreen({ api: value, id: 'demo', demo: true })
   document.body.replaceChildren(page)
   await vi.waitFor(() => expect(page.querySelector('[aria-busy]').getAttribute('aria-busy')).toBe('false'))
 }
@@ -25,7 +25,7 @@ describe('pantalla de configuración', () => {
     await mount()
   })
   it('mantiene el menú del panel con Configuración activa y las rutas del escuadrón de origen', async () => {
-    page = configuracionEscuadronScreen({ api, panelHref: '/escuadrones/panel?id=7' })
+    page = configuracionEscuadronScreen({ api, id: 'demo', demo: true, panelHref: '/escuadrones/panel?id=7' })
     document.body.replaceChildren(page)
     await vi.waitFor(() => expect(page.querySelector('input')).not.toBeNull())
     const nav = page.querySelector('aside nav')
@@ -65,6 +65,8 @@ describe('pantalla de configuración', () => {
     expect(findButton('Guardar cambios').disabled).toBe(false)
   })
   it('limita las plazas a los miembros actuales y a diez', () => {
+    expect(findButton('Reducir plazas').className).toContain('cursor-pointer')
+    expect(findButton('Aumentar plazas').className).toContain('cursor-pointer')
     for (let i = 0; i < 10; i++) click('Reducir plazas')
     expect(page.querySelector('output').value).toBe('3')
     expect(findButton('Reducir plazas').disabled).toBe(true)

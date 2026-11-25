@@ -2,8 +2,8 @@ import { iniciales } from './avatar.js'
 import { icon } from './icons.js'
 
 const ITEM = [
-  'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-start font-extrabold',
-  'hover:bg-black/[0.05] focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-60',
+  'flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-3 text-start font-extrabold',
+  'hover:bg-black/[0.05] focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-default disabled:opacity-60',
 ].join(' ')
 
 let nextId = 0
@@ -17,7 +17,7 @@ function link(href, iconName, text) {
   return node
 }
 
-export function accountMenu({ nombre, fotoUrl, onLogout }) {
+export function accountMenu({ nombre, fotoUrl, onLogout, loadProfile, enPerfil = false }) {
   const root = document.createElement('div')
   root.className = 'relative'
 
@@ -25,22 +25,13 @@ export function accountMenu({ nombre, fotoUrl, onLogout }) {
   const toggle = document.createElement('button')
   toggle.type = 'button'
   toggle.className = [
-    'grid h-11 w-11 place-items-center rounded-full bg-accent font-black text-white',
+    'grid h-11 w-11 cursor-pointer place-items-center rounded-full bg-accent font-black text-white',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
-  ].join(' ')
+    enPerfil ? 'ring-2 ring-accent ring-offset-2 ring-offset-white' : '',
+  ].join(' ').trim()
   toggle.setAttribute('aria-label', 'Tu cuenta')
   toggle.setAttribute('aria-expanded', 'false')
   toggle.setAttribute('aria-controls', panelId)
-  toggle.textContent = iniciales(nombre)
-  if (fotoUrl) {
-    const photo = document.createElement('img')
-    photo.src = fotoUrl
-    photo.alt = ''
-    photo.className = 'h-full w-full rounded-full object-cover'
-    photo.referrerPolicy = 'no-referrer'
-    photo.addEventListener('error', () => toggle.replaceChildren(iniciales(nombre)), { once: true })
-    toggle.replaceChildren(photo)
-  }
 
   const panel = document.createElement('div')
   panel.id = panelId
@@ -52,7 +43,31 @@ export function accountMenu({ nombre, fotoUrl, onLogout }) {
 
   const heading = document.createElement('p')
   heading.className = 'truncate px-3 pt-2 pb-1 text-[0.8125rem] font-extrabold text-ink-muted'
-  heading.textContent = nombre ?? 'Tu cuenta'
+  function mostrarIdentidad(nombre, fotoUrl) {
+    heading.textContent = nombre || 'Tu cuenta'
+    const respaldo = !nombre && loadProfile ? icon('users') : iniciales(nombre)
+    if (!fotoUrl) {
+      toggle.replaceChildren(respaldo)
+      return
+    }
+    const photo = document.createElement('img')
+    photo.alt = ''
+    photo.className = 'h-full w-full rounded-full object-cover'
+    photo.referrerPolicy = 'no-referrer'
+    photo.addEventListener('error', () => toggle.replaceChildren(respaldo), { once: true })
+    photo.src = fotoUrl
+    toggle.replaceChildren(photo)
+  }
+  mostrarIdentidad(nombre, fotoUrl)
+
+  async function cargarIdentidad() {
+    try {
+      const perfil = await loadProfile()
+      if (perfil) mostrarIdentidad(perfil.nickname, perfil.foto_url)
+    } catch {
+      // El menú sigue disponible si no se puede cargar la identidad.
+    }
+  }
 
   const separator = document.createElement('hr')
   separator.className = 'my-1 border-hairline'
@@ -71,9 +86,16 @@ export function accountMenu({ nombre, fotoUrl, onLogout }) {
     }
   })
 
+  const perfil = link('/perfil', 'users', 'Ver perfil')
+  if (enPerfil) {
+    perfil.classList.replace('text-ink', 'text-accent')
+    perfil.classList.add('bg-black/[0.05]')
+    perfil.setAttribute('aria-current', window.location.pathname === '/perfil' ? 'page' : 'true')
+  }
+
   panel.append(
     heading,
-    link('/perfil', 'users', 'Mi perfil'),
+    perfil,
     link('/escuadrones/nuevo', 'plus', 'Crear un escuadrón'),
     link('/escuadrones/unirse', 'join', 'Unirme a un escuadrón'),
     separator,
@@ -100,5 +122,6 @@ export function accountMenu({ nombre, fotoUrl, onLogout }) {
     else if (!root.contains(event.target)) setOpen(false)
   })
 
+  if (loadProfile) void cargarIdentidad()
   return root
 }

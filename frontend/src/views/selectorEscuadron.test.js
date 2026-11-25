@@ -21,16 +21,17 @@ describe('selectorEscuadronScreen', () => {
   const tarjetas = (view) => view.querySelectorAll('a[aria-label^="Abrir panel"]')
   afterEach(() => { document.body.replaceChildren() })
 
-  it('usa la barra de la portada con sus secciones y el menú de cuenta', () => {
+  it('la barra de arriba enlaza a las secciones de la app, marca Mis escuadrones y tiene el menú de cuenta', () => {
+    window.history.replaceState(null, '', '/escuadrones')
     const nav = mount({ loadSquads: pendiente }).querySelector('header nav[aria-label="Principal"]')
-    const secciones = [...nav.querySelectorAll('a[href^="/#"]')]
 
     expect(nav.querySelector('a[aria-label="HabitSquad"]').getAttribute('href')).toBe('/')
-    expect(secciones.map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
-      ['Cómo funciona', '/#como-funciona'],
-      ['Tu escuadrón', '/#tu-escuadron'],
-      ['Tengo un código', '/#tengo-codigo'],
+    expect([...nav.querySelectorAll('a[data-zona]')].map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
+      ['Mis escuadrones', '/escuadrones'],
+      ['Alertas', '/alertas'],
     ])
+    expect(nav.querySelector('[aria-current="page"]').textContent).toBe('Mis escuadrones')
+    expect(nav.querySelector('a[href^="/#"]')).toBeNull()
     expect(nav.querySelector('[aria-label="Tu cuenta"]')).not.toBeNull()
     expect(nav.querySelector('a[href="/login"], a[href="/registro"]')).toBeNull()
   })
@@ -63,6 +64,13 @@ describe('selectorEscuadronScreen', () => {
     const view = mount({ loadSquads: async () => squads.slice(0, 1) })
 
     await vi.waitFor(() => expect(view.querySelector('[role="status"]').textContent).toBe('Tienes 1 escuadrón. Ábrelo para ver cómo va el día.'))
+  })
+
+  it('muestra en las tarjetas la capacidad configurada en el backend', async () => {
+    const view = mount({ loadSquads: async () => [{ ...squads[0], limite_miembros: 8 }] })
+    await vi.waitFor(() => expect(tarjetas(view)).toHaveLength(1))
+    expect(tarjetas(view)[0].textContent).toContain('1 de 8 miembros')
+    expect(tarjetas(view)[0].textContent).toContain('Quedan 7 plazas')
   })
 
   it('sin escuadrones cambia el saludo e invita a crear o unirse', async () => {
@@ -282,20 +290,29 @@ describe('selector recuperado conectado al backend', () => {
     expect(fetchMock.mock.calls.some(([path, options]) => path === '/api/escuadrones/9/habito/' && options.method === 'PUT')).toBe(true)
   })
   it('muestra un error de conexión y permite volver a cargar la lista', async () => {
-    fetchMock.mockRejectedValueOnce(new TypeError('offline')).mockResolvedValueOnce(response(200, squads))
+    const listRequest = vi.fn().mockRejectedValueOnce(new TypeError('offline')).mockResolvedValueOnce(response(200, squads))
+    fetchMock.mockImplementation((path) => path === '/api/escuadrones/'
+      ? listRequest()
+      : Promise.resolve(response(200, { nickname: 'Ana' })))
     start()
     await vi.waitFor(() => expect(root.querySelector('[role="alert"]').textContent).toContain('No se han podido cargar'))
     expect(root.querySelectorAll('a[aria-label^="Abrir panel"]')).toHaveLength(0)
     ;[...root.querySelectorAll('button')].find((button) => button.textContent === 'Reintentar').click()
     await vi.waitFor(() => expect(root.querySelectorAll('a[aria-label^="Abrir panel"]')).toHaveLength(2))
   })
-  it('con sesión, las secciones de la barra y el logo abren la presentación', async () => {
+  it('con sesión, la barra cambia de sección al navegar y el logo abre la presentación', async () => {
     start()
     await vi.waitFor(() => expect(root.textContent).toContain('Todavía no perteneces'))
-    ;[...root.querySelectorAll('header a')].find((link) => link.textContent === 'Cómo funciona').click()
-    expect(window.location.pathname).toBe('/')
-    expect(window.location.hash).toBe('#como-funciona')
-    expect(root.querySelector('#como-funciona')).not.toBeNull()
+    expect(root.querySelector('header [aria-current="page"]').textContent).toBe('Mis escuadrones')
+
+    root.querySelector('header a[href="/perfil"]').click()
+    expect(window.location.pathname).toBe('/perfil')
+    expect(root.querySelector('header [aria-current="page"]').textContent).toBe('Ver perfil')
+    expect(root.querySelector('header a[data-zona][aria-current]')).toBeNull()
+
+    root.querySelector('header a[data-zona="escuadrones"]').click()
+    expect(window.location.pathname).toBe('/escuadrones')
+    expect(root.querySelector('header [aria-current="page"]').textContent).toBe('Mis escuadrones')
 
     root.querySelector('header a[aria-label="HabitSquad"]').click()
     expect(window.location.pathname).toBe('/')

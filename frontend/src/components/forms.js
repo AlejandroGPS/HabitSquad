@@ -64,7 +64,7 @@ function addPasswordToggle(input) {
   const toggle = document.createElement('button')
   toggle.type = 'button'
   toggle.className = [
-    'absolute inset-y-0 end-0 flex min-w-20 items-center justify-center rounded-r-2xl px-3',
+    'absolute inset-y-0 end-0 flex min-w-20 cursor-pointer items-center justify-center rounded-r-2xl px-3',
     'text-[0.9375rem] font-extrabold text-accent transition-colors hover:text-accent-hover',
     'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent',
   ].join(' ')
@@ -114,7 +114,7 @@ export function passwordField(options) {
 }
 
 export const primaryButtonClass = [
-  'flex h-12 w-full min-w-0 items-center justify-center rounded-2xl',
+  'flex h-12 w-full min-w-0 cursor-pointer items-center justify-center rounded-2xl',
   'border-b-4 border-accent-press bg-accent px-4',
   'text-[0.9375rem] font-extrabold tracking-[0.06em] text-white uppercase',
   'transition-[transform,border-width,background-color] duration-75 hover:bg-accent-hover',
@@ -124,12 +124,13 @@ export const primaryButtonClass = [
 ].join(' ')
 
 export const secondaryButtonClass = [
-  'flex h-12 w-full min-w-0 items-center justify-center rounded-2xl',
+  'flex h-12 w-full min-w-0 cursor-pointer items-center justify-center rounded-2xl',
   'border-2 border-b-4 border-hairline bg-white/85 px-4',
   'text-[0.9375rem] font-extrabold tracking-[0.06em] text-accent uppercase',
   'transition-[transform,border-width,background-color] duration-75 hover:bg-white',
   'active:mb-0.5 active:translate-y-0.5 active:border-b-2',
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+  'disabled:cursor-default disabled:opacity-60',
 ].join(' ')
 
 export function submitButton(label) {
