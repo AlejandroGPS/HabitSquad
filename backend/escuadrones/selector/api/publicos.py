@@ -29,7 +29,9 @@ class EscuadronesPublicosView(APIView):
         ),
     )
     def get(self, request):
-        escuadrones = Escuadron.objects.filter(es_publico=True)
+        escuadrones = Escuadron.objects.filter(es_publico=True).exclude(
+            membresias__usuario=request.user
+        )
         nombre = request.query_params.get("q", "").strip()
         if nombre:
             escuadrones = escuadrones.filter(nombre__icontains=nombre)

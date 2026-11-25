@@ -85,6 +85,28 @@ def test_public_squad_list_returns_only_public_squads(api_client, user, owner):
     ]
 
 
+@pytest.mark.django_db
+def test_public_squad_list_excludes_squads_user_already_joined(api_client, user, owner):
+    joined_squad = create_squad(
+        name="Ya unido",
+        owner=owner,
+        code="X8K9QL",
+        is_public=True,
+    )
+    available_squad = create_squad(
+        name="Disponible",
+        owner=owner,
+        code="A1B2C3",
+        is_public=True,
+    )
+    Membresia.objects.create(escuadron=joined_squad, usuario=user)
+
+    response = authenticated_client(api_client, user).get(public_url())
+
+    assert response.status_code == 200
+    assert [squad["id"] for squad in response.data] == [available_squad.pk]
+
+
 def test_public_squad_list_is_documented_in_openapi(api_client):
     response = api_client.get(reverse("schema"))
 

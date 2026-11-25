@@ -57,8 +57,10 @@ ser inferior a 2. También aplican los errores `401`, `403` y `404` anteriores.
 
 `GET /api/escuadrones/publicos/`
 
-Devuelve solo escuadrones públicos, con el número actual de miembros y el
-límite configurado. Los escuadrones privados no aparecen en este listado.
+Devuelve los escuadrones públicos a los que el usuario autenticado todavía no
+pertenece, con el número actual de miembros y el límite configurado. Los
+escuadrones privados y aquellos a los que el usuario ya pertenece no aparecen
+en este listado.
 
 ```json
 [
