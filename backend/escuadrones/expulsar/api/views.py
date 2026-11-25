@@ -1,5 +1,5 @@
 from django.http import Http404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
@@ -15,12 +15,61 @@ from escuadrones.expulsar.services import (
     expulsar_miembro,
 )
 
+from .serializers import ErrorDetalleExpulsionSerializer
+
 
 class ExpulsarMiembroView(APIView):
     authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAuthenticated,)
 
-    @extend_schema(request=None, responses={204: None})
+    @extend_schema(
+        operation_id="expulsarMiembroEscuadron",
+        tags=["Escuadrones"],
+        summary="Expulsar un miembro de un escuadrón",
+        request=None,
+        parameters=[
+            OpenApiParameter(
+                name="escuadron_id",
+                type=int,
+                location=OpenApiParameter.PATH,
+                description="Identificador del escuadrón.",
+            ),
+            OpenApiParameter(
+                name="usuario_id",
+                type=int,
+                location=OpenApiParameter.PATH,
+                description="Identificador del miembro que se quiere expulsar.",
+            ),
+        ],
+        responses={
+            204: OpenApiResponse(
+                description="Membresía eliminada; la respuesta no tiene cuerpo."
+            ),
+            401: OpenApiResponse(
+                response=ErrorDetalleExpulsionSerializer,
+                description="Falta el access token, es inválido o ha expirado.",
+            ),
+            403: OpenApiResponse(
+                response=ErrorDetalleExpulsionSerializer,
+                description=(
+                    "El usuario solicitante no es administrador o el miembro "
+                    "objetivo es administrador/creador."
+                ),
+            ),
+            404: OpenApiResponse(
+                response=ErrorDetalleExpulsionSerializer,
+                description=(
+                    "El escuadrón no existe o el usuario objetivo no pertenece a él."
+                ),
+            ),
+        },
+        description=(
+            "Permite al administrador expulsar a un miembro no administrador "
+            "del escuadrón. No se puede expulsar al administrador ni al creador. "
+            "Se eliminan la membresía, sus datos relacionados y los votos del "
+            "expulsado en otras pruebas del escuadrón."
+        ),
+    )
     def delete(self, request, escuadron_id, usuario_id):
         try:
             expulsar_miembro(
