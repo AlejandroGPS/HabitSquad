@@ -29,7 +29,6 @@ describe('selectorEscuadronScreen', () => {
     expect([...nav.querySelectorAll('a[data-zona]')].map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
       ['Mis escuadrones', '/escuadrones'],
       ['Alertas', '/alertas'],
-      ['Mi perfil', '/perfil'],
     ])
     expect(nav.querySelector('[aria-current="page"]').textContent).toBe('Mis escuadrones')
     expect(nav.querySelector('a[href^="/#"]')).toBeNull()
@@ -306,9 +305,10 @@ describe('selector recuperado conectado al backend', () => {
     await vi.waitFor(() => expect(root.textContent).toContain('Todavía no perteneces'))
     expect(root.querySelector('header [aria-current="page"]').textContent).toBe('Mis escuadrones')
 
-    root.querySelector('header a[data-zona="perfil"]').click()
+    root.querySelector('header a[href="/perfil"]').click()
     expect(window.location.pathname).toBe('/perfil')
-    expect(root.querySelector('header [aria-current="page"]').textContent).toBe('Mi perfil')
+    expect(root.querySelector('header [aria-current="page"]').textContent).toBe('Ver perfil')
+    expect(root.querySelector('header a[data-zona][aria-current]')).toBeNull()
 
     root.querySelector('header a[data-zona="escuadrones"]').click()
     expect(window.location.pathname).toBe('/escuadrones')

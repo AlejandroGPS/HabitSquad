@@ -12,8 +12,8 @@ describe('barra de arriba según la pantalla', () => {
     expect(enlaces(header).map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
       ['Mis escuadrones', '/escuadrones'],
       ['Alertas', '/alertas'],
-      ['Mi perfil', '/perfil'],
     ])
+    expect(header.querySelector('a[href="/perfil"]')).toBeNull()
     expect(header.querySelector('a[href^="/#"], a[href^="#"]')).toBeNull()
     expect(enlaces(header).every((link) => link.dataset.link === '')).toBe(true)
   })
@@ -21,7 +21,6 @@ describe('barra de arriba según la pantalla', () => {
   it.each([
     ['escuadrones', '/escuadrones', 'Mis escuadrones'],
     ['alertas', '/alertas', 'Alertas'],
-    ['perfil', '/perfil', 'Mi perfil'],
   ])('en %s marca solo esa sección como la página actual', (zona, ruta, nombre) => {
     window.history.replaceState(null, '', ruta)
     const header = landingNav({ cuenta: null, zona })
@@ -31,6 +30,14 @@ describe('barra de arriba según la pantalla', () => {
     expect(marcados[0].getAttribute('aria-current')).toBe('page')
     expect(marcados[0].className).toContain('text-accent')
     expect(enlaces(header).filter((link) => link !== marcados[0]).every((link) => !link.className.includes('text-accent'))).toBe(true)
+  })
+
+  it('en el perfil enseña las secciones sin marcar ninguna: lo marca el menú de la cuenta', () => {
+    window.history.replaceState(null, '', '/perfil')
+    const header = landingNav({ cuenta: null, zona: 'perfil' })
+
+    expect(enlaces(header)).toHaveLength(2)
+    expect(header.querySelector('[aria-current]')).toBeNull()
   })
 
   it('en una subpantalla marca su sección sin decir que es esa misma página', () => {
