@@ -1,4 +1,4 @@
-import { getSquad, getSquadConfiguration, updateSquadConfiguration } from './api.js'
+import { expelMember, getSquad, getSquadConfiguration, updateSquadConfiguration } from './api.js'
 
 function configuration(value) {
   return {
@@ -23,6 +23,7 @@ export const squadSettingsApi = {
         id: String(member.usuario_id),
         nickname: member.nickname || `Miembro ${member.usuario_id}`,
         esAdministrador: member.es_administrador,
+        esCreador: member.usuario_id === squad.creador_id,
         esUsuario: member.es_usuario,
         fotoUrl: member.foto_url,
       })),
@@ -34,5 +35,8 @@ export const squadSettingsApi = {
       es_publico: publico,
       limite_miembros: capacidad,
     }))
+  },
+  async removeMember(id, memberId) {
+    await expelMember(id, memberId)
   },
 }

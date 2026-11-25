@@ -6,6 +6,7 @@ import {
   confirmPasswordReset,
   createSquad,
   deletePushSubscription,
+  expelMember,
   getVapidPublicKey,
   joinSquad,
   login,
@@ -269,6 +270,29 @@ describe('api', () => {
     expect(path).toBe('/api/alertas/suscripcion/')
     expect(options.method).toBe('DELETE')
     expect(JSON.parse(options.body)).toEqual({ endpoint: 'https://push.example/abc' })
+  })
+
+  it('expulsa a un miembro con DELETE autenticado y sin cuerpo', async () => {
+    saveSession({ access: 'access-token', refresh: 'refresh-token' })
+    fetchMock.mockResolvedValue(emptyResponse(204))
+
+    await expect(expelMember('7', '2')).resolves.toBeUndefined()
+
+    const [path, options] = fetchMock.mock.calls[0]
+    expect(path).toBe('/api/escuadrones/7/miembros/2/')
+    expect(options.method).toBe('DELETE')
+    expect(options.body).toBeUndefined()
+    expect(options.headers.get('Authorization')).toBe('Bearer access-token')
+  })
+
+  it.each([
+    [403, { detail: 'Solo un administrador puede expulsar miembros.' }],
+    [404, { detail: 'El usuario no pertenece a este escuadrón.' }],
+  ])('si no se puede expulsar lanza ApiError %i con el detalle', async (status, data) => {
+    saveSession({ access: 'access-token', refresh: 'refresh-token' })
+    fetchMock.mockResolvedValue(jsonResponse(status, data))
+
+    await expect(expelMember('7', '2')).rejects.toMatchObject({ name: 'ApiError', status, data })
   })
 
   it('renueva el access y guarda los tokens nuevos', async () => {
