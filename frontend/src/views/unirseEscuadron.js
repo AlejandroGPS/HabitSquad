@@ -27,6 +27,7 @@ export function unirseEscuadronScreen({ onSubmit, codigo = '' } = {}) {
     description: 'Escribe el código de invitación de 6 caracteres.',
     bubble: '¿Te han pasado un código?',
     showAccountLinks: false,
+    zona: 'escuadrones',
     cardClassName: 'glass w-full max-w-[27rem] rounded-[2rem] p-6 sm:p-7',
   })
 

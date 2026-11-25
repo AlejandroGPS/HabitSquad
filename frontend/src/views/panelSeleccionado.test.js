@@ -68,6 +68,7 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     expect(view.querySelector('[role="status"]').textContent).toBe('Cargando escuadrón…')
     expect(view.querySelector('[role="alert"]').textContent).toBe('')
     expect(retry(view).hidden).toBe(true)
+    expect(view.querySelector('aside a[href="/escuadrones/configuracion?origen=7"]')).toBeNull()
     expect(api.getSquad).toHaveBeenCalledWith('7')
     pending.resolve(squad)
     await loaded(view)
@@ -566,6 +567,45 @@ describe('panel del escuadrón: sincronización en tiempo real', () => {
     avisos.alActualizar(aviso)
     await vi.waitFor(() => expect(view.textContent).toContain('2/3'))
     expect(document.activeElement).toBe(document.body)
+  })
+
+  it('un miembro que desaparece en directo, por ejemplo expulsado, deja de verse', async () => {
+    const view = mount()
+    await loaded(view)
+    api.getSquad.mockResolvedValue({ ...squad, miembros: [squad.miembros[0], squad.miembros[2]] })
+    avisos.alActualizar({ ...aviso, motivo: 'miembro_expulsado' })
+    await vi.waitFor(() => expect(view.textContent).toContain('2 de 5 miembros'))
+    expect([...view.querySelectorAll('li')].map((item) => item.textContent).join()).not.toContain('lau')
+  })
+
+  it.each([[403], [404]])('si en directo el escuadrón responde %i, el usuario ha sido expulsado y pierde el panel', async (status) => {
+    const view = mount()
+    await loaded(view)
+    api.getSquad.mockRejectedValue(new ApiError(status))
+    avisos.alActualizar({ ...aviso, motivo: 'miembro_expulsado' })
+    await vi.waitFor(() => expect(view.querySelector('[role="alert"]').textContent)
+      .toBe('Ya no formas parte de este escuadrón. Vuelve a Mis escuadrones.'))
+    expect(view.querySelector('h1').textContent).toBe('Panel del escuadrón')
+    expect(view.querySelectorAll('section')).toHaveLength(0)
+    expect(view.textContent).not.toContain('ABC123')
+    expect([...view.querySelectorAll('button')].find((item) => item.textContent === 'Reintentar').hidden).toBe(true)
+    const back = [...view.querySelectorAll('a')].find((link) => link.textContent === '← Mis escuadrones')
+    expect(back.getAttribute('href')).toBe('/escuadrones')
+    expect(view.querySelector('[aria-label="Tu cuenta"]')).not.toBeNull()
+    expect(conexion.cerrar).toHaveBeenCalledOnce()
+  })
+
+  it('si la expulsión llega mientras ya había otra recarga, no vuelve a pedir el panel', async () => {
+    const view = mount()
+    await loaded(view)
+    const pending = deferred()
+    api.getSquad.mockReturnValueOnce(pending.promise)
+    avisos.alActualizar(aviso)
+    avisos.alActualizar({ ...aviso, motivo: 'miembro_expulsado' })
+    pending.reject(new ApiError(403))
+    await vi.waitFor(() => expect(view.textContent).toContain('Ya no formas parte de este escuadrón'))
+    await settle()
+    expect(api.getSquad).toHaveBeenCalledTimes(2)
   })
 
   it('al salir del panel cierra la conexión', async () => {

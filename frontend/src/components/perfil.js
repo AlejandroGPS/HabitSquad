@@ -4,8 +4,8 @@ import { accountMenu } from './accountMenu.js'
 import { element } from './dom.js'
 import { landingNav } from './landing/landingNav.js'
 
-export const PROFILE_BUTTON = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-accent px-5 py-2.5 font-extrabold text-white hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50 disabled:cursor-wait'
-export const PROFILE_SOFT_BUTTON = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-accent-soft px-5 py-2.5 font-extrabold text-accent hover:bg-accent/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50'
+export const PROFILE_BUTTON = 'inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-accent px-5 py-2.5 font-extrabold text-white hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50'
+export const PROFILE_SOFT_BUTTON = 'inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-accent-soft px-5 py-2.5 font-extrabold text-accent hover:bg-accent/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-default disabled:opacity-50'
 
 export function profileLink(href, text, className = PROFILE_SOFT_BUTTON) {
   const link = element('a', className, text)
@@ -40,12 +40,12 @@ export function profileShell(title, onLogout) {
   content.append(element('h1', 'mb-6 text-3xl font-black tracking-tight sm:text-4xl', title))
   const background = element('div', 'access-backdrop pointer-events-none fixed inset-0 -z-10')
   background.setAttribute('aria-hidden', 'true')
-  const nav = landingNav({ cuenta: accountMenu({ onLogout }) })
+  const nav = landingNav({ cuenta: accountMenu({ onLogout, enPerfil: true }), zona: 'perfil' })
   const root = element('div', 'relative isolate min-h-dvh overflow-x-clip font-rounded text-ink antialiased', background, nav, content)
   return {
     root, content,
     updateAccount(profile) {
-      const next = landingNav({ cuenta: accountMenu({ nombre: profile.nickname, fotoUrl: profile.foto_url, onLogout }) })
+      const next = landingNav({ cuenta: accountMenu({ nombre: profile.nickname, fotoUrl: profile.foto_url, onLogout, enPerfil: true }), zona: 'perfil' })
       root.querySelector('header').replaceWith(next)
     },
   }

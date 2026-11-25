@@ -211,7 +211,7 @@ export function habitoDiarioScreen({ navigate, api = { getSquad, getDailyHabit, 
   sync()
   void loadHabit()
   const page = appLayout({ active: 'habito', kicker: squadName, title: 'Tu hábito diario', leading: back, body, detail: true,
-    navItems: validSquadId ? squadNavigation(squadId) : undefined,
+    navItems: squadNavigation(squadId),
     trailing: validSquadId ? squadSettingsSlot() : undefined })
   return page
 }

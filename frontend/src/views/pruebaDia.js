@@ -258,7 +258,7 @@ export function pruebaDiaScreen({
   sync()
   void load()
   const page = appLayout({ active: 'habito', kicker: 'Mi hábito', title: habitTitle, leading: back, body, detail: true,
-    navItems: validSquadId ? squadNavigation(squadId) : undefined,
+    navItems: squadNavigation(squadId),
     trailing: validSquadId ? squadSettingsSlot() : undefined })
   return page
 }

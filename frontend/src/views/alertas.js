@@ -6,7 +6,7 @@ import { card, cardLabel, pillButtonClass } from '../components/card.js'
 import { button, element } from '../components/dom.js'
 import { icon } from '../components/icons.js'
 import { PROFILE_BUTTON } from '../components/perfil.js'
-import { isSquadAdmin, squadNavigation, updateSquadNavigation } from '../components/panel/navigation.js'
+import { isSquadAdmin, selectedSquadId, squadNavigation, updateSquadNavigation } from '../components/panel/navigation.js'
 
 const AHORA_NO = 'habitsquad.avisos'
 
@@ -86,7 +86,7 @@ export function alertasScreen({
   avisos = crearAvisos(),
   almacen = window.localStorage,
 } = {}) {
-  const squadId = new URLSearchParams(window.location.search).get('escuadron')
+  const squadId = selectedSquadId(new URLSearchParams(window.location.search).get('escuadron'))
   const validSquadId = /^[1-9]\d*$/.test(squadId ?? '')
   const perfil = api.getProfile()
 
@@ -123,7 +123,7 @@ export function alertasScreen({
   const body = element('div', 'mt-4 grid gap-3 px-4 lg:mt-6 lg:grid-cols-4 lg:gap-4 lg:px-0', permiso, tuAviso)
   const cuenta = accountMenu({ loadProfile: () => perfil, onLogout })
   const root = appLayout({ active: 'alertas', kicker: 'Tu cuenta', title: 'Alertas', body,
-    navItems: validSquadId ? squadNavigation(squadId) : undefined,
+    navItems: squadNavigation(squadId),
     trailing: cuenta })
 
   if (validSquadId) {

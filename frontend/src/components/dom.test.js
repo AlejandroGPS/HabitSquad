@@ -18,14 +18,19 @@ describe('element', () => {
 })
 
 describe('button', () => {
-  it('es de tipo button y llama a onClick', () => {
+  it('es de tipo button, pone mano y llama a onClick', () => {
     const onClick = vi.fn()
     const node = button('boton', onClick, 'Pulsar')
 
     node.click()
     expect(node.type).toBe('button')
+    expect(node.className).toBe('boton cursor-pointer')
     expect(node.textContent).toBe('Pulsar')
     expect(onClick).toHaveBeenCalledOnce()
+  })
+
+  it('no duplica el cursor si la clase ya lo fija', () => {
+    expect(button('boton cursor-wait', () => {}, 'Espera').className).toBe('boton cursor-wait')
   })
 
   it('se desactiva si no hay acción', () => {

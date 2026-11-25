@@ -13,6 +13,8 @@ import { squadSettingsApi } from '../configuracion-api.js'
 
 const text = (value, className = '') => element('p', className, value)
 
+const EXPULSION = 'Al expulsarlo pierde el acceso al panel, y se borran su hábito, sus pruebas y sus votos en este escuadrón.'
+
 function action(label, onClick, variant = 'primary', iconName) {
   return button(`settings-action settings-action--${variant}`, onClick, iconName && icon(iconName), label)
 }
@@ -91,7 +93,7 @@ export function configuracionEscuadronScreen({ api = squadSettingsApi, id, panel
       text('Solo el administrador puede cambiar la configuración de este escuadrón.', 'settings-description mt-2'),
       pillLink({ href: panelHref, variant: 'secondary', className: 'mt-5' }, backLabel)))
   }
-  async function perform(operation, success, { reset = false, deleted = false } = {}) {
+  async function perform(operation, success, { reset = false, deleted = false, failure } = {}) {
     if (busy) return
     busy = true
     error.textContent = ''
@@ -124,13 +126,24 @@ export function configuracionEscuadronScreen({ api = squadSettingsApi, id, panel
     } catch (cause) {
       status.textContent = ''
       if (cause instanceof ApiError && cause.status === 403) { forbidden(); return }
-      error.textContent = message(cause)
+      error.textContent = failure && !(cause instanceof ApiError && cause.status === 401) ? failure : message(cause)
     } finally {
       busy = false
       content.setAttribute('aria-busy', 'false')
       controls.forEach(([control, disabled]) => { control.disabled = disabled })
       if (focused?.isConnected) focused.focus()
       else { panel.focus() }
+    }
+  }
+
+  // La API real responde 204 sin cuerpo; un 404 significa que ese miembro ya no estaba.
+  async function expel(member) {
+    const without = () => ({ miembros: saved.miembros.filter(({ id: memberId }) => memberId !== member.id), miembrosActuales: memberCount() - 1 })
+    try {
+      return (await api.removeMember(id, member.id)) ?? without()
+    } catch (cause) {
+      if (cause instanceof ApiError && cause.status === 404) return without()
+      throw cause
     }
   }
 
@@ -224,11 +237,13 @@ export function configuracionEscuadronScreen({ api = squadSettingsApi, id, panel
       const item = element('li', 'settings-member', avatar,
         element('div', 'min-w-0 flex-1', text(member.nickname, 'font-extrabold break-words'),
           text(member.esAdministrador ? `Administrador${member.esUsuario ? ' · Tú' : ''}` : 'Miembro', 'settings-description')))
-      if (api.removeMember && !member.esAdministrador && !member.esUsuario) {
+      if (api.removeMember && !member.esAdministrador && !member.esCreador && !member.esUsuario) {
         const confirming = confirmation === member.id
         const remove = action(confirming ? `¿Expulsar a ${member.nickname}?` : 'Expulsar', () => {
           if (confirmation !== member.id) { confirmation = member.id; renderPanel(); panel.querySelector(`[data-remove="${member.id}"]`).focus(); return }
-          void perform(() => api.removeMember(id, member.id), `${member.nickname} ha salido del escuadrón de ejemplo.`)
+          void perform(() => expel(member),
+            demo ? `${member.nickname} ha salido del escuadrón de ejemplo.` : `${member.nickname} ya no forma parte del escuadrón.`,
+            { failure: `No se ha podido expulsar a ${member.nickname}. Vuelve a intentarlo.` })
         }, confirming ? 'danger' : 'muted')
         remove.dataset.remove = member.id
         remove.setAttribute('aria-label', confirming ? `Confirmar expulsión de ${member.nickname}` : `Expulsar a ${member.nickname}`)
@@ -242,7 +257,10 @@ export function configuracionEscuadronScreen({ api = squadSettingsApi, id, panel
       list.append(element('li', 'settings-member', element('span', 'settings-free-avatar', icon('plus')),
         element('div', '', text('Plaza libre', 'font-extrabold'), text('Entra quien use el código', 'settings-description'))))
     }
-    if (!api.delete) return element('div', '', text(`Miembros · ${memberCount()} de ${saved.capacidad}`, 'settings-description mb-3'), list)
+    if (!api.delete) {
+      return element('div', '', text(`Miembros · ${memberCount()} de ${saved.capacidad}`, 'settings-description mb-3'), list,
+        confirmation && text(EXPULSION, 'settings-description mt-3'))
+    }
     const deleting = confirmation === 'delete'
     const deleteButton = action(deleting ? 'Confirmar eliminación' : 'Eliminar', () => {
       if (confirmation !== 'delete') { confirmation = 'delete'; renderPanel(); panel.querySelector('[data-delete]').focus(); return }
@@ -252,7 +270,7 @@ export function configuracionEscuadronScreen({ api = squadSettingsApi, id, panel
     const dangerActions = element('div', 'settings-member-actions', deleteButton)
     if (deleting) dangerActions.append(action('Cancelar', () => { confirmation = null; renderPanel(); panel.querySelector('[data-delete]').focus() }, 'secondary'))
     return element('div', '', text(`Miembros · ${saved.miembros.length} de ${saved.capacidad}`, 'settings-description mb-3'), list,
-      confirmation && confirmation !== 'delete' && text('Al expulsar, pierde el acceso al panel. Su racha personal y sus fotos permanecen en su perfil.', 'settings-description mt-3'),
+      confirmation && confirmation !== 'delete' && text(EXPULSION, 'settings-description mt-3'),
       element('section', 'settings-card settings-danger mt-4', row('trash', 'Eliminar escuadrón',
         text(deleting ? `¿Eliminar ${saved.nombre}? Se borran la racha y las fotos de todos. No se puede deshacer.` : 'Se borran la racha y las fotos de todos. No se puede deshacer.', 'settings-description'), dangerActions, 'settings-icon--danger')))
   }

@@ -70,6 +70,13 @@ describe('crearEscuadronScreen', () => {
     expect(joinLink.getAttribute('href')).toBe('/escuadrones/unirse')
   })
 
+  it('en la barra de arriba marca la sección Mis escuadrones', () => {
+    const actual = mount().querySelector('header [aria-current]')
+
+    expect(actual.textContent).toBe('Mis escuadrones')
+    expect(actual.getAttribute('href')).toBe('/escuadrones')
+  })
+
   it('no envía el formulario si el nombre está vacío', () => {
     const onSubmit = vi.fn()
     const element = mount(crearEscuadronScreen({ onSubmit }))

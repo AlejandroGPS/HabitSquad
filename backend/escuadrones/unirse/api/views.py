@@ -1,4 +1,9 @@
-from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+)
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
@@ -107,8 +112,19 @@ class PublicSquadJoinView(APIView):
         tags=["Escuadrones"],
         request=None,
         summary="Unirse a un escuadrón público",
+        parameters=[
+            OpenApiParameter(
+                name="escuadron_id",
+                type=int,
+                location=OpenApiParameter.PATH,
+                description="Identificador del escuadrón público.",
+            )
+        ],
         responses={
-            201: EscuadronJoinSerializer,
+            201: OpenApiResponse(
+                response=EscuadronJoinSerializer,
+                description="El usuario queda unido como miembro no administrador.",
+            ),
             401: OpenApiResponse(description="Falta un access token válido."),
             403: OpenApiResponse(description="El escuadrón es privado."),
             404: OpenApiResponse(description="El escuadrón no existe."),
@@ -118,7 +134,8 @@ class PublicSquadJoinView(APIView):
         },
         description=(
             "Incorpora al usuario autenticado a un escuadrón público sin código. "
-            "El escuadrón debe tener plazas disponibles."
+            "El usuario no debe pertenecer ya al escuadrón y este debe tener "
+            "plazas disponibles."
         ),
     )
     def post(self, request, escuadron_id):

@@ -1,7 +1,7 @@
 import { element } from './dom.js'
 
 const BASE = [
-  'inline-flex h-[3.25rem] items-center justify-center gap-2 rounded-full px-6',
+  'inline-flex h-[3.25rem] cursor-pointer items-center justify-center gap-2 rounded-full px-6',
   'text-[1.0625rem] font-bold transition-[transform,opacity] duration-75 active:scale-[0.98] active:opacity-85',
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
 ].join(' ')

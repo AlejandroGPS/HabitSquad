@@ -24,6 +24,7 @@ describe('accountMenu', () => {
     const menu = mount({ nombre: 'Alejandro' })
 
     expect(toggle(menu).textContent).toBe('A')
+    expect(toggle(menu).className).toContain('cursor-pointer')
     expect(toggle(menu).getAttribute('aria-expanded')).toBe('false')
     expect(panel(menu).hidden).toBe(true)
     expect(panel(menu).textContent).toContain('Alejandro')
@@ -61,6 +62,29 @@ describe('accountMenu', () => {
     const hrefs = [...menu.querySelectorAll('a[data-link]')].map((link) => link.getAttribute('href'))
 
     expect(hrefs).toEqual(['/perfil', '/escuadrones/nuevo', '/escuadrones/unirse'])
+  })
+
+  it('fuera del perfil no marca nada', () => {
+    const menu = mount({ nombre: 'Alejandro' })
+
+    expect(toggle(menu).className).not.toContain('ring-accent')
+    expect(menu.querySelector('[aria-current]')).toBeNull()
+  })
+
+  it.each([
+    ['/perfil', 'page'],
+    ['/perfil/editar', 'true'],
+  ])('en %s resalta el avatar y marca «Ver perfil»', (ruta, actual) => {
+    window.history.replaceState(null, '', ruta)
+    const menu = mount({ nombre: 'Alejandro', enPerfil: true })
+    const verPerfil = menu.querySelector('a[href="/perfil"]')
+
+    expect(toggle(menu).className).toContain('ring-2 ring-accent')
+    expect(verPerfil.getAttribute('aria-current')).toBe(actual)
+    expect(verPerfil.className).toContain('text-accent')
+    expect(verPerfil.className).not.toContain('text-ink')
+    expect(menu.querySelectorAll('[aria-current]')).toHaveLength(1)
+    window.history.replaceState(null, '', '/')
   })
 
   it('cierra el menú al elegir un enlace', () => {
