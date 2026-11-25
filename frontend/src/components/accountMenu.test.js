@@ -24,6 +24,7 @@ describe('accountMenu', () => {
     const menu = mount({ nombre: 'Alejandro' })
 
     expect(toggle(menu).textContent).toBe('A')
+    expect(toggle(menu).className).toContain('cursor-pointer')
     expect(toggle(menu).getAttribute('aria-expanded')).toBe('false')
     expect(panel(menu).hidden).toBe(true)
     expect(panel(menu).textContent).toContain('Alejandro')

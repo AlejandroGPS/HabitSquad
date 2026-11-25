@@ -7,8 +7,8 @@ export const cardClass = [
 ].join(' ')
 
 export const pillButtonClass = [
-  'inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-accent/10 px-4',
-  'text-[0.9375rem] font-bold text-accent disabled:opacity-50',
+  'inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-accent/10 px-4',
+  'text-[0.9375rem] font-bold text-accent disabled:cursor-default disabled:opacity-50',
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
 ].join(' ')
 

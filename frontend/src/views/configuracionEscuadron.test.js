@@ -65,6 +65,8 @@ describe('pantalla de configuración', () => {
     expect(findButton('Guardar cambios').disabled).toBe(false)
   })
   it('limita las plazas a los miembros actuales y a diez', () => {
+    expect(findButton('Reducir plazas').className).toContain('cursor-pointer')
+    expect(findButton('Aumentar plazas').className).toContain('cursor-pointer')
     for (let i = 0; i < 10; i++) click('Reducir plazas')
     expect(page.querySelector('output').value).toBe('3')
     expect(findButton('Reducir plazas').disabled).toBe(true)
