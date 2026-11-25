@@ -137,6 +137,21 @@ export async function listSquads() {
   return readJson(response)
 }
 
+export async function listPublicSquads(query = '') {
+  const params = new URLSearchParams()
+  if (query.trim()) params.set('q', query.trim())
+  const path = `/api/escuadrones/publicos/${params.size ? `?${params}` : ''}`
+  const response = await authFetch(path)
+  if (!response.ok) throw new ApiError(response.status, await readJson(response))
+  return readJson(response)
+}
+
+export async function joinPublicSquad(squadId) {
+  const response = await authFetch(`/api/escuadrones/${squadId}/unirse/`, { method: 'POST' })
+  if (!response.ok) throw new ApiError(response.status, await readJson(response))
+  return readJson(response)
+}
+
 export async function getSquad(squadId) {
   const response = await authFetch(`/api/escuadrones/${squadId}/`)
   if (!response.ok) throw new ApiError(response.status, await readJson(response))

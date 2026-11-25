@@ -27,7 +27,7 @@ export function squadBadge(squad) {
 }
 
 export function escuadronResultado(squad, query, onJoin) {
-  const free = Math.max(0, squad.capacidad - squad.miembros.length)
+  const free = Math.max(0, squad.capacidad - squad.miembrosActuales)
   const action = button('squad-action', () => onJoin(squad), icon(squad.unido ? 'check' : 'userPlus'),
     squad.unido ? (squad.habitoPropio ? 'Ya eres miembro' : 'Elegir hábito') : free ? 'Unirme' : 'Completo')
   action.disabled = (!free && !squad.unido) || Boolean(squad.habitoPropio)
@@ -39,6 +39,6 @@ export function escuadronResultado(squad, query, onJoin) {
       element('h3', 'squad-result-name', highlightedName(squad.nombre, query))),
     element('div', 'squad-result-meta',
       element('span', 'squad-streak', icon('flame', 'h-4 w-4 shrink-0'), `${squad.racha} ${squad.racha === 1 ? 'día' : 'días'}`),
-      element('span', 'squad-capacity', `${squad.miembros.length}/${squad.capacidad} miembros`), places),
+      element('span', 'squad-capacity', `${squad.miembrosActuales}/${squad.capacidad} miembros`), places),
     action)
 }

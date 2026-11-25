@@ -22,7 +22,7 @@ const EXAMPLES = [
 
 export function createMockSquadSearch() {
   const squads = EXAMPLES.map(([id, nombre, categoria, habito, racha, count, color]) => ({
-    id, nombre, categoria, habito, racha, color, capacidad: 5, publico: true,
+    id, nombre, categoria, habito, racha, color, capacidad: 5, publico: true, miembrosActuales: count,
     unido: false, habitoPropio: '',
     miembros: PEOPLE.slice(0, count).map(([nickname, habito]) => ({ nickname, habito })),
   }))
@@ -33,12 +33,16 @@ export function createMockSquadSearch() {
     return squad
   }
   return {
-    async list() { return copy(squads.filter((squad) => squad.publico)) },
+    async list(query = '') {
+      const normalize = (text) => text.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es')
+      return copy(squads.filter((squad) => squad.publico && !squad.unido && normalize(squad.nombre).includes(normalize(query.trim()))))
+    },
     async join(id) {
       const squad = find(id)
       if (!squad.unido) {
         if (squad.miembros.length >= squad.capacidad) throw new Error('El escuadrón se acaba de completar. Prueba con otro.')
         squad.miembros.push({ nickname: 'tú', habito: 'Hábito por elegir' })
+        squad.miembrosActuales = squad.miembros.length
         squad.unido = true
       }
       return copy(squad)

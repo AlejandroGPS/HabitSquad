@@ -149,6 +149,7 @@ export const routes = [
     title: 'Buscar escuadrones',
     private: true,
     view: ({ navigate } = {}) => buscarEscuadronesScreen({
+      loadProfile: getProfile,
       onLogout: async () => { await logout(); navigate?.('/login') },
     }),
   },

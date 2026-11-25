@@ -8,10 +8,11 @@ let api
 const rows = () => [...view.querySelectorAll('ul[aria-label="Escuadrones públicos"] > li')]
 const findButton = (label, root = view) => [...root.querySelectorAll('button')].find((node) => node.textContent === label)
 const dialog = () => view.querySelector('dialog')
-function search(text) {
+async function search(text) {
   const input = view.querySelector('input[type="search"]')
   input.value = text
   input.dispatchEvent(new Event('input'))
+  await vi.waitFor(() => expect(view.querySelector('[aria-label="Resultados de búsqueda"]').getAttribute('aria-busy')).toBe('false'))
 }
 async function mount(adapter = createMockSquadSearch()) {
   api = adapter
@@ -44,17 +45,17 @@ describe('buscador de escuadrones', () => {
 
   it('busca sin tildes ni mayúsculas y resalta la coincidencia como texto seguro', async () => {
     await mount()
-    search('AZUCAR')
+    await search('AZUCAR')
     expect(rows()).toHaveLength(1)
     expect(rows()[0].querySelector('mark').textContent).toBe('azúcar')
-    search('lect')
+    await search('lect')
     expect(rows()).toHaveLength(2)
     expect(view.querySelector('[role="status"]').textContent).toBe('2 resultados')
-    search('<img src=x onerror=alert(1)>')
+    await search('<img src=x onerror=alert(1)>')
     expect(rows()).toHaveLength(0)
     expect(view.querySelector('.squad-empty').hidden).toBe(false)
     findButton('Limpiar búsqueda').click()
-    expect(rows()).toHaveLength(12)
+    await vi.waitFor(() => expect(rows()).toHaveLength(12))
   })
 
   it('ordena los resultados por racha y mantiene la búsqueda por nombre', async () => {
@@ -63,7 +64,7 @@ describe('buscador de escuadrones', () => {
     sort.value = 'streak'; sort.dispatchEvent(new Event('change'))
     expect(rows()[0].querySelector('h3').textContent).toBe('Sin azúcar')
     expect(rows()).toHaveLength(12)
-    search('lect')
+    await search('lect')
     expect(rows()[0].querySelector('h3').textContent).toBe('Lectores nocturnos')
     expect(rows()).toHaveLength(2)
   })
@@ -75,7 +76,7 @@ describe('buscador de escuadrones', () => {
     expect(disabled.disabled).toBe(true)
     disabled.click()
     expect(dialog().open).toBe(false)
-    search('madrugadores')
+    await search('madrugadores')
     const join = rows()[0].querySelector('button')
     join.focus(); join.click()
     expect(dialog().open).toBe(true)
@@ -87,34 +88,34 @@ describe('buscador de escuadrones', () => {
     expect((await api.list()).find((squad) => squad.id === 'madrugadores').unido).toBe(false)
   })
 
-  it('simula unión y hábito, actualiza plazas y evita unirse dos veces', async () => {
+  it('retira el escuadrón tras unirse, guarda el hábito y enlaza al panel', async () => {
     await mount()
-    search('madrugadores')
+    await search('madrugadores')
     rows()[0].querySelector('button').click()
     findButton('Unirme a Madrugadores 6:30', dialog()).click()
     await vi.waitFor(() => expect(dialog().querySelector('input[name="habito"]')).not.toBeNull())
-    expect(rows()[0].textContent).toContain('3/5')
+    expect(rows()).toHaveLength(0)
     const input = dialog().querySelector('input')
     input.value = 'Caminar 30 minutos'
     dialog().querySelector('form').dispatchEvent(new Event('submit', { cancelable: true }))
     await vi.waitFor(() => expect(dialog().textContent).toContain('¡Todo listo!'))
+    expect(dialog().querySelector('a[data-link]').getAttribute('href')).toBe('/escuadrones/panel?id=madrugadores')
+    expect(dialog().textContent).toContain('Tu hábito: Caminar 30 minutos')
     findButton('Volver al buscador', dialog()).click()
-    expect((await api.list()).find((squad) => squad.id === 'madrugadores').habitoPropio).toBe('Caminar 30 minutos')
-    expect(rows()[0].querySelector('button').disabled).toBe(true)
-    await api.join('madrugadores')
-    expect((await api.list()).find((squad) => squad.id === 'madrugadores').miembros).toHaveLength(3)
+    expect((await api.join('madrugadores')).habitoPropio).toBe('Caminar 30 minutos')
+    expect((await api.join('madrugadores')).miembrosActuales).toBe(3)
   })
 
   it('permite elegir el hábito más tarde sin perder la unión', async () => {
     await mount()
-    search('madrugadores')
+    await search('madrugadores')
     rows()[0].querySelector('button').click()
     findButton('Unirme a Madrugadores 6:30', dialog()).click()
     await vi.waitFor(() => expect(dialog().querySelector('input')).not.toBeNull())
     findButton('Elegir hábito más tarde', dialog()).click()
-    findButton('Elegir hábito').click()
-    expect(dialog().querySelector('input[name="habito"]')).not.toBeNull()
-    expect(rows()[0].textContent).toContain('3/5')
+    expect(dialog().open).toBe(false)
+    expect(rows()).toHaveLength(0)
+    expect((await api.join('madrugadores')).miembrosActuales).toBe(3)
   })
 
   it('recupera una carga fallida y permite reintentar una unión fallida', async () => {
@@ -125,12 +126,12 @@ describe('buscador de escuadrones', () => {
     expect(view.querySelector('[role="alert"]').textContent).toContain('No se han podido cargar')
     findButton('Reintentar').click()
     await vi.waitFor(() => expect(rows()).toHaveLength(12))
-    search('madrugadores')
+    await search('madrugadores')
     rows()[0].querySelector('button').click()
     const confirm = findButton('Unirme a Madrugadores 6:30', dialog())
     confirm.click(); confirm.click()
     expect(join).toHaveBeenCalledTimes(1)
-    await vi.waitFor(() => expect(dialog().querySelector('[role="alert"]').textContent).toContain('se acaba de completar'))
+    await vi.waitFor(() => expect(dialog().querySelector('[role="alert"]').textContent).toContain('No se ha podido unir'))
     expect(confirm.disabled).toBe(false)
     expect(rows()[0].textContent).toContain('2/5')
   })
@@ -139,7 +140,7 @@ describe('buscador de escuadrones', () => {
     const adapter = createMockSquadSearch()
     const saveHabit = vi.fn().mockRejectedValueOnce(new Error('No se ha podido guardar.')).mockImplementation(adapter.saveHabit)
     await mount({ ...adapter, saveHabit })
-    search('madrugadores')
+    await search('madrugadores')
     rows()[0].querySelector('button').click()
     findButton('Unirme a Madrugadores 6:30', dialog()).click()
     await vi.waitFor(() => expect(dialog().querySelector('input')).not.toBeNull())

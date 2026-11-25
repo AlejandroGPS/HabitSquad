@@ -3,15 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Buscar escuadrones · HabitSquad · Vista previa</title>
+    <title>Buscar escuadrones · HabitSquad · Vista previa con datos ficticios</title>
   </head>
   <body>
     <script type="module">
       import '@fontsource-variable/nunito'
       import '/src/style.css'
       import { buscarEscuadronesScreen } from '/src/views/buscarEscuadrones.js'
+      import { createMockSquadSearch } from '/src/mocks/buscadorEscuadrones.js'
 
-      document.body.append(buscarEscuadronesScreen())
+      document.body.append(buscarEscuadronesScreen({ api: createMockSquadSearch() }))
     </script>
   </body>
 </html>
