@@ -1,8 +1,10 @@
+from datetime import time
 from typing import ClassVar
 
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models.functions import Lower
 
 
 class CustomUserManager(BaseUserManager):
@@ -14,12 +16,41 @@ class CustomUserManager(BaseUserManager):
             raise ValueError("An email address is required.")
         return email.strip().lower()
 
+    @staticmethod
+    def normalize_nickname(nickname):
+        if nickname is None:
+            return ""
+        return str(nickname).strip()
+
     def get_by_natural_key(self, username):
         return self.get(email__iexact=username.strip())
+
+    def _default_nickname_for_email(self, email):
+        local_part = email.split("@", 1)[0]
+        base = "".join(
+            character
+            for character in local_part
+            if character.isalnum() or character in "_-"
+        )[:40]
+        if not base:
+            base = "user"
+
+        candidate = base
+        suffix = 0
+        while self.filter(nickname__iexact=candidate).exists():
+            suffix += 1
+            candidate = f"{base}{suffix}"
+        return candidate
 
     def create_user(self, email, password=None, **extra_fields):
         normalized_email = self.normalize_email(email)
         extra_fields.setdefault("email_verified", True)
+
+        nickname = self.normalize_nickname(extra_fields.get("nickname"))
+        if not nickname:
+            nickname = self._default_nickname_for_email(normalized_email)
+        extra_fields["nickname"] = nickname
+
         user = self.model(email=normalized_email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -40,9 +71,32 @@ class CustomUserManager(BaseUserManager):
 class CustomUser(AbstractUser):
     username = None
     email = models.EmailField("email address", unique=True)
+    nickname = models.CharField(
+        max_length=50,
+        verbose_name="nickname",
+        help_text="Public display name. Unique without case sensitivity.",
+    )
     email_verified = models.BooleanField(
         default=False,
         verbose_name="email verified",
+    )
+    # Solo la referencia en Cloudinary; la URL firmada se calcula al leer el perfil
+    foto_perfil_public_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="profile photo public id",
+    )
+    email_pendiente = models.EmailField(
+        blank=True,
+        null=True,
+        verbose_name="pending email",
+        help_text="New email awaiting verification before replacing login email.",
+    )
+    hora_aviso = models.TimeField(
+        default=time(20, 0),
+        verbose_name="alert time",
+        help_text="Time for the missing daily proof reminder (default 20:00).",
     )
 
     objects = CustomUserManager()
@@ -50,8 +104,25 @@ class CustomUser(AbstractUser):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS: ClassVar[list[str]] = []
 
+    class Meta:
+        verbose_name = "user"
+        verbose_name_plural = "users"
+        constraints: ClassVar[list] = [
+            models.UniqueConstraint(
+                Lower("nickname"),
+                name="usuarios_customuser_nickname_ci_uniq",
+            ),
+        ]
+
     def save(self, *args, **kwargs):
         self.email = CustomUserManager.normalize_email(self.email)
+        self.nickname = CustomUserManager.normalize_nickname(self.nickname)
+        if self.email_pendiente:
+            self.email_pendiente = CustomUserManager.normalize_email(
+                self.email_pendiente
+            )
+        else:
+            self.email_pendiente = None
         super().save(*args, **kwargs)
 
     def __str__(self):

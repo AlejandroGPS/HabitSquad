@@ -1,6 +1,8 @@
 import {
   ApiError,
   confirmEmailVerification,
+  confirmProfileEmail,
+  getProfile,
   confirmPasswordReset,
   createSquad,
   joinSquad,
@@ -11,9 +13,11 @@ import {
   requestPasswordReset,
 } from './api.js'
 import { hasSession } from './session.js'
+import { accountMenu } from './components/accountMenu.js'
 import { loginScreen, registroScreen } from './views/acceso.js'
+import { alertasScreen } from './views/alertas.js'
 import { crearEscuadronScreen } from './views/crearEscuadron.js'
-import { menuScreen } from './views/menu.js'
+import { configuracionEscuadronScreen } from './views/configuracionEscuadron.js'
 import { habitoDiarioScreen } from './views/habitoDiario.js'
 import { panelSeleccionadoScreen } from './views/panelSeleccionado.js'
 import { presentacionScreen } from './views/presentacion.js'
@@ -21,9 +25,13 @@ import { pruebaDiaScreen } from './views/pruebaDia.js'
 import { recuperarContrasenaScreen, reenviarVerificacionScreen } from './views/recuperarContrasena.js'
 import { restablecerContrasenaScreen } from './views/restablecerContrasena.js'
 import { screen } from './views/screen.js'
+import { selectorEscuadronScreen } from './views/selectorEscuadron.js'
 import { unirseEscuadronScreen } from './views/unirseEscuadron.js'
 import { verificarCorreoScreen } from './views/verificarCorreo.js'
 import { votarPruebaScreen } from './views/votarPrueba.js'
+import { perfilScreen } from './views/perfil.js'
+import { editarPerfilScreen } from './views/editarPerfil.js'
+import { confirmarCorreoPerfilScreen } from './views/confirmarCorreoPerfil.js'
 
 const backHome = [{ href: '/', label: 'Volver al inicio' }]
 
@@ -45,10 +53,10 @@ function firstMessage(value) {
 
 function registerErrorMessage(error) {
   if (error instanceof ApiError && error.status === 400) {
-    const emailError = firstMessage(error.data?.email)
-    if (emailError) return emailError
-    const passwordError = firstMessage(error.data?.password)
-    if (passwordError) return passwordError
+    for (const name of ['email', 'nickname', 'password', 'password_confirm', 'non_field_errors']) {
+      const message = firstMessage(error.data?.[name])
+      if (message) return message
+    }
     const detail = firstMessage(error.data?.detail)
     if (detail) return detail
   }
@@ -121,20 +129,67 @@ function joinSquadErrorMessage(error) {
 // Solo rutas internas: evita que ?siguiente= mande al usuario a otra web tras iniciar sesión.
 export function destinoTrasAcceso() {
   const destino = new URLSearchParams(window.location.search).get('siguiente') ?? ''
-  return /^\/(?![/\\])/.test(destino) ? destino : '/'
+  return /^\/(?![/\\])/.test(destino) ? destino : '/escuadrones'
+}
+
+function selectorEscuadron(navigate) {
+  return selectorEscuadronScreen({
+    loadProfile: getProfile,
+    onLogout: async () => {
+      await logout()
+      navigate('/login')
+    },
+  })
 }
 
 export const routes = [
   {
+    path: '/perfil',
+    title: 'Mi perfil',
+    private: true,
+    view: ({ navigate } = {}) => perfilScreen({ onLogout: async () => { await logout(); navigate?.('/login') } }),
+  },
+  {
+    path: '/perfil/editar',
+    title: 'Editar perfil',
+    private: true,
+    view: ({ navigate } = {}) => editarPerfilScreen({ onLogout: async () => { await logout(); navigate?.('/login') } }),
+  },
+  {
+    path: '/alertas',
+    title: 'Alertas',
+    private: true,
+    view: ({ navigate } = {}) => alertasScreen({ onLogout: async () => { await logout(); navigate?.('/login') } }),
+  },
+  {
+    path: '/perfil/confirmar-email',
+    title: 'Confirmar correo nuevo',
+    view: () => {
+      const params = new URLSearchParams(window.location.search)
+      return confirmarCorreoPerfilScreen({ uid: params.get('uid'), token: params.get('token'), onConfirm: confirmProfileEmail })
+    },
+  },
+  {
+    path: '/perfil/email/confirmar',
+    title: 'Confirmar correo nuevo',
+    view: () => {
+      const params = new URLSearchParams(window.location.search)
+      return confirmarCorreoPerfilScreen({ uid: params.get('uid'), token: params.get('token'), onConfirm: confirmProfileEmail })
+    },
+  },
+  {
     path: '/',
     title: 'HabitSquad',
-    view: ({ navigate } = {}) =>
-      hasSession()
-        ? menuScreen({ title: 'HabitSquad', onLogout: async () => {
+    view: ({ navigate } = {}) => presentacionScreen({
+      navigate,
+      cuenta: hasSession() ? accountMenu({
+        loadProfile: getProfile,
+        onLogout: async () => {
           await logout()
-          navigate('/login')
-        } })
-        : presentacionScreen({ navigate }),
+          navigate?.('/')
+        },
+      }) : undefined,
+    }),
   },
   {
     path: '/escuadrones/prueba',
@@ -147,6 +202,19 @@ export const routes = [
     title: 'Panel del escuadrón',
     private: true,
     view: ({ navigate } = {}) => panelSeleccionadoScreen({ navigate }),
+  },
+  {
+    path: '/escuadrones/configuracion',
+    title: 'Configuración del escuadrón',
+    private: true,
+    view: ({ navigate } = {}) => {
+      const origen = new URLSearchParams(window.location.search).get('origen')
+      return configuracionEscuadronScreen({
+        id: origen,
+        panelHref: /^[1-9]\d*$/.test(origen ?? '') ? `/escuadrones/panel?id=${origen}` : '/escuadrones',
+        onLogout: async () => { await logout(); navigate?.('/login') },
+      })
+    },
   },
   {
     path: '/login',
@@ -266,13 +334,10 @@ export const routes = [
     view: ({ navigate } = {}) => pruebaDiaScreen({ navigate }),
   },
   {
-    path: '/menu',
-    title: 'Menú principal',
+    path: '/escuadrones',
+    title: 'Mis escuadrones',
     private: true,
-    view: ({ navigate } = {}) => menuScreen({ onLogout: async () => {
-      await logout()
-      navigate('/login')
-    } }),
+    view: ({ navigate } = {}) => selectorEscuadron(navigate),
   },
   {
     path: '/escuadrones/nuevo',
@@ -312,7 +377,7 @@ export function guard(route) {
     const destino = `${window.location.pathname}${window.location.search}`
     return destino === '/' ? '/login' : `/login?siguiente=${encodeURIComponent(destino)}`
   }
-  if (route.guestOnly && hasSession()) return '/'
+  if (route.guestOnly && hasSession()) return '/escuadrones'
   return null
 }
 

@@ -18,6 +18,49 @@ def test_user_uses_big_auto_field_primary_key():
     assert user.date_joined is not None
     assert CustomUser.USERNAME_FIELD == "email"
     assert "username" not in [field.name for field in CustomUser._meta.fields]
+    assert user.nickname == "person"
+
+
+@pytest.mark.django_db
+def test_create_user_accepts_explicit_nickname():
+    user = CustomUser.objects.create_user(
+        email="person@example.com",
+        password="safe-test-password",
+        nickname="  HabitHero  ",
+    )
+
+    assert user.nickname == "HabitHero"
+
+
+@pytest.mark.django_db
+def test_user_nickname_is_unique_without_case_sensitivity():
+    CustomUser.objects.create_user(
+        email="person@example.com",
+        password="safe-test-password",
+        nickname="HabitHero",
+    )
+
+    with pytest.raises(IntegrityError), transaction.atomic():
+        CustomUser.objects.create_user(
+            email="other@example.com",
+            password="another-safe-password",
+            nickname="habithero",
+        )
+
+
+@pytest.mark.django_db
+def test_create_user_falls_back_to_user_nickname_when_email_local_part_is_empty():
+    user = CustomUser.objects.create_user(
+        email="!!!@example.com",
+        password="safe-test-password",
+    )
+    other = CustomUser.objects.create_user(
+        email="...@example.com",
+        password="safe-test-password",
+    )
+
+    assert user.nickname == "user"
+    assert other.nickname == "user1"
 
 
 @pytest.mark.django_db

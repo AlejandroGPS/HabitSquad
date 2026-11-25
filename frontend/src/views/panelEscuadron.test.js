@@ -48,7 +48,7 @@ describe('panelEscuadronScreen', () => {
     expect(header.textContent).toContain('12')
     expect(header.querySelector('.sr-only').textContent).toBe('Alertas')
     expect(header.querySelector('[aria-label="Tu cuenta"]').textContent).toBe('A')
-    expect(hrefs).toEqual(['/escuadrones/nuevo', '/escuadrones/unirse'])
+    expect(hrefs).toEqual(['/alertas', '/escuadrones/configuracion', '/perfil', '/escuadrones/nuevo', '/escuadrones/unirse'])
   })
 
   it('marca la sección Escuadrón como activa', () => {

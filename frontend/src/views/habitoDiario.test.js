@@ -187,7 +187,7 @@ describe('Elegir hábito conectado a la API', () => {
     expect(input.value).toBe('Leer 20 minutos')
     const choose = [...view.querySelectorAll('a')].find((link) => link.textContent === 'Ir a Mis escuadrones')
     expect(choose.hidden).toBe(false)
-    expect(choose.getAttribute('href')).toBe('/')
+    expect(choose.getAttribute('href')).toBe('/escuadrones')
     submit(view)
     expect(fetchMock).not.toHaveBeenCalled()
   })

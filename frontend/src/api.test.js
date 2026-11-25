@@ -5,11 +5,15 @@ import {
   authFetch,
   confirmPasswordReset,
   createSquad,
+  deletePushSubscription,
+  expelMember,
+  getVapidPublicKey,
   joinSquad,
   login,
   logout,
   refreshSession,
   register,
+  savePushSubscription,
 } from './api.js'
 import { getSession, hasSession, saveSession } from './session.js'
 
@@ -49,13 +53,16 @@ describe('api', () => {
     const userData = {
       id: 7,
       email: 'persona@example.com',
+      nickname: 'HabitHero',
       date_joined: '2026-10-17T12:00:00Z',
     }
     fetchMock.mockResolvedValue(jsonResponse(201, userData))
 
     const result = await register({
       email: 'persona@example.com',
+      nickname: 'HabitHero',
       password: 'S0mething!Secure-497',
+      password_confirm: 'S0mething!Secure-497',
     })
 
     expect(fetchMock).toHaveBeenCalledWith('/api/auth/register/', {
@@ -63,10 +70,14 @@ describe('api', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: 'persona@example.com',
+        nickname: 'HabitHero',
         password: 'S0mething!Secure-497',
+        password_confirm: 'S0mething!Secure-497',
       }),
     })
     expect(result).toEqual(userData)
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(hasSession()).toBe(false)
   })
 
   it('envía el token y ambas contraseñas al confirmar la recuperación', async () => {
@@ -187,6 +198,101 @@ describe('api', () => {
     await logout()
 
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('cerrar sesión da de baja los avisos de este navegador con el access de la cuenta que sale', async () => {
+    const subscription = { endpoint: 'https://push.example/abc', unsubscribe: vi.fn().mockResolvedValue(true) }
+    vi.stubGlobal('navigator', {
+      serviceWorker: { getRegistration: async () => ({ pushManager: { getSubscription: async () => subscription } }) },
+    })
+    saveSession({ access: 'access-token', refresh: 'refresh-token' })
+    fetchMock.mockResolvedValue(emptyResponse(204))
+
+    await logout()
+
+    expect(hasSession()).toBe(false)
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/alertas/suscripcion/', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer access-token' },
+      body: JSON.stringify({ endpoint: 'https://push.example/abc' }),
+    })
+    expect(subscription.unsubscribe).toHaveBeenCalledOnce()
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/auth/logout/', expect.objectContaining({ method: 'POST' }))
+  })
+
+  it('cerrar sesión termina aunque no se puedan dar de baja los avisos', async () => {
+    vi.stubGlobal('navigator', { serviceWorker: { getRegistration: async () => { throw new Error('sin service worker') } } })
+    saveSession({ access: 'access-token', refresh: 'refresh-token' })
+    fetchMock.mockResolvedValue(emptyResponse(204))
+
+    await logout()
+
+    expect(hasSession()).toBe(false)
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(fetchMock).toHaveBeenCalledWith('/api/auth/logout/', expect.anything())
+  })
+
+  it('pide la clave pública VAPID sin sesión', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, { public_key: 'BNcR-clave_publica' }))
+
+    await expect(getVapidPublicKey()).resolves.toBe('BNcR-clave_publica')
+    expect(fetchMock).toHaveBeenCalledWith('/api/alertas/vapid-public-key/')
+  })
+
+  it('si el servidor no tiene clave VAPID lanza ApiError 503', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(503, { detail: 'La clave pública VAPID no está configurada.' }))
+
+    await expect(getVapidPublicKey()).rejects.toMatchObject({ name: 'ApiError', status: 503 })
+  })
+
+  it('registra la suscripción push con el endpoint y las claves', async () => {
+    saveSession({ access: 'access-token', refresh: 'refresh-token' })
+    fetchMock.mockResolvedValue(jsonResponse(201, { endpoint: 'https://push.example/abc', creado: true }))
+
+    const subscription = { endpoint: 'https://push.example/abc', expirationTime: null, keys: { p256dh: 'p256', auth: 'auth' } }
+    await expect(savePushSubscription(subscription)).resolves.toEqual({ endpoint: 'https://push.example/abc', creado: true })
+
+    const [path, options] = fetchMock.mock.calls[0]
+    expect(path).toBe('/api/alertas/suscripcion/')
+    expect(options.method).toBe('POST')
+    expect(options.headers.get('Authorization')).toBe('Bearer access-token')
+    expect(JSON.parse(options.body)).toEqual({ endpoint: 'https://push.example/abc', keys: { p256dh: 'p256', auth: 'auth' } })
+  })
+
+  it('da de baja la suscripción push por su endpoint', async () => {
+    saveSession({ access: 'access-token', refresh: 'refresh-token' })
+    fetchMock.mockResolvedValueOnce(emptyResponse(204)).mockResolvedValueOnce(jsonResponse(400, { endpoint: ['Este campo es obligatorio.'] }))
+
+    await deletePushSubscription('https://push.example/abc')
+    await expect(deletePushSubscription('')).rejects.toMatchObject({ status: 400, data: { endpoint: ['Este campo es obligatorio.'] } })
+
+    const [path, options] = fetchMock.mock.calls[0]
+    expect(path).toBe('/api/alertas/suscripcion/')
+    expect(options.method).toBe('DELETE')
+    expect(JSON.parse(options.body)).toEqual({ endpoint: 'https://push.example/abc' })
+  })
+
+  it('expulsa a un miembro con DELETE autenticado y sin cuerpo', async () => {
+    saveSession({ access: 'access-token', refresh: 'refresh-token' })
+    fetchMock.mockResolvedValue(emptyResponse(204))
+
+    await expect(expelMember('7', '2')).resolves.toBeUndefined()
+
+    const [path, options] = fetchMock.mock.calls[0]
+    expect(path).toBe('/api/escuadrones/7/miembros/2/')
+    expect(options.method).toBe('DELETE')
+    expect(options.body).toBeUndefined()
+    expect(options.headers.get('Authorization')).toBe('Bearer access-token')
+  })
+
+  it.each([
+    [403, { detail: 'Solo un administrador puede expulsar miembros.' }],
+    [404, { detail: 'El usuario no pertenece a este escuadrón.' }],
+  ])('si no se puede expulsar lanza ApiError %i con el detalle', async (status, data) => {
+    saveSession({ access: 'access-token', refresh: 'refresh-token' })
+    fetchMock.mockResolvedValue(jsonResponse(status, data))
+
+    await expect(expelMember('7', '2')).rejects.toMatchObject({ name: 'ApiError', status, data })
   })
 
   it('renueva el access y guarda los tokens nuevos', async () => {

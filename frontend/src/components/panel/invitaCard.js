@@ -7,7 +7,7 @@ export function plazasLibres(libres) {
   return libres === 1 ? 'Queda 1 plaza' : `Quedan ${libres} plazas`
 }
 
-export function invitaCard({ codigo = '', libres = 0, className = 'hidden lg:flex' } = {}) {
+export function invitaCard({ codigo = '', libres = 0, className = 'col-span-2 flex lg:col-span-1' } = {}) {
   const status = element('p', 'mt-2 hidden text-[0.8125rem] font-bold text-ink-muted')
   status.setAttribute('role', 'status')
 

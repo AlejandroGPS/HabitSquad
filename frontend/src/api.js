@@ -34,8 +34,8 @@ function expireSession() {
   window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
 }
 
-export async function register({ email, password }) {
-  return await postJson('/api/auth/register/', { email, password })
+export async function register({ email, nickname, password, password_confirm }) {
+  return await postJson('/api/auth/register/', { email, nickname, password, password_confirm })
 }
 
 export async function login({ email, password }) {
@@ -143,6 +143,27 @@ export async function getSquad(squadId) {
   return readJson(response)
 }
 
+export async function getSquadConfiguration(squadId) {
+  const response = await authFetch(`/api/escuadrones/${squadId}/configuracion/`)
+  if (!response.ok) throw new ApiError(response.status, await readJson(response))
+  return readJson(response)
+}
+
+export async function updateSquadConfiguration(squadId, changes) {
+  const response = await authFetch(`/api/escuadrones/${squadId}/configuracion/`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(changes),
+  })
+  if (!response.ok) throw new ApiError(response.status, await readJson(response))
+  return readJson(response)
+}
+
+export async function expelMember(squadId, userId) {
+  const response = await authFetch(`/api/escuadrones/${squadId}/miembros/${userId}/`, { method: 'DELETE' })
+  if (!response.ok) throw new ApiError(response.status, await readJson(response))
+}
+
 function proofPath(squadId, proofId) {
   return `/api/escuadrones/${squadId}/pruebas/${proofId}/`
 }
@@ -202,13 +223,104 @@ export async function saveDailyHabit(squadId, habit) {
   return readJson(response)
 }
 
+export async function getVapidPublicKey() {
+  const response = await fetch('/api/alertas/vapid-public-key/')
+  const data = await readJson(response)
+  if (!response.ok) throw new ApiError(response.status, data)
+  return data.public_key
+}
+
+export async function savePushSubscription({ endpoint, keys }) {
+  const response = await authFetch('/api/alertas/suscripcion/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth } }),
+  })
+  const data = await readJson(response)
+  if (!response.ok) throw new ApiError(response.status, data)
+  return data
+}
+
+export async function deletePushSubscription(endpoint) {
+  const response = await authFetch('/api/alertas/suscripcion/', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ endpoint }),
+  })
+  if (!response.ok) throw new ApiError(response.status, await readJson(response))
+}
+
+// Los avisos de este navegador son de la cuenta que los activó: al salir se dan de baja para que
+// no le lleguen a quien entre después. Va con el access sin renovar para no expirar la sesión a medias.
+async function darDeBajaAvisos(session) {
+  try {
+    const registration = await navigator.serviceWorker?.getRegistration()
+    const subscription = await registration?.pushManager?.getSubscription()
+    if (!subscription) return
+    await fetch('/api/alertas/suscripcion/', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access}` },
+      body: JSON.stringify({ endpoint: subscription.endpoint }),
+    }).catch(() => {})
+    await subscription.unsubscribe()
+  } catch {
+    // Sin service worker o sin permiso no hay nada que dar de baja.
+  }
+}
+
 export async function logout() {
   const session = getSession()
   clearSession()
   if (!session) return
+  await darDeBajaAvisos(session)
   try {
     await postJson('/api/auth/logout/', { refresh: session.refresh })
   } catch {
     // Si el refresh ya caducó o no hay conexión, la sesión local queda cerrada igual.
   }
+}
+
+async function profileRequest(path = '', options = {}) {
+  const response = await authFetch(`/api/perfil/${path}`, options)
+  const data = await readJson(response)
+  if (!response.ok) throw new ApiError(response.status, data)
+  return data
+}
+
+export function getProfile() {
+  return profileRequest()
+}
+
+export function updateProfile(changes) {
+  return profileRequest('', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(changes),
+  })
+}
+
+export function uploadProfilePhoto(photo) {
+  const body = new FormData()
+  body.append('foto', photo)
+  return profileRequest('foto/', { method: 'POST', body })
+}
+
+export function requestProfileEmail(email) {
+  return profileRequest('email/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email.trim().toLowerCase() }),
+  })
+}
+
+export function confirmProfileEmail({ uid, token }) {
+  return postJson('/api/perfil/email/confirm/', { uid, token })
+}
+
+export function changeProfilePassword({ password_actual, password, password_confirm }) {
+  return profileRequest('password/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password_actual, password, password_confirm }),
+  })
 }

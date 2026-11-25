@@ -37,6 +37,30 @@ describe('semanaCard', () => {
     expect(colores(dias[0]).every((color) => color.includes('bg-[#e5e5ea]'))).toBe(true)
   })
 
+  it('trata como sin prueba un estado que no conoce', () => {
+    const dias = filas(semanaCard({ miembros: [{ estado: 'desconocido', semana: [{ estado: 'otro' }] }], ahora: AHORA }))
+    const color = (dia) => dia.nextSibling.firstElementChild.className
+
+    expect(color(dias[0])).toContain('bg-[#e5e5ea]')
+    expect(color(dias[6])).toContain('bg-[#e5e5ea]')
+  })
+
+  it('pone encima de cada columna de barras la cara del miembro al que corresponde', () => {
+    const card = semanaCard({
+      miembros: [
+        { nombre: 'ale', fotoUrl: 'https://res.cloudinary.com/demo/ale.jpg', estado: 'cumplido' },
+        { nombre: 'lau', estado: 'pendiente' },
+      ],
+      ahora: AHORA,
+    })
+    const caras = [...card.querySelectorAll('.pl-14 > span > span')]
+
+    expect(caras.map((cara) => cara.title)).toEqual(['ale', 'lau'])
+    expect(caras[0].querySelector('img').getAttribute('src')).toBe('https://res.cloudinary.com/demo/ale.jpg')
+    expect(caras[1].textContent).toBe('L')
+    expect(filas(card)[6].nextSibling.children).toHaveLength(caras.length)
+  })
+
   it('solo se ve en web por defecto y usa hoy si no se pasa la fecha', () => {
     vi.useFakeTimers()
     vi.setSystemTime(AHORA)
@@ -46,5 +70,6 @@ describe('semanaCard', () => {
     expect(card.classList.contains('lg:flex')).toBe(true)
     expect(filas(card)[6].textContent).toBe('D 25')
     expect(filas(card)[6].nextSibling.children).toHaveLength(0)
+    expect(card.querySelector('.pl-14')).toBeNull()
   })
 })

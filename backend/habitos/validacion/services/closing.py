@@ -4,12 +4,17 @@ from datetime import date
 
 from django.utils import timezone
 
+from escuadrones.tiempo_real.events import programar_actualizacion_panel
 from habitos.models import RegistroDiario, VotoValidacion
 
 from .voting import contar_votantes_elegibles, mayoria_alcanzada
 
 
-def cerrar_pruebas_pendientes(*, fecha: date | None = None) -> int:
+def cerrar_pruebas_pendientes(
+    *,
+    fecha: date | None = None,
+    notificar: bool = True,
+) -> int:
     """
     Cierra los registros pendientes de la fecha indicada (Europe/Madrid).
 
@@ -29,6 +34,7 @@ def cerrar_pruebas_pendientes(*, fecha: date | None = None) -> int:
     )
 
     cerrados = 0
+    escuadrones_actualizados = set()
     for registro in pendientes:
         votos_si = sum(
             1 for v in registro.votos.all() if v.voto == VotoValidacion.Valor.SI
@@ -40,4 +46,12 @@ def cerrar_pruebas_pendientes(*, fecha: date | None = None) -> int:
             registro.estado = RegistroDiario.Estado.NO_CUMPLIDO
         registro.save(update_fields=["estado", "actualizado_en"])
         cerrados += 1
+        escuadrones_actualizados.add(registro.habito.membresia.escuadron_id)
+
+    if notificar:
+        for escuadron_id in escuadrones_actualizados:
+            programar_actualizacion_panel(
+                escuadron_id=escuadron_id,
+                motivo="cierre_diario",
+            )
     return cerrados

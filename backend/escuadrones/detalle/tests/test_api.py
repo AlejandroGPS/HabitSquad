@@ -1,4 +1,5 @@
-from datetime import timedelta
+from datetime import UTC, date, datetime, time, timedelta
+from unittest.mock import patch
 
 import pytest
 from django.urls import reverse
@@ -6,9 +7,42 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
+from escuadrones.detalle.services import lunes_de
 from escuadrones.models import Escuadron, Membresia
 from habitos.models import HabitoDiario, RegistroDiario
 from usuarios.models import CustomUser
+
+SIGNED_FOTO_URL = (
+    "https://res.cloudinary.com/demo/image/private/s--firma--/v1/perfiles/abc.jpg"
+)
+SIGNED_FOTO_URL_CREATOR = (
+    "https://res.cloudinary.com/demo/image/private/s--c1--/v1/perfiles/u-creator.jpg"
+)
+SIGNED_FOTO_URL_MEMBER = (
+    "https://res.cloudinary.com/demo/image/private/s--m1--/v1/perfiles/u-member.jpg"
+)
+
+SQUAD_PANEL_KEYS = {
+    "id",
+    "nombre",
+    "codigo_invitacion",
+    "es_publico",
+    "limite_miembros",
+    "creador_id",
+    "miembros",
+    "racha",
+}
+
+MEMBER_PANEL_KEYS = {
+    "usuario_id",
+    "es_administrador",
+    "es_usuario",
+    "nickname",
+    "foto_url",
+    "habito",
+    "prueba_hoy",
+    "semana",
+}
 
 
 @pytest.fixture
@@ -21,6 +55,7 @@ def creator(db):
     return CustomUser.objects.create_user(
         email="creador@example.com",
         password="S0mething!Secure-497",
+        nickname="CreadorHero",
     )
 
 
@@ -29,6 +64,7 @@ def member(db):
     return CustomUser.objects.create_user(
         email="miembro@example.com",
         password="S0mething!Secure-497",
+        nickname="MiembroPro",
     )
 
 
@@ -37,6 +73,7 @@ def outsider(db):
     return CustomUser.objects.create_user(
         email="externo@example.com",
         password="S0mething!Secure-497",
+        nickname="ExternoUser",
     )
 
 
@@ -70,8 +107,20 @@ def authenticated_client(api_client, user):
     return api_client
 
 
+def members_by_usuario_id(payload):
+    return {item["usuario_id"]: item for item in payload["miembros"]}
+
+
 @pytest.mark.django_db
 def test_squad_detail_requires_authentication(api_client, squad):
+    response = api_client.get(detail_url(squad))
+
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_squad_detail_rejects_invalid_token(api_client, squad):
+    api_client.credentials(HTTP_AUTHORIZATION="Bearer token-invalido")
     response = api_client.get(detail_url(squad))
 
     assert response.status_code == 401
@@ -95,7 +144,7 @@ def test_squad_detail_rejects_unknown_squad(api_client, member):
 
 
 @pytest.mark.django_db
-def test_squad_detail_includes_each_members_habit_or_null(
+def test_squad_detail_panel_happy_path_includes_nicknames(
     api_client,
     creator,
     member,
@@ -117,41 +166,219 @@ def test_squad_detail_includes_each_members_habit_or_null(
         habito=habit, fecha=today, cloudinary_public_id="pruebas/hoy"
     )
 
-    response = authenticated_client(api_client, creator).get(detail_url(squad))
+    response = authenticated_client(api_client, member).get(detail_url(squad))
 
     assert response.status_code == 200
-    assert set(response.data) == {
-        "id",
-        "nombre",
-        "codigo_invitacion",
-        "creador_id",
-        "miembros",
-        "racha",
-    }
-    members_by_id = {item["usuario_id"]: item for item in response.data["miembros"]}
-    assert members_by_id[member.pk]["habito"]["id"] == habit.pk
-    assert members_by_id[member.pk]["habito"]["texto_personalizado"] == (
-        "Leer 20 páginas"
-    )
-    assert members_by_id[creator.pk]["habito"] is None
-    assert members_by_id[creator.pk]["es_usuario"] is True
-    assert members_by_id[creator.pk]["prueba_hoy"] is None
-    assert members_by_id[member.pk]["es_usuario"] is False
-    assert members_by_id[member.pk]["prueba_hoy"] == {
+    assert set(response.data) == SQUAD_PANEL_KEYS
+    assert response.data["id"] == squad.pk
+    assert response.data["nombre"] == "Madrugadores"
+    assert response.data["codigo_invitacion"] == "X8K9QL"
+    assert response.data["creador_id"] == creator.pk
+    assert isinstance(response.data["racha"], int)
+
+    by_id = members_by_usuario_id(response.data)
+    assert set(by_id) == {creator.pk, member.pk}
+    assert set(by_id[creator.pk]) == MEMBER_PANEL_KEYS
+    assert set(by_id[member.pk]) == MEMBER_PANEL_KEYS
+    assert "nombre" not in by_id[creator.pk]
+    assert "nombre" not in by_id[member.pk]
+
+    assert by_id[creator.pk]["nickname"] == "CreadorHero"
+    assert by_id[member.pk]["nickname"] == "MiembroPro"
+    assert by_id[creator.pk]["foto_url"] is None
+    assert by_id[member.pk]["foto_url"] is None
+    assert by_id[creator.pk]["es_administrador"] is True
+    assert by_id[member.pk]["es_administrador"] is False
+    assert by_id[creator.pk]["es_usuario"] is False
+    assert by_id[member.pk]["es_usuario"] is True
+
+    assert by_id[creator.pk]["habito"] is None
+    assert by_id[member.pk]["habito"]["id"] == habit.pk
+    assert by_id[member.pk]["habito"]["opcion"] == HabitoDiario.Opcion.OTRO
+    assert by_id[member.pk]["habito"]["texto_personalizado"] == "Leer 20 páginas"
+    assert by_id[creator.pk]["prueba_hoy"] is None
+    assert by_id[member.pk]["prueba_hoy"] == {
         "id": proof.pk,
+        "estado": "pendiente",
+    }
+    assert len(by_id[creator.pk]["semana"]) == 7
+    assert len(by_id[member.pk]["semana"]) == 7
+    assert by_id[member.pk]["semana"][today.weekday()] == {
+        "fecha": today.isoformat(),
         "estado": "pendiente",
     }
 
 
 @pytest.mark.django_db
-def test_squad_detail_includes_streak_and_week(api_client, creator, member, squad):
-    today = timezone.localdate()
-    Escuadron.objects.filter(pk=squad.pk).update(
-        creado_en=timezone.now() - timedelta(days=10)
+def test_squad_detail_foto_url_null_when_member_has_no_public_id(
+    api_client, creator, member, squad
+):
+    with patch(
+        "escuadrones.detalle.api.serializers.build_signed_foto_url",
+        return_value=SIGNED_FOTO_URL,
+    ) as build_url:
+        response = authenticated_client(api_client, member).get(detail_url(squad))
+
+    assert response.status_code == 200
+    by_id = members_by_usuario_id(response.data)
+    assert by_id[creator.pk]["foto_url"] is None
+    assert by_id[member.pk]["foto_url"] is None
+    assert "foto_perfil_public_id" not in by_id[creator.pk]
+    assert "foto_perfil_public_id" not in by_id[member.pk]
+    build_url.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_squad_detail_foto_url_null_or_signed_per_member(
+    api_client, creator, member, squad
+):
+    member.foto_perfil_public_id = "perfiles/miembro"
+    member.save(update_fields=["foto_perfil_public_id"])
+
+    with patch(
+        "escuadrones.detalle.api.serializers.build_signed_foto_url",
+        return_value=SIGNED_FOTO_URL_MEMBER,
+    ) as build_url:
+        response = authenticated_client(api_client, creator).get(detail_url(squad))
+
+    assert response.status_code == 200
+    by_id = members_by_usuario_id(response.data)
+    assert by_id[creator.pk]["foto_url"] is None
+    assert by_id[member.pk]["foto_url"] == SIGNED_FOTO_URL_MEMBER
+    assert "foto_perfil_public_id" not in by_id[member.pk]
+    assert "perfiles/miembro" not in str(response.data)
+    build_url.assert_called_once_with("perfiles/miembro")
+
+
+@pytest.mark.django_db
+def test_squad_detail_foto_url_signed_for_each_member_with_public_id(
+    api_client, creator, member, squad
+):
+    creator.foto_perfil_public_id = "perfiles/creador"
+    creator.save(update_fields=["foto_perfil_public_id"])
+    member.foto_perfil_public_id = "perfiles/miembro"
+    member.save(update_fields=["foto_perfil_public_id"])
+
+    def signed_url(public_id):
+        return {
+            "perfiles/creador": SIGNED_FOTO_URL_CREATOR,
+            "perfiles/miembro": SIGNED_FOTO_URL_MEMBER,
+        }[public_id]
+
+    with patch(
+        "escuadrones.detalle.api.serializers.build_signed_foto_url",
+        side_effect=signed_url,
+    ) as build_url:
+        response = authenticated_client(api_client, member).get(detail_url(squad))
+
+    assert response.status_code == 200
+    by_id = members_by_usuario_id(response.data)
+    assert by_id[creator.pk]["foto_url"] == SIGNED_FOTO_URL_CREATOR
+    assert by_id[member.pk]["foto_url"] == SIGNED_FOTO_URL_MEMBER
+    assert "foto_perfil_public_id" not in by_id[creator.pk]
+    assert "foto_perfil_public_id" not in by_id[member.pk]
+    assert "perfiles/creador" not in str(response.data)
+    assert "perfiles/miembro" not in str(response.data)
+    assert build_url.call_count == 2
+    build_url.assert_any_call("perfiles/creador")
+    build_url.assert_any_call("perfiles/miembro")
+
+
+@pytest.mark.django_db
+def test_squad_detail_habito_null_or_configured(api_client, creator, member, squad):
+    membership = Membresia.objects.get(escuadron=squad, usuario=member)
+    habit = HabitoDiario.objects.create(
+        membresia=membership,
+        opcion=HabitoDiario.Opcion.LEER,
+        texto_personalizado="",
     )
-    Membresia.objects.filter(escuadron=squad).update(
-        unido_en=timezone.now() - timedelta(days=10)
+
+    response = authenticated_client(api_client, member).get(detail_url(squad))
+
+    assert response.status_code == 200
+    by_id = members_by_usuario_id(response.data)
+    assert by_id[creator.pk]["habito"] is None
+    assert by_id[creator.pk]["prueba_hoy"] is None
+    assert set(by_id[member.pk]["habito"]) == {
+        "id",
+        "opcion",
+        "texto_personalizado",
+        "creado_en",
+        "actualizado_en",
+    }
+    assert by_id[member.pk]["habito"]["id"] == habit.pk
+    assert by_id[member.pk]["habito"]["opcion"] == HabitoDiario.Opcion.LEER
+    assert by_id[member.pk]["prueba_hoy"] is None
+
+
+@pytest.mark.django_db
+def test_squad_detail_prueba_hoy_null_without_today_registro(
+    api_client, creator, member, squad
+):
+    membership = Membresia.objects.get(escuadron=squad, usuario=member)
+    habit = HabitoDiario.objects.create(
+        membresia=membership,
+        opcion=HabitoDiario.Opcion.GIMNASIO,
     )
+    RegistroDiario.objects.create(
+        habito=habit,
+        fecha=timezone.localdate() - timedelta(days=1),
+        estado=RegistroDiario.Estado.CUMPLIDO,
+        cloudinary_public_id="pruebas/ayer",
+    )
+
+    response = authenticated_client(api_client, creator).get(detail_url(squad))
+
+    assert response.status_code == 200
+    by_id = members_by_usuario_id(response.data)
+    assert by_id[member.pk]["habito"]["id"] == habit.pk
+    assert by_id[member.pk]["prueba_hoy"] is None
+
+
+@pytest.mark.parametrize(
+    "estado",
+    [
+        RegistroDiario.Estado.PENDIENTE,
+        RegistroDiario.Estado.CUMPLIDO,
+        RegistroDiario.Estado.NO_CUMPLIDO,
+    ],
+)
+@pytest.mark.django_db
+def test_squad_detail_prueba_hoy_matches_registro_estado(
+    api_client, creator, member, squad, estado
+):
+    membership = Membresia.objects.get(escuadron=squad, usuario=member)
+    habit = HabitoDiario.objects.create(
+        membresia=membership,
+        opcion=HabitoDiario.Opcion.ESTUDIAR,
+    )
+    proof = RegistroDiario.objects.create(
+        habito=habit,
+        fecha=timezone.localdate(),
+        estado=estado,
+        cloudinary_public_id=f"pruebas/{estado}",
+    )
+
+    response = authenticated_client(api_client, creator).get(detail_url(squad))
+
+    assert response.status_code == 200
+    by_id = members_by_usuario_id(response.data)
+    assert by_id[member.pk]["prueba_hoy"] == {"id": proof.pk, "estado": estado}
+    assert by_id[creator.pk]["prueba_hoy"] is None
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "today", [date(2026, 11, 23), date(2026, 11, 25)], ids=["lunes", "miercoles"]
+)
+def test_squad_detail_includes_invite_code_streak_and_week(
+    api_client, creator, member, squad, today, monkeypatch
+):
+    now = datetime.combine(today, time(12), tzinfo=UTC)
+    monkeypatch.setattr(timezone, "now", lambda: now)
+    monday = lunes_de(today)
+    Escuadron.objects.filter(pk=squad.pk).update(creado_en=now - timedelta(days=10))
+    Membresia.objects.filter(escuadron=squad).update(unido_en=now - timedelta(days=10))
     for user in (creator, member):
         habit = HabitoDiario.objects.create(
             membresia=Membresia.objects.get(escuadron=squad, usuario=user),
@@ -168,11 +395,29 @@ def test_squad_detail_includes_streak_and_week(api_client, creator, member, squa
     response = authenticated_client(api_client, member).get(detail_url(squad))
 
     assert response.status_code == 200
-    assert response.data["racha"] == 2
-    week = response.data["miembros"][0]["semana"]
-    assert len(week) == 7
-    assert week[today.weekday()] == {"fecha": today.isoformat(), "estado": "cumplido"}
-    assert all(day["estado"] is None for day in week[today.weekday() + 1 :])
+    assert response.data["codigo_invitacion"] == "X8K9QL"
+    assert response.data["es_publico"] is False
+    assert response.data["limite_miembros"] == 5
+    # La racha solo cuenta jornadas anteriores a hoy.
+    assert response.data["racha"] == 1
+
+    expected_fechas = [(monday + timedelta(days=i)).isoformat() for i in range(7)]
+    by_id = members_by_usuario_id(response.data)
+    for user in (creator, member):
+        week = by_id[user.pk]["semana"]
+        assert len(week) == 7
+        assert [day["fecha"] for day in week] == expected_fechas
+        assert set(week[0]) == {"fecha", "estado"}
+        assert week[today.weekday()] == {
+            "fecha": today.isoformat(),
+            "estado": "cumplido",
+        }
+        if today.weekday() > 0:
+            assert week[today.weekday() - 1] == {
+                "fecha": (today - timedelta(days=1)).isoformat(),
+                "estado": "cumplido",
+            }
+        assert all(day["estado"] is None for day in week[today.weekday() + 1 :])
 
 
 def test_squad_detail_is_documented_in_openapi_schema(api_client):
@@ -184,3 +429,32 @@ def test_squad_detail_is_documented_in_openapi_schema(api_client):
     assert operation["summary"] == "Consultar detalle de un escuadrón"
     assert operation["tags"] == ["Escuadrones"]
     assert set(operation["responses"]) == {"200", "401", "403", "404"}
+    assert "docs/HABITOS.md" in operation["description"]
+    assert "nickname" in operation["description"].lower()
+    assert "foto" in operation["description"].lower()
+    assert "401" in operation["responses"]
+    assert "403" in operation["responses"]
+    assert "404" in operation["responses"]
+
+    schemas = response.data["components"]["schemas"]
+    member_schema = schemas.get("MembresiaConPrueba") or schemas.get(
+        "MembresiaConPruebaSerializer"
+    )
+    assert member_schema is not None
+    props = member_schema["properties"]
+    assert set(props) >= MEMBER_PANEL_KEYS
+    assert "nickname" in props
+    assert "foto_url" in props
+    assert props["foto_url"].get("nullable") is True
+    assert "nombre" not in props
+    assert "foto_perfil_public_id" not in props
+    assert "hora_aviso" not in props
+
+    squad_schema = schemas.get("EscuadronDetalle") or schemas.get(
+        "EscuadronDetalleSerializer"
+    )
+    assert squad_schema is not None
+    squad_props = squad_schema["properties"]
+    assert set(squad_props) >= SQUAD_PANEL_KEYS
+    assert "codigo_invitacion" in squad_props
+    assert "racha" in squad_props

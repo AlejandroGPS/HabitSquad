@@ -38,12 +38,16 @@ crear elementos y lanzar eventos.
 
 ## Registro y sesión
 
-`/registro` envía el correo y la contraseña a `POST /api/auth/register/`. Tras
+`/registro` envía el correo, el nickname, la contraseña y su confirmación
+(`email`, `nickname`, `password`, `password_confirm`) a `POST /api/auth/register/`.
+El nickname se recorta y ambas contraseñas deben coincidir exactamente. Los
+errores del backend se muestran junto a cada campo. Tras crear la cuenta se
+pide verificar el correo, según el contrato de `docs/REGISTRO.md`. Tras
 verificar el correo, `/login` pide `POST /api/auth/token/` y guarda la sesión
 en `localStorage` con la clave `habitsquad.session`.
 
-A continuación la aplicación abre `/`. La ruta `/menu` se conserva por
-compatibilidad. En desarrollo, Vite reenvía `/api` a
+A continuación la aplicación abre `/escuadrones`, «Mis escuadrones». La presentación
+está en `/`. En desarrollo, Vite reenvía `/api` y `/ws` a
 `http://127.0.0.1:8000`. El contrato de la API está en
 OpenAPI y el recorrido de la sesión, en `docs/AUTENTICACION_JWT.md`.
 
@@ -148,10 +152,23 @@ o no la cuenta. El enlace del mensaje abre `/reset-password`, donde el usuario
 escribe y confirma la nueva contraseña. La pantalla envía el código del enlace
 y la nueva contraseña a `POST /api/auth/password-reset/confirm/`.
 
-En desarrollo, `npm run dev` y `npm run preview` reenvían `/api` al backend en
-`http://localhost:8000`, así que hay que tener `python manage.py runserver` en
-marcha para iniciar sesión. En producción Caddy sirve frontend y API en el
-mismo dominio.
+En desarrollo, `npm run dev` y `npm run preview` reenvían `/api` y `/ws` al
+backend en `http://127.0.0.1:8000`, así que hay que tener `python manage.py
+runserver` en marcha para iniciar sesión. En producción Caddy sirve frontend y
+API en el mismo dominio.
+
+## Panel en directo
+
+El panel del escuadrón se conecta por WebSocket a `/ws/escuadrones/{id}/`
+cuando termina de cargar (`src/tiempoReal.js`). El servidor solo avisa de que
+algo ha cambiado; el panel vuelve a pedir el detalle por REST y repinta la
+racha y los miembros sin recargar la página ni repetir las animaciones de
+entrada. La conexión se cierra al salir del panel.
+
+`runserver` no atiende WebSockets: para probar el panel en directo, la API
+tiene que ir con uvicorn o con `docker-compose.dev.yml`. El contrato, la
+reconexión y la renovación del token están en
+[`docs/SINCRONIZACION_TIEMPO_REAL.md`](../docs/SINCRONIZACION_TIEMPO_REAL.md).
 
 ## PWA
 
@@ -171,6 +188,31 @@ En Chrome, la pestaña Application de las herramientas de desarrollo muestra el
 manifest y el estado del service worker. Para instalarla en un móvil hace falta
 HTTPS, así que se prueba con la versión desplegada.
 
+## Alertas
+
+La pantalla `/alertas` (sección «Alertas» del menú) activa los avisos push de
+este navegador y enseña la hora de aviso del perfil. «Cambiar hora» lleva a
+`/perfil/editar#recordatorio`, donde se guarda con `PATCH /api/perfil/`.
+
+- `src/avisos.js` pide el permiso de notificaciones, se suscribe con la clave
+  VAPID de `GET /api/alertas/vapid-public-key/` y registra o borra la
+  suscripción en `/api/alertas/suscripcion/`. Si el servidor cambia de clave,
+  rehace la suscripción.
+- `public/sw-avisos.js` lo importa el service worker de Workbox: muestra la
+  notificación con el texto que manda el servidor y, al pulsarla, abre
+  «Mis escuadrones».
+- «Ahora no» se recuerda en este navegador hasta que se activan los avisos.
+- Al cerrar sesión se borra la suscripción del navegador y del servidor, para
+  que los avisos no le lleguen a quien entre después.
+
+Como necesitan el service worker, los avisos solo funcionan con el build
+(`npm run build && npm run preview`); con `npm run dev` la pantalla indica que
+no están disponibles. El backend tiene que tener las variables `VAPID_*` (ver
+[`docs/ALERTAS.md`](../docs/ALERTAS.md)) y, para que se envíen solos a su hora,
+el worker de Django Q2 en marcha. En iPhone y iPad solo llegan si la app está
+añadida a la pantalla de inicio. Chrome no permite avisos push en ventanas de
+incógnito.
+
 ## Estructura
 
 - `index.html`: punto de entrada de la aplicación.
@@ -180,9 +222,50 @@ HTTPS, así que se prueba con la versión desplegada.
 - `src/routes.js`: rutas, pantallas y rutas que exigen sesión.
 - `src/api.js`: inicio y cierre de sesión, renovación de tokens y `authFetch`.
 - `src/session.js`: guarda los tokens en el navegador.
+- `src/tiempoReal.js`: conexión WebSocket del panel del escuadrón.
+- `src/avisos.js`: permiso de notificaciones y suscripción Web Push.
 - `src/components/`: piezas reutilizables de diseño, formularios y navegación.
 - `src/views/`: pantallas de la aplicación.
 - `src/style.css`: importa Tailwind CSS.
 - `public/`: ficheros estáticos que se copian tal cual al build, incluidos los
-  iconos de la PWA.
+  iconos de la PWA y `sw-avisos.js` (avisos push del service worker).
 - `vite.config.js`: configuración de Vite, Tailwind, la PWA y Vitest.
+
+## Perfil de usuario
+
+El menú de cuenta enlaza a `/perfil` y `/perfil/editar`. La integración, las
+pruebas y las dependencias pendientes del backend se describen en
+[PERFIL_USUARIO_FRONTEND.md](../docs/PERFIL_USUARIO_FRONTEND.md).
+
+## Configuración del escuadrón
+
+«Configuración» se abre desde el menú lateral del panel o desde el botón de
+ajustes de la cabecera móvil. La ruta `/escuadrones/configuracion?origen=ID`
+requiere sesión y conserva el escuadrón seleccionado en el menú y al volver.
+Sin un ID válido se pide abrirla desde el panel, sin consultar la API.
+
+La aplicación usa el adaptador `src/configuracion-api.js`, con JWT y renovación
+de sesión a través de `authFetch`. Consulta la configuración con GET y guarda
+nombre, visibilidad y límite mediante PATCH en
+`/api/escuadrones/{id}/configuracion/`. El detalle del escuadrón aporta miembros,
+fotos, papeles y código. El contrato está en
+[CONFIGURACION_ESCUADRON.md](../docs/CONFIGURACION_ESCUADRON.md).
+
+- General mantiene el borrador hasta guardar o descartar. El resumen refleja
+  los valores guardados y el servidor valida las modificaciones.
+- El límite empieza en 5 y admite enteros desde 2. Se permite reducirlo por
+  debajo de la ocupación; se avisa de que nadie será expulsado y que no habrá
+  nuevas incorporaciones hasta que queden plazas. No hay máximo de 10 en la API.
+- Solo administra quien autoriza el backend. Un 403 retira los controles y
+  muestra el aviso correspondiente, también si se pierde el permiso al guardar.
+- Miembros muestra los datos reales. Invitaciones permite copiar el código.
+  Expulsar, eliminar y regenerar no aparecen porque aún no existen sus endpoints.
+- Los errores de validación o red conservan el borrador para reintentar.
+  Los controles se bloquean durante el guardado para evitar peticiones duplicadas.
+- El panel y el selector muestran `limite_miembros` en vez de asumir cinco plazas.
+
+`npm run dev` también sirve `/previews/configuracion.html`, una vista previa
+independiente que inyecta explícitamente `demo: true`, el ID de ejemplo y
+`createMockSquadSettings()`. `?rol=miembro` muestra la vista sin permisos.
+Solo esta demo conserva las operaciones simuladas de expulsión, eliminación y
+regeneración y los límites de la propuesta visual (2–10). No modifica la API.

@@ -58,7 +58,7 @@ jobs:
         working-directory: backend
         run: >
           pytest --cov=usuarios --cov=autenticacion --cov=escuadrones --cov=habitos
-          --cov-report=term-missing --cov-fail-under=100
+          --cov=alertas --cov-report=term-missing --cov-fail-under=100
 
   frontend:
     name: Frontend tests and build
