@@ -159,6 +159,11 @@ export async function updateSquadConfiguration(squadId, changes) {
   return readJson(response)
 }
 
+export async function expelMember(squadId, userId) {
+  const response = await authFetch(`/api/escuadrones/${squadId}/miembros/${userId}/`, { method: 'DELETE' })
+  if (!response.ok) throw new ApiError(response.status, await readJson(response))
+}
+
 function proofPath(squadId, proofId) {
   return `/api/escuadrones/${squadId}/pruebas/${proofId}/`
 }
