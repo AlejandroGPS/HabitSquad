@@ -80,6 +80,7 @@ def test_public_squad_list_returns_only_public_squads(api_client, user, owner):
             "es_publico": True,
             "limite_miembros": 5,
             "miembros_actuales": 1,
+            "racha": 0,
         }
     ]
 

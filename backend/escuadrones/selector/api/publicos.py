@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from escuadrones.detalle.services import ResumenEscuadron
 from escuadrones.models import Escuadron
 
 from .serializers import EscuadronPublicoSerializer
@@ -24,11 +25,24 @@ class EscuadronesPublicosView(APIView):
         },
         description=(
             "Devuelve los escuadrones públicos visibles para usuarios autenticados, "
-            "con el número actual y el límite de miembros."
+            "con su racha, el número actual y el límite de miembros."
         ),
     )
     def get(self, request):
-        escuadrones = Escuadron.objects.filter(es_publico=True).annotate(
-            miembros_actuales=Count("membresias")
+        escuadrones = Escuadron.objects.filter(es_publico=True)
+        nombre = request.query_params.get("q", "").strip()
+        if nombre:
+            escuadrones = escuadrones.filter(nombre__icontains=nombre)
+
+        escuadrones = list(
+            escuadrones.annotate(
+                miembros_actuales=Count("membresias")
+            ).prefetch_related("membresias")
         )
+        for escuadron in escuadrones:
+            escuadron.racha = ResumenEscuadron(
+                escuadron,
+                escuadron.membresias.all(),
+            ).racha
+
         return Response(EscuadronPublicoSerializer(escuadrones, many=True).data)
