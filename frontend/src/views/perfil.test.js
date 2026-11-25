@@ -68,17 +68,19 @@ describe('perfil conectado', () => {
     await vi.waitFor(() => expect(root.textContent).toContain('No se han podido cargar tus hábitos.'))
     expect(root.textContent).toContain('ana@example.com')
   })
-  it('la barra de arriba marca Mi perfil también después de cargar la foto de la cuenta, y en la edición', async () => {
+  it('el menú de la cuenta marca el perfil también después de cargar la foto, y en la edición', async () => {
     window.history.replaceState(null, '', '/perfil')
     const root = perfilScreen({ api: { ...api, getProfile: vi.fn(async () => ({ ...profile, foto_url: 'https://example.com/ana.png' })) } })
     document.body.replaceChildren(root)
     await vi.waitFor(() => expect(root.querySelector('header img[src="https://example.com/ana.png"]')).not.toBeNull())
     expect(root.querySelectorAll('header')).toHaveLength(1)
-    expect(root.querySelector('header [aria-current="page"]').textContent).toBe('Mi perfil')
+    expect(root.querySelector('header [aria-label="Tu cuenta"]').className).toContain('ring-accent')
+    expect([...root.querySelectorAll('header [aria-current]')].map((node) => node.textContent)).toEqual(['Ver perfil'])
+    expect(root.querySelector('header a[data-zona="escuadrones"]')).not.toBeNull()
 
     window.history.replaceState(null, '', '/perfil/editar')
     const edicion = await edit()
-    expect(edicion.querySelector('header [aria-current="true"]').textContent).toBe('Mi perfil')
+    expect(edicion.querySelector('header [aria-current="true"]').textContent).toBe('Ver perfil')
     window.history.replaceState(null, '', '/')
   })
 })

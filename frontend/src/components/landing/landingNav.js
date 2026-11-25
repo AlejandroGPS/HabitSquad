@@ -60,10 +60,10 @@ function seguirSecciones(header, enlaces, secciones) {
 export const ZONAS = [
   { id: 'escuadrones', label: 'Mis escuadrones', href: '/escuadrones', icon: 'users' },
   { id: 'alertas', label: 'Alertas', href: '/alertas', icon: 'bell' },
-  { id: 'perfil', label: 'Mi perfil', href: '/perfil', icon: 'user' },
 ]
 
-// En el móvil no caben los tres textos junto a la marca y la cuenta: se queda el icono con su nombre accesible.
+// El perfil no está aquí: ya se abre desde el menú de la cuenta, que lo marca cuando estás en él.
+// En el móvil no caben los textos junto a la marca y la cuenta: se queda el icono con su nombre accesible.
 function enlaceZona({ id, label, href, icon: nombreIcono }, zona) {
   const actual = id === zona
   const link = enlaceRuta(
