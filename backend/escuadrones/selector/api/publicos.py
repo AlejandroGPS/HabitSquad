@@ -1,5 +1,5 @@
 from django.db.models import Count
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -19,13 +19,26 @@ class EscuadronesPublicosView(APIView):
         operation_id="listarEscuadronesPublicos",
         tags=["Escuadrones"],
         summary="Listar escuadrones públicos",
+        parameters=[
+            OpenApiParameter(
+                name="q",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description=(
+                    "Texto opcional para buscar por nombre con coincidencia "
+                    "parcial, sin distinguir mayúsculas y minúsculas."
+                ),
+            )
+        ],
         responses={
             200: EscuadronPublicoSerializer(many=True),
             401: OpenApiResponse(description="Falta un access token válido."),
         },
         description=(
-            "Devuelve los escuadrones públicos visibles para usuarios autenticados, "
-            "con su racha, el número actual y el límite de miembros."
+            "Devuelve los escuadrones públicos a los que el usuario autenticado "
+            "todavía no pertenece, con su racha, el número actual y el límite de "
+            "miembros. El parámetro opcional q filtra por nombre."
         ),
     )
     def get(self, request):

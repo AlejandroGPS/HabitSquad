@@ -114,3 +114,8 @@ def test_public_squad_list_is_documented_in_openapi(api_client):
     operation = response.data["paths"]["/api/escuadrones/publicos/"]["get"]
     assert operation["operationId"] == "listarEscuadronesPublicos"
     assert set(operation["responses"]) == {"200", "401"}
+    parameters = {parameter["name"]: parameter for parameter in operation["parameters"]}
+    assert parameters["q"]["in"] == "query"
+    assert not parameters["q"].get("required", False)
+    assert parameters["q"]["schema"]["type"] == "string"
+    assert "coincidencia parcial" in parameters["q"]["description"]
