@@ -4,6 +4,7 @@ import { icon } from './icons.js'
 
 export const APP_NAV = [
   { id: 'escuadron', label: 'Escuadrón', icon: 'users', href: '/escuadrones' },
+  { id: 'racha', label: 'Racha', icon: 'flame' },
   { id: 'alertas', label: 'Alertas', icon: 'bell', href: '/alertas' },
   { id: 'habito', label: 'Mi hábito', icon: 'book', href: '/habito', webOnly: true },
 ]
@@ -101,17 +102,4 @@ export function appLayout({ active, kicker, title, leading, trailing, sidebarFoo
     sidebar(active, sidebarFooter, navItems),
     element('div', 'min-w-0 flex-1', content),
   )
-}
-
-// Actualiza los permisos del menú sin reconstruir formularios ni perder su contenido.
-export function updateAppNavigation(root, active, items) {
-  const focused = document.activeElement
-  const focusedHref = root.querySelector('nav a:focus')?.getAttribute('href')
-  const desktop = root.querySelector('aside nav[aria-label="Secciones"]')
-  desktop?.replaceChildren(...sidebar(active, null, items).querySelector('nav').children)
-  const mobile = [...root.querySelectorAll('nav[aria-label="Secciones"]')].find((nav) => !nav.closest('aside'))
-  mobile?.replaceChildren(...tabBar(active, items).children)
-  if (focusedHref && !focused.isConnected) {
-    [...root.querySelectorAll('nav a')].find((link) => link.getAttribute('href') === focusedHref)?.focus({ preventScroll: true })
-  }
 }

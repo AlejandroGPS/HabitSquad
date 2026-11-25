@@ -1,6 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../api.js'
-import { clearSession, rememberSquad } from '../session.js'
 import { alertasScreen } from './alertas.js'
 
 function almacenFalso(inicial = {}) {
@@ -21,13 +20,12 @@ function avisosFalsos(estado = 'desactivado') {
   }
 }
 
-async function montar({ estado, avisos = avisosFalsos(estado), perfil = { nombre: 'Ana', hora_aviso: '21:30' }, almacen = almacenFalso(), squad = { miembros: [{ es_usuario: true, es_administrador: true }] } } = {}) {
+async function montar({ estado, avisos = avisosFalsos(estado), perfil = { nombre: 'Ana', hora_aviso: '21:30' }, almacen = almacenFalso() } = {}) {
   const getProfile = vi.fn(() => (perfil instanceof Error ? Promise.reject(perfil) : Promise.resolve(perfil)))
-  const getSquad = vi.fn(() => squad instanceof Error ? Promise.reject(squad) : Promise.resolve(squad))
-  const screen = alertasScreen({ onLogout: vi.fn(), api: { getProfile, getSquad }, avisos, almacen })
+  const screen = alertasScreen({ onLogout: vi.fn(), api: { getProfile }, avisos, almacen })
   document.body.replaceChildren(screen)
   await new Promise((resolve) => setTimeout(resolve))
-  return { screen, avisos, almacen, getProfile, getSquad }
+  return { screen, avisos, almacen, getProfile }
 }
 
 const titulo = (screen) => screen.querySelector('h2').textContent
@@ -36,15 +34,8 @@ const pulsar = (screen, texto) => [...screen.querySelectorAll('section button')]
 const estadoTexto = (screen) => screen.querySelector('[role="status"]').textContent
 const errorTexto = (screen) => screen.querySelector('[role="alert"]').textContent
 
-beforeEach(() => {
-  clearSession()
-  window.history.replaceState({}, '', '/alertas')
-})
-
 afterEach(() => {
   document.body.replaceChildren()
-  clearSession()
-  window.history.replaceState({}, '', '/')
 })
 
 describe('alertasScreen', () => {
@@ -53,33 +44,7 @@ describe('alertasScreen', () => {
 
     expect([...screen.querySelectorAll('[aria-current="page"]')].map((item) => item.textContent)).toContain('Alertas')
     expect(screen.querySelector('h1').textContent).toBe('Alertas')
-    expect([...screen.querySelector('aside nav').children].map((item) => item.textContent)).not.toContain('Configuración')
-  })
-
-  it('recupera el escuadrón recordado y comprueba el rol antes de mostrar Configuración', async () => {
-    rememberSquad('7')
-    const { screen, getSquad } = await montar()
-    expect(getSquad).toHaveBeenCalledWith('7')
-    expect(screen.querySelector('aside a[href="/escuadrones/configuracion?origen=7"]')).not.toBeNull()
-    expect(screen.querySelector('nav.lg\\:hidden a[href="/escuadrones/configuracion?origen=7"]')).not.toBeNull()
-  })
-
-  it.each([
-    { miembros: [{ es_usuario: true, es_administrador: false }, { es_usuario: false, es_administrador: true }] },
-    new ApiError(403),
-  ])('oculta Configuración si no confirma permisos en el escuadrón recordado', async (squad) => {
-    rememberSquad('7')
-    const { screen } = await montar({ squad })
-    expect(screen.querySelector('a[href^="/escuadrones/configuracion"]')).toBeNull()
-    expect(screen.querySelector('aside a[href="/escuadrones/panel?id=7"]')).not.toBeNull()
-  })
-
-  it('da prioridad al escuadrón de la URL sobre el recordado', async () => {
-    rememberSquad('7')
-    window.history.replaceState({}, '', '/alertas?escuadron=9')
-    const { screen, getSquad } = await montar()
-    expect(getSquad).toHaveBeenCalledWith('9')
-    expect(screen.querySelector('aside a[href="/escuadrones/configuracion?origen=9"]')).not.toBeNull()
+    expect([...screen.querySelector('aside nav').children].map((item) => item.textContent)).toContain('Configuración')
   })
 
   it('mientras comprueba los avisos no ofrece acciones', () => {

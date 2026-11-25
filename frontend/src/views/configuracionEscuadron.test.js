@@ -29,7 +29,7 @@ describe('pantalla de configuración', () => {
     document.body.replaceChildren(page)
     await vi.waitFor(() => expect(page.querySelector('input')).not.toBeNull())
     const nav = page.querySelector('aside nav')
-    expect([...nav.children].map((node) => node.textContent)).toEqual(['Escuadrón', 'Configuración', 'Alertas', 'Mi hábito'])
+    expect([...nav.children].map((node) => node.textContent)).toEqual(['Escuadrón', 'Racha', 'Alertas', 'Mi hábito', 'Configuración'])
     expect(nav.querySelector('[aria-current="page"]').getAttribute('href')).toBe('/escuadrones/configuracion?origen=7')
     expect(nav.querySelector('a[href="/escuadrones/panel?id=7"]').hasAttribute('data-link')).toBe(true)
     expect(nav.querySelector('a[href="/habito?escuadron=7"]')).not.toBeNull()
