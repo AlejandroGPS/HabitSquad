@@ -4,8 +4,8 @@ import { accountMenu } from './accountMenu.js'
 import { element } from './dom.js'
 import { landingNav } from './landing/landingNav.js'
 
-export const PROFILE_BUTTON = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-accent px-5 py-2.5 font-extrabold text-white hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50 disabled:cursor-wait'
-export const PROFILE_SOFT_BUTTON = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-accent-soft px-5 py-2.5 font-extrabold text-accent hover:bg-accent/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50'
+export const PROFILE_BUTTON = 'inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-accent px-5 py-2.5 font-extrabold text-white hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50'
+export const PROFILE_SOFT_BUTTON = 'inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-accent-soft px-5 py-2.5 font-extrabold text-accent hover:bg-accent/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-default disabled:opacity-50'
 
 export function profileLink(href, text, className = PROFILE_SOFT_BUTTON) {
   const link = element('a', className, text)

@@ -2,8 +2,8 @@ import { iniciales } from './avatar.js'
 import { icon } from './icons.js'
 
 const ITEM = [
-  'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-start font-extrabold',
-  'hover:bg-black/[0.05] focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-60',
+  'flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-3 text-start font-extrabold',
+  'hover:bg-black/[0.05] focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-default disabled:opacity-60',
 ].join(' ')
 
 let nextId = 0
@@ -25,7 +25,7 @@ export function accountMenu({ nombre, fotoUrl, onLogout, loadProfile }) {
   const toggle = document.createElement('button')
   toggle.type = 'button'
   toggle.className = [
-    'grid h-11 w-11 place-items-center rounded-full bg-accent font-black text-white',
+    'grid h-11 w-11 cursor-pointer place-items-center rounded-full bg-accent font-black text-white',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
   ].join(' ')
   toggle.setAttribute('aria-label', 'Tu cuenta')
