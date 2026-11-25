@@ -57,8 +57,14 @@ ser inferior a 2. También aplican los errores `401`, `403` y `404` anteriores.
 
 `GET /api/escuadrones/publicos/`
 
-Devuelve solo escuadrones públicos, con el número actual de miembros y el
-límite configurado. Los escuadrones privados no aparecen en este listado.
+Devuelve los escuadrones públicos a los que el usuario autenticado todavía no
+pertenece, con el número actual de miembros y el límite configurado. Los
+escuadrones privados y aquellos a los que el usuario ya pertenece no aparecen
+en este listado.
+
+El parámetro de consulta opcional `q` busca por coincidencia parcial del nombre,
+sin distinguir mayúsculas y minúsculas. Cada resultado también incluye la racha
+actual (`racha`).
 
 ```json
 [
@@ -67,7 +73,8 @@ límite configurado. Los escuadrones privados no aparecen en este listado.
     "nombre": "Lectores",
     "es_publico": true,
     "limite_miembros": 8,
-    "miembros_actuales": 3
+    "miembros_actuales": 3,
+    "racha": 0
   }
 ]
 ```
@@ -75,7 +82,9 @@ límite configurado. Los escuadrones privados no aparecen en este listado.
 ## Unirse a un escuadrón
 
 - Los escuadrones públicos permiten unirse sin código con
-  `POST /api/escuadrones/{escuadron_id}/unirse/` y cuerpo vacío.
+  `POST /api/escuadrones/{escuadron_id}/unirse/` y cuerpo vacío. La ruta
+  devuelve `201` si la unión tiene éxito, `403` si el escuadrón es privado,
+  `404` si no existe y `409` si el usuario ya pertenece o no hay plazas.
 - Los escuadrones privados requieren el código mediante el endpoint existente
   `POST /api/escuadrones/unirse/`, documentado en
   [UNIRSE_ESCUADRON.md](UNIRSE_ESCUADRON.md).

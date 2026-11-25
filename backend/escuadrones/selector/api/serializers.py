@@ -10,6 +10,7 @@ class EscuadronSelectorSerializer(EscuadronConMiembrosSerializer):
 
 class EscuadronPublicoSerializer(serializers.ModelSerializer):
     miembros_actuales = serializers.IntegerField(read_only=True)
+    racha = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Escuadron
@@ -19,5 +20,6 @@ class EscuadronPublicoSerializer(serializers.ModelSerializer):
             "es_publico",
             "limite_miembros",
             "miembros_actuales",
+            "racha",
         )
         read_only_fields = fields

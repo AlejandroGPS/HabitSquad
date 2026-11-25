@@ -175,3 +175,7 @@ def test_public_join_is_documented_in_openapi(api_client):
     assert operation["operationId"] == "unirseAUnEscuadronPublico"
     assert "requestBody" not in operation
     assert set(operation["responses"]) == {"201", "401", "403", "404", "409"}
+    parameters = {parameter["name"]: parameter for parameter in operation["parameters"]}
+    assert parameters["escuadron_id"]["in"] == "path"
+    assert parameters["escuadron_id"]["required"] is True
+    assert parameters["escuadron_id"]["schema"]["type"] == "integer"
