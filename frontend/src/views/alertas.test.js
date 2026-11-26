@@ -42,7 +42,6 @@ describe('alertasScreen', () => {
   it('muestra Alertas sin panel lateral y permite volver a Mis escuadrones', async () => {
     const { screen } = await montar()
 
-    expect([...screen.querySelectorAll('[aria-current="page"]')].map((item) => item.textContent)).toContain('Alertas')
     expect(screen.querySelector('h1').textContent).toBe('Alertas')
     expect(screen.querySelector('aside')).toBeNull()
     const volver = screen.querySelector('header a[aria-label="Volver a mis escuadrones"]')

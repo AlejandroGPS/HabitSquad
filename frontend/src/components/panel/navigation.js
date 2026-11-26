@@ -16,14 +16,13 @@ export function squadNavigation(id) {
   if (selectedId) rememberSquad(selectedId)
   const selected = Boolean(selectedId)
   return [
-    ...APP_NAV.map((item) => {
-      if (item.id === 'racha' || item.id === 'alertas') return { ...item, sidebarHidden: true }
+    ...APP_NAV.filter(({ id }) => id === 'escuadron' || id === 'habito').map((item) => {
       if (selected && item.id === 'escuadron') return { ...item, href: `/escuadrones/panel?id=${selectedId}` }
-      if (selected && item.id === 'habito') return { ...item, href: `/habito?escuadron=${selectedId}` }
-      return { ...item }
+      if (selected && item.id === 'habito') return { ...item, href: `/habito?escuadron=${selectedId}`, webOnly: false }
+      return { ...item, webOnly: false }
     }),
     { id: 'configuracion', label: 'Configuración', icon: 'settings',
-      href: selected ? `/escuadrones/configuracion?origen=${selectedId}` : '/escuadrones/configuracion', webOnly: true },
+      href: selected ? `/escuadrones/configuracion?origen=${selectedId}` : '/escuadrones/configuracion' },
   ]
 }
 

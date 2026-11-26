@@ -10,8 +10,8 @@ describe('squadNavigation', () => {
 
   it('incluye Configuración en el menú lateral aunque no haya escuadrón', () => {
     const labels = squadNavigation().map(({ label }) => label)
-    expect(labels).toEqual(['Escuadrón', 'Racha', 'Alertas', 'Mi hábito', 'Configuración'])
-    expect(squadNavigation().filter(({ sidebarHidden }) => !sidebarHidden).map(({ label }) => label))
+    expect(labels).toEqual(['Escuadrón', 'Mi hábito', 'Configuración'])
+    expect(squadNavigation().filter(({ webOnly }) => !webOnly).map(({ label }) => label))
       .toEqual(['Escuadrón', 'Mi hábito', 'Configuración'])
   })
 

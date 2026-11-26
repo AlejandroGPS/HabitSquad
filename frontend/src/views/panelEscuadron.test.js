@@ -58,7 +58,7 @@ describe('panelEscuadronScreen', () => {
       ['Escuadrón', 'Mi hábito', 'Configuración'],
     )
     expect([...screen.querySelectorAll('nav.lg\\:hidden a')].map((link) => link.textContent)).toEqual(
-      ['Escuadrón', 'Racha', 'Alertas'],
+      ['Escuadrón', 'Mi hábito', 'Configuración'],
     )
   })
 
