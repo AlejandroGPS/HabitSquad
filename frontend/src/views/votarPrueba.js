@@ -5,7 +5,6 @@ import { button, element } from '../components/dom.js'
 import { icon } from '../components/icons.js'
 import { alertasBoton, escuadronResumen } from '../components/panel/cabecera.js'
 import { ESTADOS } from '../components/panel/estados.js'
-import { isSquadAdmin, squadNavigation, squadSettingsSlot, updateSquadNavigation } from '../components/panel/navigation.js'
 import { habitText } from './habitoDiario.js'
 
 const cardStyle = 'rounded-3xl border-2 border-white bg-white/85 shadow-sm'
@@ -92,9 +91,12 @@ export function votarPruebaScreen() {
   const body = element('div', 'mt-4 px-4 lg:mt-6 lg:px-0', content, status, error, retry)
   const screen = appLayout({
     active: 'escuadron', kicker: 'Votación', title, leading: back,
-    navItems: validId(squadId) ? squadNavigation(squadId) : undefined,
-    trailing: [alertasBoton(squadId), validId(squadId) && squadSettingsSlot()], sidebarFooter: footer, body, detail: true,
+    trailing: [alertasBoton()], sidebarFooter: footer, body, detail: true,
   })
+  for (const link of screen.querySelectorAll('nav a[href="/"], nav a[href="/escuadrones"]')) link.href = back.href
+  for (const link of screen.querySelectorAll('nav a[href="/habito"]')) {
+    if (validId(squadId)) link.href = `/habito?escuadron=${squadId}`
+  }
 
   let busy = false
   async function load() {
@@ -113,7 +115,6 @@ export function votarPruebaScreen() {
         getSquad(squadId), getProof(squadId, proofId), getProofVotes(squadId, proofId),
       ])
       const members = new Map(squad.miembros.map((member) => [member.usuario_id, member]))
-      updateSquadNavigation(screen, squadId, 'escuadron', isSquadAdmin(squad))
       const viewer = squad.miembros.find(({ es_usuario }) => es_usuario)
       const nameFor = (id) => members.get(id)?.nickname || `Miembro ${id}`
       const author = nameFor(proof.usuario_id)
