@@ -1,0 +1,39 @@
+@layer components {
+  .alerts-content { display: grid; gap: 1.25rem; margin: 1.25rem 1rem 0; }
+  .alerts-intro { display: flex; align-items: center; gap: 1.25rem; border-radius: 1.75rem; padding: 1.25rem; background: var(--color-accent-soft); border: 2px solid white; }
+  .alerts-intro-title { font-size: 1.25rem; line-height: 1.25; font-weight: 900; color: var(--color-accent); }
+  .alerts-intro-mascot { width: 4rem; height: auto; }
+  .touch-grid { display: grid; gap: 1.25rem; align-items: start; min-width: 0; }
+  .touch-composer, .touch-preview { min-width: 0; padding: 1.25rem; }
+  .touch-icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; flex-shrink: 0; border-radius: 0.875rem; background: var(--color-accent-soft); color: var(--color-accent); }
+  .touch-label { display: block; margin-bottom: 0.625rem; font-size: 0.9375rem; font-weight: 900; }
+  .touch-select { width: 100%; min-height: 3rem; border: 2px solid var(--color-hairline); border-radius: 1rem; padding: 0.625rem 2.5rem 0.625rem 0.875rem; appearance: none; background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%235b32ea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 0.875rem center / 1.25rem no-repeat; font: inherit; font-weight: 800; text-overflow: ellipsis; }
+  .touch-select:focus-visible, .touch-radio:focus-visible, .touch-editor:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+  .touch-select:disabled { opacity: 0.6; }
+  .touch-members, .touch-messages { display: grid; min-width: 0; gap: 0.625rem; margin-top: 1.5rem; }
+  .touch-member, .touch-option { display: flex; align-items: center; gap: 0.75rem; border: 2px solid var(--color-hairline); border-radius: 1rem; padding: 0.875rem; cursor: pointer; }
+  .touch-member:has(:checked), .touch-option:has(:checked) { border-color: var(--color-accent); background: var(--color-accent-soft); }
+  .touch-member:has(:disabled) { cursor: default; background: var(--color-surface); border-color: var(--color-fill); }
+  .touch-option:has(:disabled) { cursor: wait; }
+  .touch-radio { flex-shrink: 0; width: 1.125rem; height: 1.125rem; accent-color: var(--color-accent); }
+  .touch-editor { display: block; width: 100%; min-height: 7rem; resize: vertical; border: 2px solid var(--color-hairline); border-radius: 1rem; padding: 0.875rem; font: inherit; font-weight: 600; color: var(--color-ink); background: white; }
+  .touch-editor:disabled { opacity: 0.6; cursor: wait; }
+  .touch-eyebrow { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; font-weight: 900; letter-spacing: 0.08em; color: var(--color-accent); }
+  .touch-notification { display: flex; align-items: start; gap: 0.75rem; margin-top: 1.5rem; border: 1px solid var(--color-accent-line); border-radius: 1.25rem; padding: 1.125rem; background: var(--color-accent-soft); overflow-wrap: anywhere; }
+  .touch-notification .touch-icon { background: white; }
+  .touch-tip { display: flex; gap: 0.625rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--color-hairline); color: var(--color-ink-muted); font-size: 0.875rem; font-weight: 700; }
+  .touch-tip > svg { color: var(--color-positive); }
+  .touch-status:empty { display: none; }
+  .touch-status, .touch-empty { margin-top: 0.75rem; font-size: 0.875rem; font-weight: 700; color: var(--color-ink-muted); }
+  .touch-error { margin-top: 0.75rem; font-size: 0.875rem; font-weight: 800; color: var(--color-danger); }
+  .touch-retry { min-height: 2.75rem; font-weight: 800; color: var(--color-accent); text-decoration: underline; }
+  @media (width >= 64rem) {
+    .alerts-content { margin: 1.5rem 0 0; }
+    .alerts-intro { padding: 1.5rem 2rem; }
+    .alerts-intro-title { font-size: 1.625rem; }
+    .alerts-intro-mascot { width: 5rem; }
+    .touch-grid { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+    .touch-composer, .touch-preview { padding: 1.5rem; }
+    .touch-preview { position: sticky; top: 1.5rem; }
+  }
+}

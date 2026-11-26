@@ -22,17 +22,17 @@ function avisosFalsos(estado = 'desactivado') {
 
 async function montar({ estado, avisos = avisosFalsos(estado), perfil = { nombre: 'Ana', hora_aviso: '21:30' }, almacen = almacenFalso() } = {}) {
   const getProfile = vi.fn(() => (perfil instanceof Error ? Promise.reject(perfil) : Promise.resolve(perfil)))
-  const screen = alertasScreen({ onLogout: vi.fn(), api: { getProfile }, avisos, almacen })
+  const screen = alertasScreen({ onLogout: vi.fn(), api: { getProfile, listSquads: vi.fn().mockResolvedValue([]) }, avisos, almacen })
   document.body.replaceChildren(screen)
   await new Promise((resolve) => setTimeout(resolve))
   return { screen, avisos, almacen, getProfile }
 }
 
-const titulo = (screen) => screen.querySelector('h2').textContent
-const botones = (screen) => [...screen.querySelectorAll('section button')].map((boton) => boton.textContent)
-const pulsar = (screen, texto) => [...screen.querySelectorAll('section button')].find((boton) => boton.textContent === texto).click()
-const estadoTexto = (screen) => screen.querySelector('[role="status"]').textContent
-const errorTexto = (screen) => screen.querySelector('[role="alert"]').textContent
+const titulo = (screen) => screen.querySelector('[data-avisos] h2').textContent
+const botones = (screen) => [...screen.querySelectorAll('[data-avisos] button')].map((boton) => boton.textContent)
+const pulsar = (screen, texto) => [...screen.querySelectorAll('[data-avisos] button')].find((boton) => boton.textContent === texto).click()
+const estadoTexto = (screen) => screen.querySelector('[data-avisos] [role="status"]').textContent
+const errorTexto = (screen) => screen.querySelector('[data-avisos] [role="alert"]').textContent
 
 afterEach(() => {
   document.body.replaceChildren()
@@ -42,7 +42,7 @@ describe('alertasScreen', () => {
   it('muestra Alertas sin menús de navegación y permite volver a Mis escuadrones', async () => {
     const { screen } = await montar()
 
-    expect(screen.querySelector('h1').textContent).toBe('Alertas')
+    expect(screen.querySelector('h1').textContent).toBe('Alertas y toques')
     expect(screen.querySelector('aside')).toBeNull()
     expect(screen.querySelector('nav[aria-label="Secciones"]')).toBeNull()
     const volver = screen.querySelector('header a[aria-label="Volver a mis escuadrones"]')
@@ -54,9 +54,9 @@ describe('alertasScreen', () => {
 
   it('mientras comprueba los avisos no ofrece acciones', () => {
     const avisos = { ...avisosFalsos(), consultar: vi.fn(() => new Promise(() => {})) }
-    const screen = alertasScreen({ api: { getProfile: () => new Promise(() => {}) }, avisos, almacen: almacenFalso() })
+    const screen = alertasScreen({ api: { getProfile: () => new Promise(() => {}), listSquads: () => Promise.resolve([]) }, avisos, almacen: almacenFalso() })
 
-    expect(screen.querySelector('h2').textContent).toBe('Que no se te pase la prueba')
+    expect(titulo(screen)).toBe('Que no se te pase la prueba')
     expect(screen.textContent).toContain('Comprobando los avisos de este navegador…')
     expect(botones(screen)).toEqual([])
   })
@@ -99,15 +99,15 @@ describe('alertasScreen', () => {
 
     pulsar(screen, 'Activar avisos')
     expect(botones(screen)).toEqual(['Activando…', 'Ahora no'])
-    expect([...screen.querySelectorAll('section button')].every((boton) => boton.disabled)).toBe(true)
-    screen.querySelector('section button').click()
+    expect([...screen.querySelectorAll('[data-avisos] button')].every((boton) => boton.disabled)).toBe(true)
+    screen.querySelector('[data-avisos] button').click()
     expect(avisos.activar).toHaveBeenCalledOnce()
 
     terminar('activado')
     await vi.waitFor(() => expect(titulo(screen)).toBe('Avisos activados'))
     expect(estadoTexto(screen)).toBe('Avisos activados en este navegador.')
     expect(botones(screen)).toEqual(['Desactivar avisos'])
-    expect(document.activeElement).toBe(screen.querySelector('h2'))
+    expect(document.activeElement).toBe(screen.querySelector('[data-avisos] h2'))
   })
 
   it('si se cierra la petición de permiso sin elegir no confirma nada', async () => {
@@ -171,7 +171,7 @@ describe('alertasScreen', () => {
     pulsar(primera.screen, 'Ahora no')
     expect(titulo(primera.screen)).toBe('Sin avisos por ahora')
     expect(botones(primera.screen)).toEqual(['Activar avisos'])
-    expect(document.activeElement).toBe(primera.screen.querySelector('h2'))
+    expect(document.activeElement).toBe(primera.screen.querySelector('[data-avisos] h2'))
 
     const segunda = await montar({ almacen })
     expect(titulo(segunda.screen)).toBe('Sin avisos por ahora')
