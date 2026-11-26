@@ -39,11 +39,12 @@ afterEach(() => {
 })
 
 describe('alertasScreen', () => {
-  it('muestra Alertas sin panel lateral y permite volver a Mis escuadrones', async () => {
+  it('muestra Alertas sin menús de navegación y permite volver a Mis escuadrones', async () => {
     const { screen } = await montar()
 
     expect(screen.querySelector('h1').textContent).toBe('Alertas')
     expect(screen.querySelector('aside')).toBeNull()
+    expect(screen.querySelector('nav[aria-label="Secciones"]')).toBeNull()
     const volver = screen.querySelector('header a[aria-label="Volver a mis escuadrones"]')
     expect(volver.getAttribute('href')).toBe('/escuadrones')
     expect(volver.hasAttribute('data-link')).toBe(true)

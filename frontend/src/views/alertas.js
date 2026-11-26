@@ -5,7 +5,6 @@ import { appLayout } from '../components/appLayout.js'
 import { card, cardLabel, pillButtonClass } from '../components/card.js'
 import { button, element } from '../components/dom.js'
 import { icon } from '../components/icons.js'
-import { squadNavigation } from '../components/panel/navigation.js'
 import { PROFILE_BUTTON } from '../components/perfil.js'
 
 const AHORA_NO = 'habitsquad.avisos'
@@ -125,8 +124,7 @@ export function alertasScreen({
   volver.dataset.link = ''
   volver.setAttribute('aria-label', 'Volver a mis escuadrones')
   const root = appLayout({ active: 'alertas', kicker: 'Tu cuenta', title: 'Alertas', body, trailing: cuenta,
-    leading: volver, showSidebar: false,
-    navItems: squadNavigation() })
+    leading: volver, showSidebar: false, detail: true })
 
   perfil.then(
     (datos) => { hora.textContent = datos.hora_aviso },
