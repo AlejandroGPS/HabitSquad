@@ -120,7 +120,12 @@ export function alertasScreen({
 
   const body = element('div', 'mt-4 grid gap-3 px-4 lg:mt-6 lg:grid-cols-4 lg:gap-4 lg:px-0', permiso, tuAviso)
   const cuenta = accountMenu({ loadProfile: () => perfil, onLogout })
+  const volver = element('a', 'glass grid h-11 w-11 shrink-0 place-items-center rounded-full text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent', icon('back'))
+  volver.href = '/escuadrones'
+  volver.dataset.link = ''
+  volver.setAttribute('aria-label', 'Volver a mis escuadrones')
   const root = appLayout({ active: 'alertas', kicker: 'Tu cuenta', title: 'Alertas', body, trailing: cuenta,
+    leading: volver, showSidebar: false,
     navItems: squadNavigation() })
 
   perfil.then(

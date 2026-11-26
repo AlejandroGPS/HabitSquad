@@ -40,6 +40,8 @@ describe('Elegir hábito conectado a la API', () => {
     expect(view.querySelector('input[name="habito"]').closest('[hidden]')).toBeNull()
     expect(view.querySelector('a[aria-label="Volver al panel"]').getAttribute('href')).toBe('/escuadrones/panel?id=7')
     expect(view.querySelector('nav.lg\\:hidden')).toBeNull()
+    expect([...view.querySelectorAll('aside nav a')].map((link) => link.textContent))
+      .toEqual(['Escuadrón', 'Mi hábito', 'Configuración'])
     expect(view.textContent).toContain('la racha del escuadrón vuelve a cero')
   })
   it.each([
