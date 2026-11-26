@@ -121,6 +121,11 @@ describe('panel del escuadrón: carga de datos y estados', () => {
     await loaded(view)
     const nav = view.querySelector('aside nav')
     expect([...nav.children].map((item) => item.textContent)).toEqual(['Escuadrón', 'Mi hábito', 'Configuración'])
+    const mobileLinks = [...view.querySelectorAll('nav.lg\\:hidden a')]
+    expect(mobileLinks.map((link) => link.textContent)).toEqual(['Escuadrón', 'Mi hábito', 'Configuración'])
+    expect(mobileLinks.map((link) => link.getAttribute('href'))).toEqual([
+      '/escuadrones/panel?id=7', '/habito?escuadron=7', '/escuadrones/configuracion?origen=7',
+    ])
     const settings = nav.querySelector('a[href="/escuadrones/configuracion?origen=7"]')
     expect(settings.textContent).toBe('Configuración')
     expect(settings.hasAttribute('data-link')).toBe(true)
