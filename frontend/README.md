@@ -237,6 +237,42 @@ El menú de cuenta enlaza a `/perfil` y `/perfil/editar`. La integración, las
 pruebas y las dependencias pendientes del backend se describen en
 [PERFIL_USUARIO_FRONTEND.md](../docs/PERFIL_USUARIO_FRONTEND.md).
 
+## Buscador de escuadrones
+
+`/escuadrones/buscar` se abre desde «Mis escuadrones» y requiere sesión, como
+el resto de pantallas de escuadrones. Permite buscar por nombre sin distinguir
+mayúsculas y ordenar los resultados por racha, plazas libres o nombre.
+Los escuadrones completos no permiten unirse. El backend solo devuelve grupos
+públicos a los que el usuario todavía no pertenece.
+
+El listado y la ficha muestran la racha, la ocupación respecto a la capacidad
+y las plazas libres, sin identificar a los miembros ni mostrar una temática.
+La ficha permite confirmar la unión y elegir el hábito con «¿Qué harás hoy?».
+Se puede cerrar con Escape, el fondo o «Ahora no».
+La unión y el hábito se guardan en el backend. Al unirse, el grupo desaparece
+del buscador y pasa a «Mis escuadrones». Después de guardar el hábito se puede
+abrir su panel; también se puede cerrar la ficha y elegirlo más tarde.
+El acceso con código y la creación enlazan a sus pantallas existentes.
+
+El adaptador `src/buscador-api.js` usa `authFetch`, con JWT y renovación de
+sesión, para estas operaciones:
+
+- `GET /api/escuadrones/publicos/?q=texto`: listado y búsqueda por nombre.
+  Espera 250 ms entre teclas e ignora respuestas de búsquedas anteriores.
+- `POST /api/escuadrones/{id}/unirse/`: unión sin código y con cuerpo vacío.
+- `PUT /api/escuadrones/{id}/habito/`: guarda el texto como hábito «Otro».
+
+La ocupación procede de `miembros_actuales`, la capacidad de `limite_miembros`
+y la racha de `racha`; las plazas libres nunca se muestran negativas.
+Si el grupo se completa, pasa a privado o deja de existir antes de confirmar
+(`403`, `404` o `409`), la ficha muestra el error y refresca el listado.
+Si falla el guardado del hábito, conserva el texto y permite reintentarlo
+sin repetir la unión.
+
+`previews/buscador.html` conserva una vista previa explícita con datos ficticios,
+sin iniciar sesión ni escribir en la API. Usa `src/mocks/buscadorEscuadrones.js`
+mediante inyección del adaptador. La ruta de la aplicación no carga mocks.
+
 ## Configuración del escuadrón
 
 «Configuración» se abre desde el menú lateral del panel o desde el botón de

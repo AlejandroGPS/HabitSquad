@@ -18,6 +18,7 @@ export function otraRachaCard() {
     'section',
     'flex h-full flex-col justify-center gap-3 rounded-[1.75rem] border-2 border-dashed border-accent-line bg-white/40 p-4 lg:p-5',
     element('h2', 'text-[1.125rem] font-black', '¿Una racha más?'),
+    accion('/escuadrones/buscar', 'bg-white text-accent', icon('search'), 'Buscar escuadrones'),
     accion('/escuadrones/nuevo', 'bg-accent text-white hover:bg-accent-hover', icon('plus'), 'Crear un escuadrón'),
     accion('/escuadrones/unirse', 'bg-white text-accent', icon('join'), 'Tengo un código'),
   )
