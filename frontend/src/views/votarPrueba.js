@@ -5,6 +5,7 @@ import { button, element } from '../components/dom.js'
 import { icon } from '../components/icons.js'
 import { alertasBoton, escuadronResumen } from '../components/panel/cabecera.js'
 import { ESTADOS } from '../components/panel/estados.js'
+import { squadNavigation } from '../components/panel/navigation.js'
 import { habitText } from './habitoDiario.js'
 
 const cardStyle = 'rounded-3xl border-2 border-white bg-white/85 shadow-sm'
@@ -92,6 +93,7 @@ export function votarPruebaScreen() {
   const screen = appLayout({
     active: 'escuadron', kicker: 'Votación', title, leading: back,
     trailing: [alertasBoton()], sidebarFooter: footer, body, detail: true,
+    navItems: squadNavigation(squadId),
   })
   for (const link of screen.querySelectorAll('nav a[href="/"], nav a[href="/escuadrones"]')) link.href = back.href
   for (const link of screen.querySelectorAll('nav a[href="/habito"]')) {

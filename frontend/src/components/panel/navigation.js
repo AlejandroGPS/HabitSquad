@@ -17,6 +17,7 @@ export function squadNavigation(id) {
   const selected = Boolean(selectedId)
   return [
     ...APP_NAV.map((item) => {
+      if (item.id === 'racha' || item.id === 'alertas') return { ...item, sidebarHidden: true }
       if (selected && item.id === 'escuadron') return { ...item, href: `/escuadrones/panel?id=${selectedId}` }
       if (selected && item.id === 'habito') return { ...item, href: `/habito?escuadron=${selectedId}` }
       return { ...item }

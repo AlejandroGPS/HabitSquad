@@ -39,12 +39,17 @@ afterEach(() => {
 })
 
 describe('alertasScreen', () => {
-  it('es la sección Alertas de la navegación', async () => {
+  it('muestra Alertas sin panel lateral y permite volver a Mis escuadrones', async () => {
     const { screen } = await montar()
 
     expect([...screen.querySelectorAll('[aria-current="page"]')].map((item) => item.textContent)).toContain('Alertas')
     expect(screen.querySelector('h1').textContent).toBe('Alertas')
-    expect([...screen.querySelector('aside nav').children].map((item) => item.textContent)).toContain('Configuración')
+    expect(screen.querySelector('aside')).toBeNull()
+    const volver = screen.querySelector('header a[aria-label="Volver a mis escuadrones"]')
+    expect(volver.getAttribute('href')).toBe('/escuadrones')
+    expect(volver.hasAttribute('data-link')).toBe(true)
+    expect(volver.querySelector('svg')).not.toBeNull()
+    expect(volver.parentElement.classList.contains('lg:hidden')).toBe(false)
   })
 
   it('mientras comprueba los avisos no ofrece acciones', () => {
