@@ -19,6 +19,7 @@ import {
 export function panelEscuadronScreen({ escuadron, miembros = [], ahora = new Date(), acciones = {} }) {
   const { nombre, codigo, plazas = 5, racha = 0, cierre = '23:59' } = escuadron
   const usuario = miembros.find(({ esUsuario }) => esUsuario)
+  const navItems = squadNavigation(escuadron.id)
 
   const body = element(
     'div',
@@ -41,7 +42,8 @@ export function panelEscuadronScreen({ escuadron, miembros = [], ahora = new Dat
     active: 'escuadron',
     kicker: 'Escuadrón',
     title: nombre,
-    navItems: squadNavigation(escuadron.id),
+    navItems,
+    sidebarNavItems: navItems.filter(({ id }) => id !== 'racha' && id !== 'alertas'),
     leading: squadAvatar({ nombre }),
     trailing: [
       rachaChip({ racha }),

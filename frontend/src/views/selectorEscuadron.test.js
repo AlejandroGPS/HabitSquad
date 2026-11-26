@@ -34,6 +34,11 @@ describe('selectorEscuadronScreen', () => {
     expect(nav.querySelector('a[href^="/#"]')).toBeNull()
     expect(nav.querySelector('[aria-label="Tu cuenta"]')).not.toBeNull()
     expect(nav.querySelector('a[href="/login"], a[href="/registro"]')).toBeNull()
+    nav.querySelector('[aria-label="Tu cuenta"]').click()
+    const menu = nav.querySelector('[id^="menu-cuenta-"]')
+    expect(menu.hidden).toBe(false)
+    expect([...menu.querySelectorAll('a')].map((link) => link.getAttribute('href'))).toEqual(['/perfil'])
+    expect(menu.textContent).toContain('Cerrar sesión')
   })
 
   it('mientras carga saluda, avisa del estado y no muestra escuadrones', () => {

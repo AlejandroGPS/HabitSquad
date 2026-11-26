@@ -38,7 +38,7 @@ describe('appLayout', () => {
     expect(screen.querySelector('aside a[href="/"]').textContent).toBe('HabitSquad')
   })
 
-  it('enlaza las secciones con ruta y desactiva las que aún no existen', () => {
+  it('enlaza las secciones y lleva Racha al recordatorio del perfil', () => {
     const screen = mount()
     const [sidebarNav] = screen.querySelectorAll('nav[aria-label="Secciones"]')
     const [escuadron, racha, alertas] = sidebarNav.children
@@ -46,8 +46,9 @@ describe('appLayout', () => {
     expect(escuadron.tagName).toBe('A')
     expect(escuadron.getAttribute('href')).toBe('/escuadrones')
     expect(escuadron.hasAttribute('data-link')).toBe(true)
-    expect(racha.tagName).toBe('SPAN')
-    expect(racha.getAttribute('aria-disabled')).toBe('true')
+    expect(racha.tagName).toBe('A')
+    expect(racha.getAttribute('href')).toBe('/perfil/editar#recordatorio')
+    expect(racha.hasAttribute('data-link')).toBe(true)
     expect(alertas.getAttribute('href')).toBe('/alertas')
     expect(alertas.hasAttribute('data-link')).toBe(true)
   })
