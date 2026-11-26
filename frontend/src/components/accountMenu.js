@@ -17,7 +17,7 @@ function link(href, iconName, text) {
   return node
 }
 
-export function accountMenu({ nombre, fotoUrl, onLogout, loadProfile, enPerfil = false }) {
+export function accountMenu({ nombre, fotoUrl, onLogout, loadProfile, enPerfil = false, conAccionesEscuadron = true }) {
   const root = document.createElement('div')
   root.className = 'relative'
 
@@ -96,8 +96,10 @@ export function accountMenu({ nombre, fotoUrl, onLogout, loadProfile, enPerfil =
   panel.append(
     heading,
     perfil,
-    link('/escuadrones/nuevo', 'plus', 'Crear un escuadrón'),
-    link('/escuadrones/unirse', 'join', 'Unirme a un escuadrón'),
+    ...(conAccionesEscuadron ? [
+      link('/escuadrones/nuevo', 'plus', 'Crear un escuadrón'),
+      link('/escuadrones/unirse', 'join', 'Unirme a un escuadrón'),
+    ] : []),
     separator,
     logoutButton,
   )

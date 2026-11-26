@@ -4,7 +4,7 @@ import { icon } from './icons.js'
 
 export const APP_NAV = [
   { id: 'escuadron', label: 'Escuadrón', icon: 'users', href: '/escuadrones' },
-  { id: 'racha', label: 'Racha', icon: 'flame' },
+  { id: 'racha', label: 'Racha', icon: 'flame', href: '/perfil/editar#recordatorio' },
   { id: 'alertas', label: 'Alertas', icon: 'bell', href: '/alertas' },
   { id: 'habito', label: 'Mi hábito', icon: 'book', href: '/habito', webOnly: true },
 ]
@@ -69,7 +69,7 @@ function tabBar(active, items) {
   return nav
 }
 
-export function appLayout({ active, kicker, title, leading, trailing, sidebarFooter, body, detail = false, navItems = APP_NAV }) {
+export function appLayout({ active, kicker, title, leading, trailing, sidebarFooter, body, detail = false, navItems = APP_NAV, sidebarNavItems = navItems }) {
   const header = element(
     'header',
     'flex items-center gap-3 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-1 lg:px-0 lg:pt-8',
@@ -99,7 +99,7 @@ export function appLayout({ active, kicker, title, leading, trailing, sidebarFoo
     'main',
     'relative isolate flex min-h-dvh overflow-x-clip font-rounded text-ink antialiased',
     backdrop,
-    sidebar(active, sidebarFooter, navItems),
+    sidebar(active, sidebarFooter, sidebarNavItems),
     element('div', 'min-w-0 flex-1', content),
   )
 }

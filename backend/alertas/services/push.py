@@ -1,4 +1,5 @@
 import json
+import logging
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any
@@ -10,6 +11,12 @@ from pywebpush import WebPushException, webpush
 from alertas.models import SuscripcionPush
 from alertas.services.eligibility import usuario_debe_recibir_aviso
 from usuarios.models import CustomUser
+
+logger = logging.getLogger(__name__)
+
+# WNS rechaza el TTL=0 predeterminado de pywebpush. Cinco minutos permiten
+# entregar el recordatorio sin conservar un aviso obsoleto durante horas.
+_TTL_AVISO_SEGUNDOS = 300
 
 # Contenido fijo de la notificación; el contrato solo fija cuándo se envía.
 _PAYLOAD = json.dumps(
@@ -56,8 +63,14 @@ def _enviar_a_suscripcion(
             data=_PAYLOAD,
             vapid_private_key=vapid_private_key,
             vapid_claims=vapid_claims,
+            ttl=_TTL_AVISO_SEGUNDOS,
         )
-    except WebPushException:
+    except WebPushException as error:
+        logger.warning(
+            "Fallo de aviso push: suscripcion_id=%s estado_http=%s",
+            suscripcion.pk,
+            getattr(error.response, "status_code", None),
+        )
         return False
     return True
 

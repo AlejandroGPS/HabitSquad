@@ -136,6 +136,8 @@ def test_enviar_aviso_llama_webpush(user, habito, suscripcion):
     assert kwargs["subscription_info"]["endpoint"] == ENDPOINT
     assert kwargs["vapid_private_key"] == "privada"
     assert kwargs["vapid_claims"] == {"sub": "mailto:ops@habitsquad.local"}
+    # WNS rechaza TTL=0: el recordatorio necesita una caducidad positiva.
+    assert kwargs["ttl"] == 300
     assert "Todavía no has subido" in kwargs["data"]
 
 
@@ -265,8 +267,12 @@ def test_enviar_aviso_sin_vapid_no_envia(user, habito, suscripcion):
     VAPID_ADMIN_EMAIL="mailto:ops@habitsquad.local",
 )
 @pytest.mark.django_db
-def test_enviar_aviso_ignora_fallo_webpush(user, habito, suscripcion):
-    sender = MagicMock(side_effect=WebPushException("gone"))
+@pytest.mark.parametrize("http_status", [None, 400])
+def test_enviar_aviso_ignora_fallo_webpush(
+    user, habito, suscripcion, caplog, http_status
+):
+    response = MagicMock(status_code=http_status) if http_status else None
+    sender = MagicMock(side_effect=WebPushException("gone", response=response))
 
     enviados = enviar_aviso_a_usuario(
         user,
@@ -276,6 +282,9 @@ def test_enviar_aviso_ignora_fallo_webpush(user, habito, suscripcion):
 
     assert enviados == 0
     sender.assert_called_once()
+    assert f"suscripcion_id={suscripcion.pk}" in caplog.text
+    assert f"estado_http={http_status}" in caplog.text
+    assert ENDPOINT not in caplog.text
 
 
 @override_settings(

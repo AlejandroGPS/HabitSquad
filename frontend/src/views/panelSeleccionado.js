@@ -1,5 +1,5 @@
 import { ApiError, getDailyHabit, getSquad, logout } from '../api.js'
-import { appLayout } from '../components/appLayout.js'
+import { APP_NAV, appLayout } from '../components/appLayout.js'
 import { accountMenu } from '../components/accountMenu.js'
 import { element } from '../components/dom.js'
 import {
@@ -27,6 +27,8 @@ export function panelSeleccionadoScreen({
   conectar = conectarEscuadron,
 } = {}) {
   const id = new URLSearchParams(window.location.search).get('id')
+  const navItems = squadNavigation(id)
+  const sidebarNavItems = navItems.filter(({ id }) => id !== 'racha' && id !== 'alertas')
   const root = element('div')
   const back = element('a', `${ANCHO_COMPLETO} inline-flex min-h-11 items-center font-bold text-accent`, '← Mis escuadrones')
   back.href = '/escuadrones'
@@ -48,7 +50,7 @@ export function panelSeleccionadoScreen({
     onLogout: async () => { await logout(); navigate('/login') },
   })
   root.append(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body, trailing: cuenta,
-    navItems: squadNavigation(id) }))
+    navItems, sidebarNavItems }))
   let loading = false
   let pendiente = false
   let pintado = null
@@ -90,7 +92,8 @@ export function panelSeleccionadoScreen({
     error.textContent = 'Ya no formas parte de este escuadrón. Vuelve a Mis escuadrones.'
     retry.hidden = true
     body.replaceChildren(back, status, error, retry)
-    root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body, trailing: cuenta }))
+    root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body, trailing: cuenta,
+      sidebarNavItems: APP_NAV.filter(({ id }) => id !== 'racha' && id !== 'alertas') }))
   }
 
   // En vivo se repinta sin huecos ni animaciones, y solo si cambia algo de lo que se ve.
@@ -157,7 +160,7 @@ export function panelSeleccionadoScreen({
       const devolverFoco = recordarFoco()
       const content = element('div', REJILLA, back, ...tarjetas)
       root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Escuadrón', title: squad.nombre, body: content,
-        navItems: squadNavigation(id),
+        navItems, sidebarNavItems,
         trailing: [rachaChip({ racha }), squadSettingsLink(id), cuenta] }))
       devolverFoco()
       for (const link of root.querySelectorAll('a[href="/habito"]')) {
