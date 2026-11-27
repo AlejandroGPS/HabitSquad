@@ -19,6 +19,7 @@ import { alertasScreen } from './views/alertas.js'
 import { crearEscuadronScreen } from './views/crearEscuadron.js'
 import { configuracionEscuadronScreen } from './views/configuracionEscuadron.js'
 import { buscarEscuadronesScreen } from './views/buscarEscuadrones.js'
+import { menuScreen } from './views/menu.js'
 import { habitoDiarioScreen } from './views/habitoDiario.js'
 import { panelSeleccionadoScreen } from './views/panelSeleccionado.js'
 import { presentacionScreen } from './views/presentacion.js'
@@ -100,6 +101,19 @@ function createSquadErrorMessage(error) {
     return 'Tu sesión ha caducado. Vuelve a iniciar sesión.'
   }
   return 'No se ha podido crear el escuadrón. Comprueba tu conexión e inténtalo de nuevo.'
+}
+
+function menuView({ navigate } = {}) {
+  return menuScreen({
+    navigate,
+    onJoin: async (codigo) => {
+      try {
+        return await joinSquad(codigo)
+      } catch (error) {
+        throw new Error(joinSquadErrorMessage(error), { cause: error })
+      }
+    },
+  })
 }
 
 function joinSquadErrorMessage(error) {
@@ -190,16 +204,10 @@ export const routes = [
   {
     path: '/',
     title: 'HabitSquad',
-    view: ({ navigate } = {}) => presentacionScreen({
-      navigate,
-      cuenta: hasSession() ? accountMenu({
-        loadProfile: getProfile,
-        onLogout: async () => {
-          await logout()
-          navigate?.('/')
-        },
-      }) : undefined,
-    }),
+    view: ({ navigate } = {}) =>
+      hasSession()
+        ? menuView({ navigate })
+        : presentacionScreen({ navigate }),
   },
   {
     path: '/escuadrones/prueba',
