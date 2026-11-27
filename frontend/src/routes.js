@@ -167,7 +167,7 @@ export const routes = [
   },
   {
     path: '/alertas',
-    title: 'Alertas',
+    title: 'Alertas y toques',
     private: true,
     view: ({ navigate } = {}) => alertasScreen({ onLogout: async () => { await logout(); navigate?.('/login') } }),
   },
