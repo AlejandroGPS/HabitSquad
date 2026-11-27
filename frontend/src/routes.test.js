@@ -16,8 +16,8 @@ vi.mock('./api.js', async (importOriginal) => {
   return {
     ...actual,
     login: vi.fn(),
-    register: vi.fn(),
     logout: vi.fn(),
+    register: vi.fn(),
     requestPasswordReset: vi.fn(),
     confirmEmailVerification: vi.fn(),
     confirmPasswordReset: vi.fn(),
@@ -79,7 +79,6 @@ describe('sesión', () => {
     localStorage.clear()
     login.mockReset()
     register.mockReset()
-    logout.mockReset()
     confirmEmailVerification.mockReset()
     confirmPasswordReset.mockReset()
     requestEmailVerification.mockReset()
@@ -98,12 +97,12 @@ describe('sesión', () => {
     expect(home.view().querySelector('h1').textContent).toBe('Cumple tu hábito. Que no caiga la racha.')
   })
 
-  it('con sesión el inicio sigue mostrando la presentación', () => {
+  it('con sesión el inicio abre la búsqueda de escuadrones', () => {
     saveSession({ access: 'access-token', refresh: 'refresh-token' })
     const home = routes.find((route) => route.path === '/')
 
     expect(guard(home)).toBeNull()
-    expect(home.view().querySelector('h1').textContent).toBe('Cumple tu hábito. Que no caiga la racha.')
+    expect(home.view().querySelector('h1').textContent).toBe('Buscar escuadrones')
   })
 
   it('con sesión, /login y /registro llevan al selector', () => {
@@ -307,7 +306,6 @@ describe('sesión', () => {
     expect(navigate).not.toHaveBeenCalled()
     expect(hasSession()).toBe(false)
   })
-
   it('cerrar sesión llama a logout y vuelve a /login', async () => {
     saveSession({ access: 'access-token', refresh: 'refresh-token' })
     logout.mockResolvedValue(undefined)

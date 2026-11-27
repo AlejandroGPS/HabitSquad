@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alertas y toques · HabitSquad · Vista previa</title>
+  </head>
+  <body>
+    <script type="module">
+      import '@fontsource-variable/nunito'
+      import '/src/style.css'
+      import { alertasScreen } from '/src/views/alertas.js'
+
+      const grupos = [
+        { id: 1, nombre: 'Los imparables', miembros: [
+          { usuario_id: 1, nickname: 'Lucía', es_usuario: true },
+          { usuario_id: 2, nickname: 'Álex' },
+          { usuario_id: 3, nickname: 'Marta' },
+          { usuario_id: 4, nickname: 'Pablo', prueba_hoy: { estado: 'cumplido' } },
+        ] },
+        { id: 2, nombre: 'Un poquito cada día', miembros: [
+          { usuario_id: 1, nickname: 'Lucía', es_usuario: true },
+          { usuario_id: 5, nickname: 'Sofía' },
+        ] },
+      ]
+      let estadoAvisos = 'desactivado'
+      const datos = new Map()
+      document.body.append(alertasScreen({
+        demo: true,
+        api: {
+          getProfile: async () => ({ nickname: 'Lucía', hora_aviso: '21:30' }),
+          listSquads: async () => grupos,
+          getSquad: async (id) => grupos.find((grupo) => String(grupo.id) === id),
+          sendTouch: async () => { await new Promise((resolve) => setTimeout(resolve, 600)) },
+        },
+        avisos: {
+          consultar: async () => estadoAvisos,
+          activar: async () => { estadoAvisos = 'activado'; return estadoAvisos },
+          desactivar: async () => { estadoAvisos = 'desactivado'; return estadoAvisos },
+        },
+        almacen: {
+          getItem: (clave) => datos.get(clave),
+          setItem: (clave, valor) => datos.set(clave, valor),
+          removeItem: (clave) => datos.delete(clave),
+        },
+      }))
+    </script>
+  </body>
+</html>

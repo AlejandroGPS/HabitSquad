@@ -305,7 +305,7 @@ describe('selector recuperado conectado al backend', () => {
     ;[...root.querySelectorAll('button')].find((button) => button.textContent === 'Reintentar').click()
     await vi.waitFor(() => expect(root.querySelectorAll('a[aria-label^="Abrir panel"]')).toHaveLength(2))
   })
-  it('con sesión, la barra cambia de sección al navegar y el logo abre la presentación', async () => {
+  it('con sesión, la barra cambia de sección al navegar y el logo abre la búsqueda', async () => {
     start()
     await vi.waitFor(() => expect(root.textContent).toContain('Todavía no perteneces'))
     expect(root.querySelector('header [aria-current="page"]').textContent).toBe('Mis escuadrones')
@@ -321,7 +321,7 @@ describe('selector recuperado conectado al backend', () => {
 
     root.querySelector('header a[aria-label="HabitSquad"]').click()
     expect(window.location.pathname).toBe('/')
-    expect(root.querySelector('h1').textContent).toBe('Cumple tu hábito. Que no caiga la racha.')
+    expect(root.querySelector('h1').textContent).toBe('Buscar escuadrones')
   })
   it('protege el selector /escuadrones y el panel sin sesión', () => {
     clearSession()

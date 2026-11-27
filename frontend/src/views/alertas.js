@@ -1,4 +1,5 @@
-import { ApiError, getProfile } from '../api.js'
+import '../toques.css'
+import { ApiError, getProfile, getSquad, listSquads } from '../api.js'
 import { crearAvisos } from '../avisos.js'
 import { accountMenu } from '../components/accountMenu.js'
 import { appLayout } from '../components/appLayout.js'
@@ -6,6 +7,8 @@ import { card, cardLabel, pillButtonClass } from '../components/card.js'
 import { button, element } from '../components/dom.js'
 import { icon } from '../components/icons.js'
 import { PROFILE_BUTTON } from '../components/perfil.js'
+import { mascota } from '../components/mascota.js'
+import { toquesPanel } from '../components/toques.js'
 
 const AHORA_NO = 'habitsquad.avisos'
 
@@ -81,9 +84,10 @@ function muestraAviso() {
 
 export function alertasScreen({
   onLogout,
-  api = { getProfile },
+  api = { getProfile, getSquad, listSquads },
   avisos = crearAvisos(),
   almacen = window.localStorage,
+  demo = false,
 } = {}) {
   const perfil = api.getProfile()
 
@@ -109,6 +113,7 @@ export function alertasScreen({
     ),
     muestraAviso(),
   )
+  permiso.dataset.avisos = ''
 
   const hora = element('p', 'mt-1 text-[2.5rem] leading-none font-black tabular-nums', '—')
   const notaHora = element('p', 'mt-2 mb-4 text-[0.8125rem] font-bold text-ink-muted', 'Cada uno elige su hora en el perfil.')
@@ -117,14 +122,21 @@ export function alertasScreen({
   cambiarHora.dataset.link = ''
   const tuAviso = card('flex flex-col', cardLabel('Tu aviso', { icon: 'clock' }), hora, notaHora, cambiarHora)
 
-  const body = element('div', 'mt-4 grid gap-3 px-4 lg:mt-6 lg:grid-cols-4 lg:gap-4 lg:px-0', permiso, tuAviso)
+  const intro = element('div', 'alerts-intro', mascota('alerts-intro-mascot'),
+    element('div', 'min-w-0', element('p', 'alerts-intro-title', 'La constancia se contagia'),
+      element('p', 'mt-2 font-semibold text-ink-muted', 'Recuerda tu hábito y anima a quienes lo comparten contigo.')))
+  const body = element('div', 'alerts-content', intro,
+    demo && element('p', 'text-sm font-bold text-accent', 'Vista de ejemplo · Ningún toque ni aviso se envía fuera de esta pantalla.'),
+    toquesPanel({ api, demo }),
+    element('div', 'grid gap-4 lg:grid-cols-4', permiso, tuAviso))
   const cuenta = accountMenu({ loadProfile: () => perfil, onLogout })
   const volver = element('a', 'glass grid h-11 w-11 shrink-0 place-items-center rounded-full text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent', icon('back'))
   volver.href = '/escuadrones'
   volver.dataset.link = ''
   volver.setAttribute('aria-label', 'Volver a mis escuadrones')
-  const root = appLayout({ active: 'alertas', kicker: 'Tu cuenta', title: 'Alertas', body, trailing: cuenta,
+  const root = appLayout({ active: 'alertas', kicker: 'Tu cuenta', title: 'Alertas y toques', body, trailing: cuenta,
     leading: volver, showSidebar: false, detail: true })
+  root.querySelector('h1').classList.remove('truncate')
 
   perfil.then(
     (datos) => { hora.textContent = datos.hora_aviso },

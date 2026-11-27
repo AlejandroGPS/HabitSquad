@@ -684,3 +684,132 @@
     }
   }
 }
+
+/* Buscar escuadrones. El estado final ya está pintado: la animación solo marca el inicio. */
+@layer components {
+  .buscar-chips {
+    scrollbar-width: none;
+  }
+
+  .buscar-chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .buscar-page {
+    color: #1d1d1f;
+    background:
+      radial-gradient(ellipse 46% 38% at 0% 0%, rgb(255 196 168 / 0.95), transparent 68%),
+      radial-gradient(ellipse 40% 34% at 100% 0%, rgb(198 216 255 / 0.8), transparent 66%),
+      radial-gradient(ellipse 52% 46% at 100% 100%, rgb(198 170 255 / 0.88), transparent 70%),
+      radial-gradient(ellipse 36% 32% at 0% 100%, rgb(176 224 156 / 0.55), transparent 68%),
+      linear-gradient(180deg, #f7f5ff 0%, #f3effc 100%);
+  }
+
+  .buscar-page input[type='search']::-webkit-search-decoration,
+  .buscar-page input[type='search']::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .buscar-page :is(a, button, input, select):focus-visible {
+    outline: 3px solid #5b32ea;
+    outline-offset: 3px;
+  }
+
+  .buscar-shimmer {
+    background: linear-gradient(100deg, #f0ecf8 18%, #fff 42%, #f0ecf8 68%);
+    background-size: 220% 100%;
+  }
+
+  .buscar-card {
+    box-shadow: 0 12px 30px -22px rgb(60 30 140 / 0.55);
+  }
+
+  .buscar-codigo {
+    background: linear-gradient(165deg, #7d5cff 0%, #5b32ea 48%, #4a22d4 100%);
+    box-shadow: 0 22px 44px -26px rgb(70 30 180 / 0.75);
+  }
+}
+
+@keyframes buscar-rise {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+  }
+}
+
+@keyframes buscar-side {
+  from {
+    opacity: 0;
+    translate: 16px 12px;
+  }
+}
+
+@keyframes buscar-pop {
+  0% {
+    scale: 0.92;
+  }
+  55% {
+    scale: 1.06;
+  }
+}
+
+@keyframes buscar-shimmer {
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -120% 0;
+  }
+}
+
+@keyframes buscar-tecla {
+  from {
+    translate: 0 0.4rem;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .buscar-in {
+    animation: buscar-rise 0.5s cubic-bezier(0.16, 0.84, 0.32, 1) both;
+  }
+
+  .buscar-rise {
+    animation: buscar-rise 0.48s cubic-bezier(0.16, 0.84, 0.32, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+
+  .buscar-side {
+    animation: buscar-side 0.55s cubic-bezier(0.16, 0.84, 0.32, 1) backwards;
+    animation-delay: calc(90ms + var(--i, 0) * 80ms);
+  }
+
+  .buscar-pop {
+    animation: buscar-pop 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+
+  .buscar-chip[aria-pressed='true'] {
+    animation: buscar-pop 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+
+  .buscar-shimmer {
+    animation: buscar-shimmer 1.25s ease-in-out infinite;
+  }
+
+  .buscar-tecla {
+    animation: buscar-tecla 0.16s ease-out;
+  }
+
+  @media (pointer: fine) {
+    .buscar-card {
+      transition:
+        translate 0.2s ease,
+        box-shadow 0.2s ease;
+    }
+
+    .buscar-card:hover {
+      translate: 0 -3px;
+      box-shadow: 0 18px 36px -20px rgb(60 30 140 / 0.4);
+    }
+  }
+}

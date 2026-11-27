@@ -77,4 +77,14 @@ describe('appLayout', () => {
     expect(screen.querySelector('header').children).toHaveLength(1)
     expect(screen.querySelector('aside').children).toHaveLength(2)
   })
+
+  it('deja la flecha de volver encima del título, también en escritorio', () => {
+    const back = document.createElement('a')
+    back.textContent = '← Mis escuadrones'
+    const screen = mount({ back, detail: true })
+    const header = screen.querySelector('header')
+
+    expect(header.firstElementChild).toBe(back)
+    expect(header.querySelector('.lg\\:hidden')).toBeNull()
+  })
 })

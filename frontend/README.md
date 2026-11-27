@@ -190,7 +190,7 @@ HTTPS, así que se prueba con la versión desplegada.
 
 ## Alertas
 
-La pantalla `/alertas` (sección «Alertas» del menú) activa los avisos push de
+La pantalla «Alertas y toques», en `/alertas` (sección «Alertas» del menú), activa los avisos push de
 este navegador y enseña la hora de aviso del perfil. «Cambiar hora» lleva a
 `/perfil/editar#recordatorio`, donde se guarda con `PATCH /api/perfil/`.
 
@@ -212,6 +212,22 @@ no están disponibles. El backend tiene que tener las variables `VAPID_*` (ver
 el worker de Django Q2 en marcha. En iPhone y iPad solo llegan si la app está
 añadida a la pantalla de inicio. Chrome no permite avisos push en ventanas de
 incógnito.
+
+La sección de toques consulta los escuadrones y sus miembros reales, permite
+elegir a un compañero sin prueba y seleccionar entre tres mensajes predefinidos,
+sin emojis, o escribir un mensaje personalizado. El campo «Tu mensaje» permite
+editar también las plantillas; el borrador personalizado se conserva al alternar
+entre opciones. La vista previa refleja el destinatario y el texto editado y no
+se permite enviar un mensaje vacío. Se excluye al propio
+usuario y se deshabilitan los compañeros que ya han subido su prueba.
+
+El backend todavía no ofrece un endpoint para enviar toques: en la aplicación
+«Dar toque» permanece deshabilitado y se explica su disponibilidad. El componente
+`src/components/toques.js` admite un adaptador `sendTouch({ squadId, userId,
+messageId, text })` para conectarlo cuando se acuerde el contrato. Bloquea controles
+durante el envío, conserva la selección si falla y confirma solo al resolver.
+`previews/alertas.html`, disponible con `npm run dev`, permite probar todo el
+recorrido sin sesión con datos y envíos de ejemplo, sin notificaciones reales.
 
 ## Estructura
 

@@ -45,6 +45,8 @@ const OUTLINE_PATHS = {
     'M16 3.5a4 4 0 0 1 0 7.5',
     'M22 21c0-3-1.8-5.6-4.5-6.6',
   ],
+  search: ['M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z', 'm21 21-4.3-4.3'],
+  chevron: ['m6 9 6 6 6-6'],
 }
 
 function svg(className) {

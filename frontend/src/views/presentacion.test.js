@@ -59,10 +59,10 @@ describe('página de presentación', () => {
     }
   })
 
-  it('con sesión, / sigue mostrando la presentación', () => {
+  it('con sesión, / abre la búsqueda de escuadrones', () => {
     saveSession({ access: 'access-token', refresh: 'refresh-token' })
     const element = ruta('/').view({ navigate: vi.fn() })
-    expect(element.querySelector('h1').textContent).toBe(TITULO)
+    expect(element.querySelector('h1').textContent).toBe('Buscar escuadrones')
   })
 
   it('los botones del principio llevan a registro y a inicio de sesión', () => {

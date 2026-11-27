@@ -2,6 +2,7 @@ import { ApiError, getDailyHabit, getSquad, logout } from '../api.js'
 import { APP_NAV, appLayout } from '../components/appLayout.js'
 import { accountMenu } from '../components/accountMenu.js'
 import { element } from '../components/dom.js'
+import { panelBackLink } from '../components/navigation.js'
 import {
   cierreCard,
   habitoCard,
@@ -30,9 +31,7 @@ export function panelSeleccionadoScreen({
   const navItems = squadNavigation(id)
   const sidebarNavItems = navItems.filter(({ id }) => id !== 'racha' && id !== 'alertas')
   const root = element('div')
-  const back = element('a', `${ANCHO_COMPLETO} inline-flex min-h-11 items-center font-bold text-accent`, '← Mis escuadrones')
-  back.href = '/escuadrones'
-  back.dataset.link = ''
+  const back = panelBackLink({ href: '/escuadrones', label: 'Mis escuadrones' })
   const status = element('p', `${ANCHO_COMPLETO} font-semibold text-ink-muted empty:hidden`)
   status.setAttribute('role', 'status')
   const error = element('p', `${ANCHO_COMPLETO} font-bold text-red-700 empty:hidden`)
@@ -41,7 +40,7 @@ export function panelSeleccionadoScreen({
   retry.type = 'button'
   retry.hidden = true
   const huecos = panelCargando()
-  const body = element('div', REJILLA, back, status, error, retry)
+  const body = element('div', REJILLA, status, error, retry)
   // La cuenta usa el nickname y la foto que ya trae el escuadrón, sin pedir el perfil aparte.
   let mostrarIdentidad
   const identidad = new Promise((resolve) => { mostrarIdentidad = resolve })
@@ -49,7 +48,7 @@ export function panelSeleccionadoScreen({
     loadProfile: () => identidad,
     onLogout: async () => { await logout(); navigate('/login') },
   })
-  root.append(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body, trailing: cuenta,
+  root.append(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', back, body, trailing: cuenta,
     navItems, sidebarNavItems }))
   let loading = false
   let pendiente = false
@@ -91,8 +90,8 @@ export function panelSeleccionadoScreen({
     status.textContent = ''
     error.textContent = 'Ya no formas parte de este escuadrón. Vuelve a Mis escuadrones.'
     retry.hidden = true
-    body.replaceChildren(back, status, error, retry)
-    root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body, trailing: cuenta,
+    body.replaceChildren(status, error, retry)
+    root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', back, body, trailing: cuenta,
       sidebarNavItems: APP_NAV.filter(({ id }) => id !== 'racha' && id !== 'alertas') }))
   }
 
@@ -158,8 +157,8 @@ export function panelSeleccionadoScreen({
         }
       }
       const devolverFoco = recordarFoco()
-      const content = element('div', REJILLA, back, ...tarjetas)
-      root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Escuadrón', title: squad.nombre, body: content,
+      const content = element('div', REJILLA, ...tarjetas)
+      root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Escuadrón', title: squad.nombre, back, body: content,
         navItems, sidebarNavItems,
         trailing: [rachaChip({ racha }), squadSettingsLink(id), cuenta] }))
       devolverFoco()
