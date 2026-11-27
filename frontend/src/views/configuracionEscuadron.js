@@ -5,6 +5,7 @@ import { iniciales, squadAvatar } from '../components/avatar.js'
 import { pillLink } from '../components/buttons.js'
 import { button, element } from '../components/dom.js'
 import { icon } from '../components/icons.js'
+import { panelBackLink } from '../components/navigation.js'
 import { clearFieldError, labeledField, setFieldError } from '../components/forms.js'
 import { settingsTabs } from '../components/configuracion/tabs.js'
 import { squadNavigation } from '../components/panel/navigation.js'
@@ -51,8 +52,11 @@ export function configuracionEscuadronScreen({ api = squadSettingsApi, id, panel
   })
   tabs.node.hidden = true
   const backLabel = panelHref.startsWith('/escuadrones/panel?') ? 'Volver al panel' : 'Mis escuadrones'
-  const back = pillLink({ href: panelHref, variant: 'secondary', className: 'settings-back h-11 w-11 px-0' }, icon('back'))
-  back.setAttribute('aria-label', backLabel)
+  const back = panelBackLink({
+    href: panelHref,
+    label: backLabel === 'Volver al panel' ? 'Panel' : 'Mis escuadrones',
+    ariaLabel: backLabel,
+  })
   content.append(tabs.node, error, status, panel)
   const demoNote = text('Datos de ejemplo. Los cambios se conservan al navegar y se reinician al recargar.', 'settings-demo')
   const originId = new URL(panelHref, window.location.origin).searchParams.get('id')

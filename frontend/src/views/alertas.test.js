@@ -48,7 +48,8 @@ describe('alertasScreen', () => {
     const volver = screen.querySelector('header a[aria-label="Volver a mis escuadrones"]')
     expect(volver.getAttribute('href')).toBe('/escuadrones')
     expect(volver.hasAttribute('data-link')).toBe(true)
-    expect(volver.querySelector('svg')).not.toBeNull()
+    expect(volver.textContent).toBe('← Mis escuadrones')
+    expect(volver.querySelector('svg')).toBeNull()
     expect(volver.parentElement.classList.contains('lg:hidden')).toBe(false)
   })
 

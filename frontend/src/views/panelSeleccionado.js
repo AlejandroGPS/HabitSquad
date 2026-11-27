@@ -2,6 +2,7 @@ import { ApiError, getDailyHabit, getSquad, logout } from '../api.js'
 import { APP_NAV, appLayout } from '../components/appLayout.js'
 import { accountMenu } from '../components/accountMenu.js'
 import { element } from '../components/dom.js'
+import { panelBackLink } from '../components/navigation.js'
 import {
   cierreCard,
   habitoCard,
@@ -30,9 +31,8 @@ export function panelSeleccionadoScreen({
   const navItems = squadNavigation(id)
   const sidebarNavItems = navItems.filter(({ id }) => id !== 'racha' && id !== 'alertas')
   const root = element('div')
-  const back = element('a', `${ANCHO_COMPLETO} inline-flex min-h-11 items-center font-bold text-accent`, '← Mis escuadrones')
-  back.href = '/escuadrones'
-  back.dataset.link = ''
+  const back = panelBackLink({ href: '/escuadrones', label: 'Mis escuadrones' })
+  back.classList.add('col-span-2', 'lg:col-span-4')
   const status = element('p', `${ANCHO_COMPLETO} font-semibold text-ink-muted empty:hidden`)
   status.setAttribute('role', 'status')
   const error = element('p', `${ANCHO_COMPLETO} font-bold text-red-700 empty:hidden`)

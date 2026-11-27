@@ -2,6 +2,7 @@ import { ApiError, getDailyHabit, getSquad, saveDailyHabit } from '../api.js'
 import { appLayout } from '../components/appLayout.js'
 import { element } from '../components/dom.js'
 import { icon } from '../components/icons.js'
+import { panelBackLink } from '../components/navigation.js'
 import { squadNavigation } from '../components/panel/navigation.js'
 import mascotUrl from '../assets/mascota.webp'
 
@@ -96,11 +97,7 @@ export function habitoDiarioScreen({ navigate, api = { getSquad, getDailyHabit, 
   retry.hidden = true
   const save = element('button', 'flex min-h-[3.25rem] w-full items-center justify-center rounded-full bg-accent px-6 text-[1.0625rem] font-extrabold text-white disabled:opacity-50', 'Guardar hábito')
   save.type = 'submit'
-  const back = element('a', 'glass grid h-11 w-11 shrink-0 place-items-center rounded-full text-ink')
-  back.href = '/escuadrones'
-  back.dataset.link = ''
-  back.setAttribute('aria-label', 'Volver al panel')
-  back.append(icon('back'))
+  const back = panelBackLink({ href: '/escuadrones', label: 'Panel', ariaLabel: 'Volver al panel' })
   const chooseSquad = element('a', 'inline-flex min-h-11 items-center font-bold text-accent', 'Ir a Mis escuadrones')
   chooseSquad.href = '/escuadrones'
   chooseSquad.dataset.link = ''
