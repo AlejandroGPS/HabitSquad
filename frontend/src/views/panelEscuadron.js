@@ -2,6 +2,7 @@ import { accountMenu } from '../components/accountMenu.js'
 import { appLayout } from '../components/appLayout.js'
 import { squadAvatar } from '../components/avatar.js'
 import { element } from '../components/dom.js'
+import { squadNavigation, squadSettingsLink } from '../components/panel/navigation.js'
 import {
   alertasBoton,
   cierreCard,
@@ -18,6 +19,7 @@ import {
 export function panelEscuadronScreen({ escuadron, miembros = [], ahora = new Date(), acciones = {} }) {
   const { nombre, codigo, plazas = 5, racha = 0, cierre = '23:59' } = escuadron
   const usuario = miembros.find(({ esUsuario }) => esUsuario)
+  const navItems = squadNavigation(escuadron.id)
 
   const body = element(
     'div',
@@ -40,10 +42,13 @@ export function panelEscuadronScreen({ escuadron, miembros = [], ahora = new Dat
     active: 'escuadron',
     kicker: 'Escuadrón',
     title: nombre,
+    navItems,
+    sidebarNavItems: navItems.filter(({ id }) => id !== 'racha' && id !== 'alertas'),
     leading: squadAvatar({ nombre }),
     trailing: [
       rachaChip({ racha }),
       alertasBoton(),
+      squadSettingsLink(escuadron.id),
       accountMenu({ nombre: usuario?.nombre, onLogout: acciones.cerrarSesion }),
     ],
     sidebarFooter: escuadronResumen({ nombre, miembros: miembros.length, plazas }),

@@ -23,7 +23,7 @@ export function backLink({ href, label }) {
 }
 
 const panelBackClass = [
-  'inline-flex min-h-11 min-w-11 shrink-0 items-center font-bold text-accent',
+  'inline-flex min-h-11 min-w-11 shrink-0 items-center whitespace-nowrap font-bold text-accent',
   'rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
 ].join(' ')
 

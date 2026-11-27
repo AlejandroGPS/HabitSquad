@@ -75,6 +75,7 @@ describe('loginScreen', () => {
     expect(
       element.querySelector('a[aria-current="page"]').textContent,
     ).toBe('Iniciar sesión')
+    expect(element.querySelector('a[href="/reenviar-verificacion"]')).toBeNull()
   })
 
   it('avisa si faltan el correo o la contraseña y no envía el formulario', () => {
@@ -167,5 +168,27 @@ describe('loginScreen', () => {
       expect(password.selectionStart).toBe(0)
       expect(password.selectionEnd).toBe('secreta'.length)
     })
+    expect(element.querySelector('a[href="/reenviar-verificacion"]')).toBeNull()
+  })
+
+  it('no ofrece reenviar la verificación hasta que el error diga que falta verificar', async () => {
+    const onSubmit = vi.fn().mockRejectedValueOnce(
+      new Error('El correo o la contraseña no son correctos, o falta verificar el correo.'),
+    )
+    const element = mount(loginScreen({ onSubmit }))
+
+    expect(element.querySelector('a[href="/reenviar-verificacion"]')).toBeNull()
+
+    fill(element, { email: 'persona@example.com', password: 'secreta' })
+    submit(element)
+
+    await vi.waitFor(() => {
+      expect(element.querySelector('a[href="/reenviar-verificacion"]').textContent).toBe(
+        'Reenviar correo de verificación',
+      )
+    })
+
+    element.querySelector('input[name="email"]').dispatchEvent(new Event('input', { bubbles: true }))
+    expect(element.querySelector('a[href="/reenviar-verificacion"]')).toBeNull()
   })
 })

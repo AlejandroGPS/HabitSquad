@@ -11,6 +11,7 @@ describe('panelBackLink', () => {
     expect(link.textContent).toBe('← Mis escuadrones')
     expect(link.querySelector('svg')).toBeNull()
     expect(link.className).toContain('text-accent')
+    expect(link.className).toContain('whitespace-nowrap')
     expect(link.className).not.toContain('glass')
     expect(link.hasAttribute('aria-label')).toBe(false)
   })

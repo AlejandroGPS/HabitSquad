@@ -4,6 +4,7 @@ from rest_framework import serializers
 from escuadrones.models import Escuadron, Membresia
 from habitos.api.serializers import HabitoDiarioSerializer
 from habitos.models import RegistroDiario
+from habitos.prueba.services import build_signed_foto_url
 
 
 class ResumenPruebaSerializer(serializers.ModelSerializer):
@@ -36,7 +37,17 @@ class MembresiaDetalleSerializer(serializers.ModelSerializer):
 
 
 class MembresiaConPruebaSerializer(MembresiaDetalleSerializer):
-    nombre = serializers.CharField(source="usuario.get_full_name", read_only=True)
+    nickname = serializers.CharField(
+        source="usuario.nickname",
+        read_only=True,
+        help_text="Nombre público del usuario (perfil/registro).",
+    )
+    foto_url = serializers.SerializerMethodField(
+        help_text=(
+            "URL firmada o temporal de la foto de perfil. null si no hay foto. "
+            "No es una URL pública permanente."
+        ),
+    )
     es_usuario = serializers.SerializerMethodField()
     prueba_hoy = serializers.SerializerMethodField()
     semana = serializers.SerializerMethodField()
@@ -44,7 +55,8 @@ class MembresiaConPruebaSerializer(MembresiaDetalleSerializer):
     class Meta(MembresiaDetalleSerializer.Meta):
         fields = (
             *MembresiaDetalleSerializer.Meta.fields,
-            "nombre",
+            "nickname",
+            "foto_url",
             "es_usuario",
             "prueba_hoy",
             "semana",
@@ -53,6 +65,13 @@ class MembresiaConPruebaSerializer(MembresiaDetalleSerializer):
 
     def get_es_usuario(self, obj) -> bool:
         return obj.usuario_id == self.context["request"].user.pk
+
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_foto_url(self, obj) -> str | None:
+        public_id = obj.usuario.foto_perfil_public_id
+        if not public_id:
+            return None
+        return build_signed_foto_url(public_id)
 
     @extend_schema_field(ResumenPruebaSerializer(allow_null=True))
     def get_prueba_hoy(self, obj):
@@ -80,6 +99,8 @@ class EscuadronConMiembrosSerializer(serializers.ModelSerializer):
             "id",
             "nombre",
             "codigo_invitacion",
+            "es_publico",
+            "limite_miembros",
             "creador_id",
             "miembros",
         )

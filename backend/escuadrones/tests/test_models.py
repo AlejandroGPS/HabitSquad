@@ -1,4 +1,5 @@
 import pytest
+from django.db import IntegrityError, transaction
 
 from escuadrones.models import Escuadron, Membresia
 from usuarios.models import CustomUser
@@ -21,6 +22,19 @@ def test_escuadron_string_representation(user):
     )
 
     assert str(escuadron) == "Madrugadores"
+    assert escuadron.es_publico is False
+    assert escuadron.limite_miembros == 5
+
+
+@pytest.mark.django_db
+def test_escuadron_limit_cannot_be_lower_than_two(user):
+    with transaction.atomic(), pytest.raises(IntegrityError):
+        Escuadron.objects.create(
+            nombre="Madrugadores",
+            creador=user,
+            codigo_invitacion="X8K9QL",
+            limite_miembros=1,
+        )
 
 
 @pytest.mark.django_db

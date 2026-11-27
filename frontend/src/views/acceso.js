@@ -61,6 +61,27 @@ function accesoScreen({ mode, onSubmit, notice: noticeMessage } = {}) {
     placeholder: isLogin ? 'Tu contraseña' : 'Mínimo 8 caracteres',
     autocomplete: isLogin ? 'current-password' : 'new-password',
   })
+  const fields = [email]
+  if (!isLogin) {
+    fields.push(labeledField({
+      label: 'Nickname',
+      id: 'registro-nickname',
+      name: 'nickname',
+      type: 'text',
+      placeholder: 'Tu nombre en el escuadrón',
+      autocomplete: 'nickname',
+    }))
+  }
+  fields.push(password)
+  if (!isLogin) {
+    fields.push(passwordField({
+      label: 'Confirmar contraseña',
+      id: 'registro-password-confirm',
+      name: 'password_confirm',
+      placeholder: 'Repite tu contraseña',
+      autocomplete: 'new-password',
+    }))
+  }
 
   const submit = submitButton(copy.submit)
   const alert = formAlert()
@@ -73,31 +94,30 @@ function accesoScreen({ mode, onSubmit, notice: noticeMessage } = {}) {
   function clearField(field) {
     clearFieldError(field.input, field.error)
     clearFormAlert(alert)
+    content.querySelector('a[href="/reenviar-verificacion"]')?.remove()
   }
 
-  email.input.addEventListener('input', () => clearField(email))
-  password.input.addEventListener('input', () => clearField(password))
+  for (const field of fields) {
+    field.input.addEventListener('input', () => clearField(field))
+  }
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault()
     if (submit.disabled) return
     clearFormAlert(alert)
+    content.querySelector('a[href="/reenviar-verificacion"]')?.remove()
 
-    const values = {
-      email: email.input.value,
-      password: password.input.value,
-    }
+    const values = Object.fromEntries(fields.map(({ input }) => [input.name, input.value]))
     const result = isLogin ? validateLogin(values) : validateRegistration(values)
 
-    for (const field of [email, password]) {
+    for (const field of fields) {
       const message = result.errors[field.input.name]
       if (message) setFieldError(field.input, field.error, message)
       else clearFieldError(field.input, field.error)
     }
 
     if (!result.ok) {
-      const firstInvalid = result.errors.email ? email.input : password.input
-      firstInvalid.focus()
+      fields.find(({ input }) => result.errors[input.name]).input.focus()
       return
     }
 
@@ -105,7 +125,8 @@ function accesoScreen({ mode, onSubmit, notice: noticeMessage } = {}) {
 
     setSubmitPending(submit, true, copy.pending)
     try {
-      await onSubmit({ email: result.email, password: result.password })
+      const { ok, errors, ...credentials } = result
+      await onSubmit(credentials)
       if (!isLogin) {
         const confirmation = document.createElement('div')
         confirmation.className = 'mt-5 flex flex-col'
@@ -121,23 +142,31 @@ function accesoScreen({ mode, onSubmit, notice: noticeMessage } = {}) {
     } catch (error) {
       const fieldErrors = error?.cause?.data
       if (fieldErrors && typeof fieldErrors === 'object') {
-        const emailErr = Array.isArray(fieldErrors.email)
-          ? fieldErrors.email[0]
-          : fieldErrors.email
-        const passErr = Array.isArray(fieldErrors.password)
-          ? fieldErrors.password[0]
-          : fieldErrors.password
-        if (emailErr) setFieldError(email.input, email.error, String(emailErr).trim())
-        if (passErr) setFieldError(password.input, password.error, String(passErr).trim())
-        if (emailErr) {
-          email.input.focus()
-        } else if (passErr) {
-          password.input.focus()
-          password.input.select?.()
+        let firstInvalid
+        for (const field of fields) {
+          const value = fieldErrors[field.input.name]
+          const message = Array.isArray(value) ? value[0] : value
+          if (!message) continue
+          setFieldError(field.input, field.error, String(message).trim())
+          firstInvalid ??= field.input
+        }
+        if (firstInvalid) {
+          firstInvalid.focus()
+          if (firstInvalid.type === 'password') firstInvalid.select()
         }
       }
       showFormAlert(alert, error.message, submit)
       if (isLogin) {
+        // Solo cuando el fallo apunta a correo sin verificar: el 401 del login
+        // mezcla credenciales incorrectas y verificación pendiente.
+        const resend = content.querySelector('a[href="/reenviar-verificacion"]')
+        if (String(error.message).includes('verificar')) {
+          if (!resend) {
+            content.append(backLink({ href: '/reenviar-verificacion', label: 'Reenviar correo de verificación' }))
+          }
+        } else {
+          resend?.remove()
+        }
         password.input.focus()
         password.input.select()
       }
@@ -146,7 +175,7 @@ function accesoScreen({ mode, onSubmit, notice: noticeMessage } = {}) {
     }
   })
 
-  form.append(email.wrapper, password.wrapper)
+  form.append(...fields.map(({ wrapper }) => wrapper))
   if (isLogin) form.append(passwordRecoveryLink())
   form.append(submit)
 
@@ -157,11 +186,6 @@ function accesoScreen({ mode, onSubmit, notice: noticeMessage } = {}) {
     content.append(noticeWrapper)
   }
   content.append(form, note)
-  if (isLogin) {
-    content.append(
-      backLink({ href: '/reenviar-verificacion', label: 'Reenviar correo de verificación' }),
-    )
-  }
   return main
 }
 

@@ -35,6 +35,8 @@ Content-Type: application/json
   "id": 1,
   "nombre": "Madrugadores",
   "codigo_invitacion": "X8K9QL",
+  "es_publico": false,
+  "limite_miembros": 5,
   "creador_id": 42,
   "miembros": [
     {
@@ -54,6 +56,8 @@ Content-Type: application/json
 | `id` | integer | Identificador del escuadrón al que se ha unido. |
 | `nombre` | string | Nombre del escuadrón. |
 | `codigo_invitacion` | string | Código de invitación del escuadrón (6 caracteres `A–Z` / `0–9`). |
+| `es_publico` | boolean | Indica si el escuadrón es público. |
+| `limite_miembros` | integer | Máximo configurado de miembros. |
 | `creador_id` | integer | ID del usuario que creó el escuadrón. |
 | `miembros` | array | Lista de membresías tras la unión, incluido el usuario que se acaba de unir. |
 | `miembros[].usuario_id` | integer | ID del usuario miembro. |

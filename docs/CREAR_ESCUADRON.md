@@ -35,6 +35,8 @@ Content-Type: application/json
   "id": 1,
   "nombre": "Madrugadores",
   "codigo_invitacion": "X8K9QL",
+  "es_publico": false,
+  "limite_miembros": 5,
   "creador_id": 42,
   "miembros": [
     {
@@ -50,6 +52,8 @@ Content-Type: application/json
 | `id` | integer | Identificador del escuadrón. |
 | `nombre` | string | Nombre persistido (espacios extremos recortados). |
 | `codigo_invitacion` | string | Código único de 6 caracteres alfanuméricos en mayúsculas (`A–Z`, `0–9`). |
+| `es_publico` | boolean | Visibilidad del escuadrón. Se crea como privado (`false`). |
+| `limite_miembros` | integer | Máximo de miembros. Se crea con valor `5`; el mínimo permitido es `2`. |
 | `creador_id` | integer | ID del usuario autenticado que creó el escuadrón. |
 | `miembros` | array | Lista de membresías. En la creación incluye al creador como administrador. |
 | `miembros[].usuario_id` | integer | ID del usuario miembro. |
@@ -62,6 +66,7 @@ Content-Type: application/json
 2. Se genera un `codigo_invitacion` de 6 caracteres que no colisione con ningún
    escuadrón existente.
 3. El creador queda registrado como miembro con `es_administrador: true`.
+4. La configuración inicial es privada y permite hasta 5 miembros.
 
 ## Errores
 

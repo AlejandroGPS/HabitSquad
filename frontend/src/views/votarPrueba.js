@@ -6,6 +6,7 @@ import { icon } from '../components/icons.js'
 import { panelBackLink } from '../components/navigation.js'
 import { alertasBoton, escuadronResumen } from '../components/panel/cabecera.js'
 import { ESTADOS } from '../components/panel/estados.js'
+import { squadNavigation } from '../components/panel/navigation.js'
 import { habitText } from './habitoDiario.js'
 
 const cardStyle = 'rounded-3xl border-2 border-white bg-white/85 shadow-sm'
@@ -76,7 +77,7 @@ export function votarPruebaScreen() {
   const proofId = params.get('registro')
   const validId = (value) => /^[1-9]\d*$/.test(value ?? '')
   const back = panelBackLink({
-    href: validId(squadId) ? `/escuadrones/panel?id=${squadId}` : '/',
+    href: validId(squadId) ? `/escuadrones/panel?id=${squadId}` : '/escuadrones',
     label: 'Panel',
     ariaLabel: 'Volver al escuadrón',
   })
@@ -92,10 +93,11 @@ export function votarPruebaScreen() {
   const content = element('div')
   const body = element('div', 'mt-4 px-4 lg:mt-6 lg:px-0', content, status, error, retry)
   const screen = appLayout({
-    active: 'escuadron', kicker: 'Votación', title, back,
+    active: 'escuadron', kicker: 'Votación', title, leading: back,
     trailing: [alertasBoton()], sidebarFooter: footer, body, detail: true,
+    navItems: squadNavigation(squadId),
   })
-  for (const link of screen.querySelectorAll('nav a[href="/"]')) link.href = back.href
+  for (const link of screen.querySelectorAll('nav a[href="/"], nav a[href="/escuadrones"]')) link.href = back.href
   for (const link of screen.querySelectorAll('nav a[href="/habito"]')) {
     if (validId(squadId)) link.href = `/habito?escuadron=${squadId}`
   }
@@ -118,7 +120,7 @@ export function votarPruebaScreen() {
       ])
       const members = new Map(squad.miembros.map((member) => [member.usuario_id, member]))
       const viewer = squad.miembros.find(({ es_usuario }) => es_usuario)
-      const nameFor = (id) => members.get(id)?.nombre || `Miembro ${id}`
+      const nameFor = (id) => members.get(id)?.nickname || `Miembro ${id}`
       const author = nameFor(proof.usuario_id)
       title.textContent = `Prueba de ${author}`
       footer.replaceChildren(escuadronResumen({ nombre: squad.nombre, miembros: members.size }))

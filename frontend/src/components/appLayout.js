@@ -3,9 +3,9 @@ import { element } from './dom.js'
 import { icon } from './icons.js'
 
 export const APP_NAV = [
-  { id: 'escuadron', label: 'Escuadrón', icon: 'users', href: '/' },
-  { id: 'racha', label: 'Racha', icon: 'flame' },
-  { id: 'alertas', label: 'Alertas', icon: 'bell' },
+  { id: 'escuadron', label: 'Escuadrón', icon: 'users', href: '/escuadrones' },
+  { id: 'racha', label: 'Racha', icon: 'flame', href: '/perfil/editar#recordatorio' },
+  { id: 'alertas', label: 'Alertas', icon: 'bell', href: '/alertas' },
   { id: 'habito', label: 'Mi hábito', icon: 'book', href: '/habito', webOnly: true },
 ]
 
@@ -24,7 +24,7 @@ function navItem(item, active, className) {
   return node
 }
 
-function sidebar(active, footer) {
+function sidebar(active, footer, items) {
   const brand = element(
     'a',
     'flex items-center gap-2.5 rounded-xl px-2 py-1',
@@ -36,7 +36,7 @@ function sidebar(active, footer) {
 
   const nav = element('nav', 'mt-8 flex flex-col gap-1')
   nav.setAttribute('aria-label', 'Secciones')
-  for (const item of APP_NAV) {
+  for (const item of items.filter(({ sidebarHidden }) => !sidebarHidden)) {
     const link = navItem(item, active, 'flex items-center gap-3 rounded-2xl px-3 py-2.5 font-extrabold')
     link.append(icon(item.icon), item.label)
     nav.append(link)
@@ -51,13 +51,13 @@ function sidebar(active, footer) {
   )
 }
 
-function tabBar(active) {
+function tabBar(active, items) {
   const nav = element(
     'nav',
     'glass sticky bottom-4 z-10 mx-4 flex justify-around rounded-full p-1.5 lg:hidden',
   )
   nav.setAttribute('aria-label', 'Secciones')
-  for (const item of APP_NAV.filter(({ webOnly }) => !webOnly)) {
+  for (const item of items.filter(({ webOnly }) => !webOnly)) {
     const link = navItem(
       item,
       active,
@@ -69,23 +69,18 @@ function tabBar(active) {
   return nav
 }
 
-export function appLayout({ active, kicker, title, leading, back, trailing, sidebarFooter, body, detail = false }) {
+export function appLayout({ active, kicker, title, leading, trailing, sidebarFooter, body, detail = false, navItems = APP_NAV, sidebarNavItems = navItems, showSidebar = true }) {
   const header = element(
     'header',
-    'flex flex-col gap-1 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-1 lg:px-0 lg:pt-8',
-    back,
+    'flex items-center gap-3 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-1 lg:px-0 lg:pt-8',
+    leading && element('span', detail || !showSidebar ? '' : 'lg:hidden', leading),
     element(
       'div',
-      'flex min-w-0 items-center gap-3',
-      leading && element('span', detail ? '' : 'lg:hidden', leading),
-      element(
-        'div',
-        'min-w-0',
-        element('p', 'text-[0.9375rem] font-bold text-ink-muted', kicker),
-        element('h1', 'truncate text-[1.375rem] leading-tight font-black lg:text-[2rem]', title),
-      ),
-      trailing && element('div', 'ms-auto flex items-center gap-2', trailing),
+      'min-w-0',
+      element('p', 'text-[0.9375rem] font-bold text-ink-muted', kicker),
+      element('h1', 'truncate text-[1.375rem] leading-tight font-black lg:text-[2rem]', title),
     ),
+    trailing && element('div', 'ms-auto flex items-center gap-2', trailing),
   )
 
   const content = element(
@@ -94,7 +89,7 @@ export function appLayout({ active, kicker, title, leading, back, trailing, side
     header,
     body,
     element('div', 'min-h-4 flex-1'),
-    !detail && tabBar(active),
+    !detail && tabBar(active, navItems),
   )
 
   const backdrop = element('div', 'app-backdrop pointer-events-none fixed inset-0 -z-10')
@@ -104,7 +99,7 @@ export function appLayout({ active, kicker, title, leading, back, trailing, side
     'main',
     'relative isolate flex min-h-dvh overflow-x-clip font-rounded text-ink antialiased',
     backdrop,
-    sidebar(active, sidebarFooter),
+    showSidebar && sidebar(active, sidebarFooter, sidebarNavItems),
     element('div', 'min-w-0 flex-1', content),
   )
 }

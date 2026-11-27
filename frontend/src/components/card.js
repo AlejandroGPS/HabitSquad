@@ -7,8 +7,8 @@ export const cardClass = [
 ].join(' ')
 
 export const pillButtonClass = [
-  'inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-accent/10 px-4',
-  'text-[0.9375rem] font-bold text-accent disabled:opacity-50',
+  'inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-accent/10 px-4',
+  'text-[0.9375rem] font-bold text-accent disabled:cursor-default disabled:opacity-50',
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
 ].join(' ')
 
@@ -42,9 +42,11 @@ export function cardNote(text) {
 }
 
 export function progressBars(colors, className = 'mt-2') {
-  return element(
+  const bars = element(
     'div',
     `${className} flex gap-1`,
     ...colors.map((color) => element('span', `h-2.5 flex-1 rounded-full ${color}`)),
   )
+  bars.dataset.barras = ''
+  return bars
 }

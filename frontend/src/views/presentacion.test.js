@@ -59,10 +59,10 @@ describe('página de presentación', () => {
     }
   })
 
-  it('con sesión, / no muestra la presentación', () => {
+  it('con sesión, / sigue mostrando la presentación', () => {
     saveSession({ access: 'access-token', refresh: 'refresh-token' })
     const element = ruta('/').view({ navigate: vi.fn() })
-    expect(element.querySelector('h1').textContent).not.toBe(TITULO)
+    expect(element.querySelector('h1').textContent).toBe(TITULO)
   })
 
   it('los botones del principio llevan a registro y a inicio de sesión', () => {
@@ -202,16 +202,16 @@ describe('vuelta a unirse tras iniciar sesión o registrarse', () => {
   })
 
   it.each(['//evil.com', '/\\evil.com', 'https://evil.com', 'escuadrones'])(
-    'no acepta %s como destino y vuelve al inicio',
+    'no acepta %s como destino y vuelve al selector',
     (siguiente) => {
       window.history.replaceState({}, '', conSiguiente('/login', siguiente))
-      expect(destinoTrasAcceso()).toBe('/')
+      expect(destinoTrasAcceso()).toBe('/escuadrones')
     },
   )
 
-  it('sin ?siguiente= vuelve al inicio', () => {
+  it('sin ?siguiente= vuelve al selector', () => {
     window.history.replaceState({}, '', '/login')
-    expect(destinoTrasAcceso()).toBe('/')
+    expect(destinoTrasAcceso()).toBe('/escuadrones')
   })
 
   it('unirse rellena las casillas con el código de la URL', () => {

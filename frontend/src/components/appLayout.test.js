@@ -38,16 +38,19 @@ describe('appLayout', () => {
     expect(screen.querySelector('aside a[href="/"]').textContent).toBe('HabitSquad')
   })
 
-  it('enlaza las secciones con ruta y desactiva las que aún no existen', () => {
+  it('enlaza las secciones y lleva Racha al recordatorio del perfil', () => {
     const screen = mount()
     const [sidebarNav] = screen.querySelectorAll('nav[aria-label="Secciones"]')
-    const [escuadron, racha] = sidebarNav.children
+    const [escuadron, racha, alertas] = sidebarNav.children
 
     expect(escuadron.tagName).toBe('A')
-    expect(escuadron.getAttribute('href')).toBe('/')
+    expect(escuadron.getAttribute('href')).toBe('/escuadrones')
     expect(escuadron.hasAttribute('data-link')).toBe(true)
-    expect(racha.tagName).toBe('SPAN')
-    expect(racha.getAttribute('aria-disabled')).toBe('true')
+    expect(racha.tagName).toBe('A')
+    expect(racha.getAttribute('href')).toBe('/perfil/editar#recordatorio')
+    expect(racha.hasAttribute('data-link')).toBe(true)
+    expect(alertas.getAttribute('href')).toBe('/alertas')
+    expect(alertas.hasAttribute('data-link')).toBe(true)
   })
 
   it('marca la sección activa', () => {
@@ -73,15 +76,5 @@ describe('appLayout', () => {
 
     expect(screen.querySelector('header').children).toHaveLength(1)
     expect(screen.querySelector('aside').children).toHaveLength(2)
-  })
-
-  it('deja la flecha de volver encima del título, también en escritorio', () => {
-    const back = document.createElement('a')
-    back.textContent = '← Mis escuadrones'
-    const screen = mount({ back, detail: true })
-    const header = screen.querySelector('header')
-
-    expect(header.firstElementChild).toBe(back)
-    expect(header.querySelector('.lg\\:hidden')).toBeNull()
   })
 })

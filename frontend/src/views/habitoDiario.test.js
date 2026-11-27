@@ -44,6 +44,8 @@ describe('Elegir hábito conectado a la API', () => {
     expect(back.querySelector('svg')).toBeNull()
     expect(back.className).not.toContain('glass')
     expect(view.querySelector('nav.lg\\:hidden')).toBeNull()
+    expect([...view.querySelectorAll('aside nav a')].map((link) => link.textContent))
+      .toEqual(['Escuadrón', 'Mi hábito', 'Configuración'])
     expect(view.textContent).toContain('la racha del escuadrón vuelve a cero')
   })
   it.each([
@@ -191,7 +193,7 @@ describe('Elegir hábito conectado a la API', () => {
     expect(input.value).toBe('Leer 20 minutos')
     const choose = [...view.querySelectorAll('a')].find((link) => link.textContent === 'Ir a Mis escuadrones')
     expect(choose.hidden).toBe(false)
-    expect(choose.getAttribute('href')).toBe('/')
+    expect(choose.getAttribute('href')).toBe('/escuadrones')
     submit(view)
     expect(fetchMock).not.toHaveBeenCalled()
   })

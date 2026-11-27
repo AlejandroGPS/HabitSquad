@@ -48,11 +48,18 @@ describe('panelEscuadronScreen', () => {
     expect(header.textContent).toContain('12')
     expect(header.querySelector('.sr-only').textContent).toBe('Alertas')
     expect(header.querySelector('[aria-label="Tu cuenta"]').textContent).toBe('A')
-    expect(hrefs).toEqual(['/escuadrones/nuevo', '/escuadrones/unirse'])
+    expect(hrefs).toEqual(['/alertas', '/escuadrones/configuracion', '/perfil', '/escuadrones/nuevo', '/escuadrones/unirse'])
   })
 
   it('marca la sección Escuadrón como activa', () => {
-    expect(mount().querySelector('aside [aria-current="page"]').textContent).toBe('Escuadrón')
+    const screen = mount()
+    expect(screen.querySelector('aside [aria-current="page"]').textContent).toBe('Escuadrón')
+    expect([...screen.querySelectorAll('aside nav a')].map((link) => link.textContent)).toEqual(
+      ['Escuadrón', 'Mi hábito', 'Configuración'],
+    )
+    expect([...screen.querySelectorAll('nav.lg\\:hidden a')].map((link) => link.textContent)).toEqual(
+      ['Escuadrón', 'Mi hábito', 'Configuración'],
+    )
   })
 
   it('monta todas las tarjetas con los datos del escuadrón', () => {
