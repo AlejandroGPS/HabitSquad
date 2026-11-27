@@ -58,12 +58,50 @@ describe('menuScreen', () => {
       'Madrugadores',
       'Lectores nocturnos',
     ])
-    menu.querySelector('select').value = 'nombre'
-    menu.querySelector('select').dispatchEvent(new Event('change'))
+    const orden = menu.querySelector('[aria-label^="Ordenar escuadrones"]')
+    expect(menu.querySelector('select')).toBeNull()
+    expect(orden.getAttribute('aria-expanded')).toBe('false')
+    orden.click()
+    expect(orden.getAttribute('aria-expanded')).toBe('true')
+    expect(menu.querySelector('[role="listbox"]').textContent).toContain('Ordenar por')
+    const opciones = [...menu.querySelectorAll('[role="option"]')]
+    expect(opciones.filter((option) => option.querySelector('.buscar-orden-check').classList.contains('hidden'))).toHaveLength(2)
+    expect(opciones.find((option) => option.getAttribute('aria-selected') === 'true').textContent).toContain('Racha más larga')
+    ;[...menu.querySelectorAll('[role="option"]')].find((option) => option.textContent.includes('Nombre')).click()
+    expect(orden.getAttribute('aria-expanded')).toBe('false')
+    expect(orden.textContent).toContain('Nombre')
     expect([...menu.querySelectorAll('h3')].map((title) => title.textContent)).toEqual([
       'Lectores nocturnos',
       'Madrugadores',
     ])
+  })
+
+  it('el orden se cierra con Escape, con un clic fuera y se recorre con el teclado', async () => {
+    const menu = menuScreen({
+      loadSquads: async () => [
+        { id: 1, nombre: 'Lectores nocturnos', miembros: [{ usuario_id: 1 }] },
+        { id: 2, nombre: 'Madrugadores', miembros: [{ usuario_id: 2 }] },
+      ],
+    })
+    document.body.append(menu)
+    await vi.waitFor(() => expect(menu.querySelectorAll('.buscar-card')).toHaveLength(2))
+    const orden = menu.querySelector('[aria-label^="Ordenar escuadrones"]')
+    const options = () => [...menu.querySelectorAll('[role="option"]')]
+
+    orden.click()
+    options()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+    expect(document.activeElement).toBe(options()[1])
+    options()[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }))
+    expect(document.activeElement).toBe(options()[0])
+
+    orden.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    expect(orden.getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(orden)
+
+    orden.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+    expect(orden.getAttribute('aria-expanded')).toBe('true')
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(orden.getAttribute('aria-expanded')).toBe('false')
   })
 
   it('lista el hábito de cada miembro y no le pone una categoría al escuadrón', async () => {

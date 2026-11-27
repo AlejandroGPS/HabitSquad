@@ -7,6 +7,11 @@ const CAPACITY = 5
 const CODE_LENGTH = 6
 const TONES = ['#5b32ea', '#ff7a1a', '#1cb0f6', '#3dcc4a', '#ce82ff', '#ff4b4b']
 const FACES = ['#8b6cff', '#ff9a4a', '#4eb8f0', '#67c23a', '#f48fb1', '#ffd15c']
+const ORDERS = [
+  { id: 'racha', label: 'Racha más larga', icon: 'flame' },
+  { id: 'plazas', label: 'Más plazas libres', icon: 'users' },
+  { id: 'nombre', label: 'Nombre', icon: 'text' },
+]
 
 function fold(value) {
   return String(value ?? '')
@@ -387,6 +392,126 @@ function createCard() {
   return card
 }
 
+function sortControl(onChange) {
+  const root = element('div', 'relative shrink-0')
+  const trigger = element(
+    'button',
+    'buscar-orden inline-flex h-11 max-w-full items-center gap-2 rounded-full bg-white ps-3 pe-2.5 text-[0.875rem] font-extrabold text-[#1d1d1f] shadow-[0_8px_20px_-14px_rgb(60_30_140/0.8)] ring-1 ring-white',
+  )
+  trigger.type = 'button'
+  trigger.setAttribute('aria-haspopup', 'listbox')
+  trigger.setAttribute('aria-expanded', 'false')
+  trigger.setAttribute('aria-controls', 'ordenar-escuadrones')
+  const currentIcon = element('span', 'grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#efeaff] text-accent')
+  const label = element('span', 'min-w-0 truncate')
+  const chevron = icon('chevron', 'buscar-chevron h-4 w-4 shrink-0 text-ink-muted')
+  trigger.append(currentIcon, label, chevron)
+
+  const panel = element(
+    'div',
+    'buscar-menu absolute end-0 top-full z-30 mt-2 w-[17rem] max-w-[calc(100vw-2rem)] rounded-[1.25rem] bg-white p-1.5 shadow-[0_1px_2px_rgb(0_0_0/0.05),0_18px_40px_-16px_rgb(60_30_140/0.5)] ring-1 ring-black/[0.04]',
+  )
+  panel.id = 'ordenar-escuadrones'
+  panel.hidden = true
+  panel.setAttribute('role', 'listbox')
+  panel.setAttribute('aria-label', 'Ordenar escuadrones')
+  const caption = element('p', 'px-2.5 pt-1.5 pb-1 text-[0.75rem] font-extrabold text-ink-muted', 'Ordenar por')
+  panel.append(caption)
+
+  let current = ORDERS[0].id
+  const options = ORDERS.map((order) => {
+    const option = element('button', '')
+    option.type = 'button'
+    option.dataset.order = order.id
+    option.setAttribute('role', 'option')
+    const mark = icon('check', 'buscar-orden-check ms-auto h-4 w-4 shrink-0 text-accent')
+    option.append(
+      element('span', 'grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f6f3ff] text-accent', icon(order.icon, 'h-4 w-4')),
+      element('span', 'min-w-0 truncate', order.label),
+      mark,
+    )
+    option.addEventListener('click', () => choose(order.id))
+    panel.append(option)
+    return option
+  })
+
+  function paint() {
+    const selected = ORDERS.find((order) => order.id === current)
+    label.textContent = selected.label
+    currentIcon.replaceChildren(icon(selected.icon, 'h-3.5 w-3.5'))
+    trigger.setAttribute('aria-label', `Ordenar escuadrones, ${selected.label}`)
+    for (const option of options) {
+      const on = option.dataset.order === current
+      option.setAttribute('aria-selected', String(on))
+      option.className = [
+        'flex min-h-11 w-full items-center gap-2.5 rounded-[0.9rem] px-2 text-start text-[0.9375rem] font-extrabold transition-colors',
+        on ? 'bg-[#efeaff] text-accent' : 'text-[#1d1d1f] hover:bg-black/[0.04]',
+      ].join(' ')
+      option.querySelector('.buscar-orden-check').classList.toggle('hidden', !on)
+    }
+  }
+
+  function setOpen(open) {
+    panel.hidden = !open
+    trigger.setAttribute('aria-expanded', String(open))
+    panel.classList.remove('buscar-menu-in')
+    if (!open) return
+    void panel.offsetWidth
+    panel.classList.add('buscar-menu-in')
+    options.find((option) => option.dataset.order === current)?.focus()
+  }
+
+  function choose(id) {
+    const changed = id !== current
+    current = id
+    paint()
+    setOpen(false)
+    trigger.focus()
+    if (changed) onChange(id)
+  }
+
+  function move(step) {
+    const index = Math.max(0, options.findIndex((option) => option === document.activeElement))
+    options[(index + step + options.length) % options.length].focus()
+  }
+
+  trigger.addEventListener('click', () => setOpen(panel.hidden))
+  trigger.addEventListener('keydown', (event) => {
+    if (!panel.hidden) return
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+    event.preventDefault()
+    setOpen(true)
+  })
+  root.addEventListener('keydown', (event) => {
+    if (panel.hidden) return
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      setOpen(false)
+      trigger.focus()
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      move(1)
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      move(-1)
+    } else if (event.key === 'Home') {
+      event.preventDefault()
+      options[0].focus()
+    } else if (event.key === 'End') {
+      event.preventDefault()
+      options.at(-1).focus()
+    }
+  })
+  document.addEventListener('click', function closeOutside(event) {
+    if (!root.isConnected) document.removeEventListener('click', closeOutside)
+    else if (!root.contains(event.target)) setOpen(false)
+  })
+
+  paint()
+  root.append(trigger, panel)
+  return root
+}
+
 export function menuScreen({ onJoin, navigate, loadSquads = listSquads } = {}) {
   const main = element('main', 'buscar-page min-h-dvh overflow-x-clip font-rounded text-[#1d1d1f] antialiased')
   const wrap = element('div', 'mx-auto w-full max-w-6xl px-4 py-6 sm:px-8 sm:py-10')
@@ -426,23 +551,11 @@ export function menuScreen({ onJoin, navigate, loadSquads = listSquads } = {}) {
   section.setAttribute('aria-labelledby', 'squad-list-title')
   const listTitle = element('h2', 'text-[0.9375rem] font-extrabold text-ink-muted', 'Escuadrones')
   listTitle.id = 'squad-list-title'
-  const sort = element(
-    'select',
-    'h-10 appearance-none rounded-full bg-white/80 py-0 ps-4 pe-9 text-[0.8125rem] font-bold text-ink-muted shadow-sm',
-  )
-  sort.setAttribute('aria-label', 'Ordenar escuadrones')
-  for (const [value, label] of [['racha', 'Racha más larga'], ['plazas', 'Más plazas libres'], ['nombre', 'Nombre']]) {
-    const option = element('option', '', label)
-    option.value = value
-    sort.append(option)
-  }
-  const sortWrap = element(
-    'div',
-    'relative shrink-0',
-    sort,
-    element('span', 'pointer-events-none absolute inset-y-0 right-3 grid place-items-center text-ink-muted', icon('chevron', 'h-4 w-4')),
-  )
-  const listHeader = element('div', 'flex items-center justify-between gap-3', listTitle, sortWrap)
+  const sort = sortControl((id) => {
+    order = id
+    render()
+  })
+  const listHeader = element('div', 'flex flex-wrap items-center justify-between gap-3', listTitle, sort)
   const status = element('p', 'mt-3 text-sm font-semibold text-ink-muted', 'Cargando escuadrones…')
   status.setAttribute('role', 'status')
   const listError = element('p', 'mt-3 text-sm font-bold text-red-700')
@@ -512,10 +625,6 @@ export function menuScreen({ onJoin, navigate, loadSquads = listSquads } = {}) {
 
   searchInput.addEventListener('input', () => {
     query = searchInput.value
-    render()
-  })
-  sort.addEventListener('change', () => {
-    order = sort.value
     render()
   })
 

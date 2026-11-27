@@ -39,6 +39,7 @@ const OUTLINE_PATHS = {
   ],
   search: ['M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z', 'm21 21-4.3-4.3'],
   chevron: ['m6 9 6 6 6-6'],
+  text: ['M4 7h16', 'M4 12h16', 'M4 17h10'],
 }
 
 function svg(className) {

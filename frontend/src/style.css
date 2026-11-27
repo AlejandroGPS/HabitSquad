@@ -513,6 +513,18 @@
     background: linear-gradient(165deg, #7d5cff 0%, #5b32ea 48%, #4a22d4 100%);
     box-shadow: 0 22px 44px -26px rgb(70 30 180 / 0.75);
   }
+
+  .buscar-orden[aria-expanded='true'] {
+    box-shadow: 0 12px 28px -16px rgb(91 50 234 / 0.65);
+  }
+
+  .buscar-orden[aria-expanded='true'] .buscar-chevron {
+    rotate: 180deg;
+  }
+
+  .buscar-menu {
+    transform-origin: top right;
+  }
 }
 
 @keyframes buscar-rise {
@@ -553,6 +565,14 @@
   }
 }
 
+@keyframes buscar-menu {
+  from {
+    opacity: 0;
+    translate: 0 -8px;
+    scale: 0.96;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .buscar-in {
     animation: buscar-rise 0.5s cubic-bezier(0.16, 0.84, 0.32, 1) both;
@@ -578,6 +598,14 @@
 
   .buscar-tecla {
     animation: buscar-tecla 0.16s ease-out;
+  }
+
+  .buscar-chevron {
+    transition: rotate 0.2s ease;
+  }
+
+  .buscar-menu-in {
+    animation: buscar-menu 0.22s cubic-bezier(0.16, 0.84, 0.32, 1);
   }
 
   @media (pointer: fine) {
