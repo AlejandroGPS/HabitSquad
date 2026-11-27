@@ -19,7 +19,7 @@ describe('startApp', () => {
   })
 
   it.each([
-    ['/', 'Cumple tu hábito. Que no caiga la racha.'],
+    ['/', 'Buscar escuadrones'],
     ['/escuadrones', 'Mis escuadrones'],
     ['/escuadrones/panel?id=7', 'Lectores'],
     ['/escuadrones/panel?id=8', 'Panel del escuadrón'],

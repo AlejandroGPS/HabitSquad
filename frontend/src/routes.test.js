@@ -4,6 +4,7 @@ import {
   confirmEmailVerification,
   confirmPasswordReset,
   login,
+  logout,
   register,
   requestEmailVerification,
 } from './api.js'
@@ -15,6 +16,7 @@ vi.mock('./api.js', async (importOriginal) => {
   return {
     ...actual,
     login: vi.fn(),
+    logout: vi.fn(),
     register: vi.fn(),
     requestPasswordReset: vi.fn(),
     confirmEmailVerification: vi.fn(),

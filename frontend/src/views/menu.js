@@ -1,6 +1,7 @@
 import { ApiError, listSquads } from '../api.js'
 import { element } from '../components/dom.js'
 import { icon } from '../components/icons.js'
+import { landingNav } from '../components/landing/landingNav.js'
 import { habitText } from './habitoDiario.js'
 
 const CAPACITY = 5
@@ -434,8 +435,9 @@ function createCard() {
   return card
 }
 
-export function menuScreen({ onJoin, navigate, loadSquads = listSquads } = {}) {
+export function menuScreen({ onJoin, navigate, loadSquads = listSquads, cuenta } = {}) {
   const main = element('main', 'buscar-page min-h-dvh overflow-x-clip font-rounded text-[#1d1d1f] antialiased')
+  if (cuenta) main.append(landingNav({ cuenta, zona: 'buscar' }))
   const wrap = element('div', 'mx-auto w-full max-w-6xl px-4 py-6 sm:px-8 sm:py-10')
 
   const heading = element('h1', 'buscar-in text-[1.85rem] leading-none font-black tracking-tight sm:text-[2.35rem]', 'Buscar escuadrones')

@@ -106,6 +106,10 @@ function createSquadErrorMessage(error) {
 function menuView({ navigate } = {}) {
   return menuScreen({
     navigate,
+    cuenta: accountMenu({
+      loadProfile: getProfile,
+      onLogout: async () => { await logout(); navigate?.('/login') },
+    }),
     onJoin: async (codigo) => {
       try {
         return await joinSquad(codigo)
