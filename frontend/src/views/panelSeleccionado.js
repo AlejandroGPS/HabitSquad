@@ -2,6 +2,7 @@ import { ApiError, getDailyHabit, getSquad, logout } from '../api.js'
 import { appLayout } from '../components/appLayout.js'
 import { accountMenu } from '../components/accountMenu.js'
 import { element } from '../components/dom.js'
+import { panelBackLink } from '../components/navigation.js'
 import {
   cierreCard,
   habitoCard,
@@ -18,9 +19,7 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
   const id = new URLSearchParams(window.location.search).get('id')
   const root = element('div')
   const body = element('div', 'mt-5 px-4 lg:px-0')
-  const back = element('a', 'inline-flex min-h-11 items-center font-bold text-accent', '← Mis escuadrones')
-  back.href = '/'
-  back.dataset.link = ''
+  const back = panelBackLink({ href: '/', label: 'Mis escuadrones' })
   const status = element('p', 'mt-3 font-semibold text-ink-muted')
   status.setAttribute('role', 'status')
   const error = element('p', 'mt-3 font-bold text-red-700')
@@ -28,8 +27,8 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
   const retry = element('button', 'min-h-11 font-bold text-accent underline', 'Reintentar')
   retry.type = 'button'
   retry.hidden = true
-  body.append(back, status, error, retry)
-  root.append(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body }))
+  body.append(status, error, retry)
+  root.append(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', back, body }))
   let loading = false
   async function load() {
     if (loading) return
@@ -56,7 +55,7 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
       const momento = ahora()
       const abrirPrueba = ({ pruebaId }) => navigate(`/escuadrones/prueba?escuadron=${id}&registro=${pruebaId}`)
       const pruebaPropia = miembros.find(({ esUsuario }) => esUsuario)?.pruebaId
-      const content = element('div', 'mt-4 grid grid-cols-2 gap-3 px-4 lg:mt-6 lg:grid-cols-4 lg:gap-4 lg:px-0', back,
+      const content = element('div', 'mt-4 grid grid-cols-2 gap-3 px-4 lg:mt-6 lg:grid-cols-4 lg:gap-4 lg:px-0',
         rachaCard({ racha }),
         hoyCard({ miembros }),
         cierreCard({ ahora: momento }),
@@ -69,8 +68,7 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
         }),
         miembrosCard({ miembros, onVerFoto: abrirPrueba, onVotar: abrirPrueba }),
         invitaCard({ codigo: squad.codigo_invitacion, libres: 5 - squad.miembros.length }))
-      back.classList.add('col-span-2', 'lg:col-span-4')
-      root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Escuadrón', title: squad.nombre, body: content,
+      root.replaceChildren(appLayout({ active: 'escuadron', kicker: 'Escuadrón', title: squad.nombre, back, body: content,
         trailing: [rachaChip({ racha }), accountMenu({ onLogout: async () => { await logout(); navigate('/login') } })] }))
       for (const link of root.querySelectorAll('a[href="/habito"]')) {
         link.href = `/habito?escuadron=${id}`

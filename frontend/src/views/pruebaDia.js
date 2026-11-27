@@ -2,6 +2,7 @@ import { ApiError, getDailyHabit, getSquad, uploadProof } from '../api.js'
 import { appLayout } from '../components/appLayout.js'
 import { element } from '../components/dom.js'
 import { icon } from '../components/icons.js'
+import { panelBackLink } from '../components/navigation.js'
 import { tiempoRestante } from '../tiempo.js'
 
 const CIERRE = '23:59'
@@ -118,9 +119,7 @@ export function pruebaDiaScreen({
   chooseHabit.href = validSquadId ? `/habito?escuadron=${squadId}` : '/habito'
   chooseHabit.dataset.link = ''
   chooseHabit.hidden = true
-  const backToPanel = element('a', 'inline-flex min-h-11 items-center font-bold text-accent', 'Volver al panel')
-  backToPanel.href = panelHref
-  backToPanel.dataset.link = ''
+  const backToPanel = panelBackLink({ href: panelHref, label: 'Volver al panel' })
   backToPanel.hidden = true
   const notices = element('div', 'space-y-2', status, error, retry, chooseHabit, backToPanel)
 
@@ -129,11 +128,7 @@ export function pruebaDiaScreen({
     icon('upload'), sendLabel)
   send.type = 'button'
 
-  const back = element('a', 'glass grid h-11 w-11 shrink-0 place-items-center rounded-full text-ink')
-  back.href = panelHref
-  back.dataset.link = ''
-  back.setAttribute('aria-label', 'Volver al panel')
-  back.append(icon('back'))
+  const back = panelBackLink({ href: panelHref, label: 'Panel', ariaLabel: 'Volver al panel' })
 
   const body = element('div', 'mt-4 grid gap-4 px-4 lg:mt-6 lg:grid-cols-2 lg:px-0',
     photoCard,
@@ -255,7 +250,7 @@ export function pruebaDiaScreen({
 
   sync()
   void load()
-  const page = appLayout({ active: 'habito', kicker: 'Mi hábito', title: habitTitle, leading: back, body, detail: true })
+  const page = appLayout({ active: 'habito', kicker: 'Mi hábito', title: habitTitle, back, body, detail: true })
   if (validSquadId) {
     for (const link of page.querySelectorAll('a[href="/habito"]')) {
       link.href = `/habito?escuadron=${squadId}`

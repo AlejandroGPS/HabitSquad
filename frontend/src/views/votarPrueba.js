@@ -3,6 +3,7 @@ import { appLayout } from '../components/appLayout.js'
 import { iniciales } from '../components/avatar.js'
 import { button, element } from '../components/dom.js'
 import { icon } from '../components/icons.js'
+import { panelBackLink } from '../components/navigation.js'
 import { alertasBoton, escuadronResumen } from '../components/panel/cabecera.js'
 import { ESTADOS } from '../components/panel/estados.js'
 import { habitText } from './habitoDiario.js'
@@ -74,10 +75,11 @@ export function votarPruebaScreen() {
   const squadId = params.get('escuadron')
   const proofId = params.get('registro')
   const validId = (value) => /^[1-9]\d*$/.test(value ?? '')
-  const back = element('a', 'glass grid h-10 w-10 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-accent', icon('back'))
-  back.href = validId(squadId) ? `/escuadrones/panel?id=${squadId}` : '/'
-  back.dataset.link = ''
-  back.setAttribute('aria-label', 'Volver al escuadrón')
+  const back = panelBackLink({
+    href: validId(squadId) ? `/escuadrones/panel?id=${squadId}` : '/',
+    label: 'Panel',
+    ariaLabel: 'Volver al escuadrón',
+  })
 
   const title = element('span', '', 'Validar prueba')
   const footer = element('div')
@@ -90,7 +92,7 @@ export function votarPruebaScreen() {
   const content = element('div')
   const body = element('div', 'mt-4 px-4 lg:mt-6 lg:px-0', content, status, error, retry)
   const screen = appLayout({
-    active: 'escuadron', kicker: 'Votación', title, leading: back,
+    active: 'escuadron', kicker: 'Votación', title, back,
     trailing: [alertasBoton()], sidebarFooter: footer, body, detail: true,
   })
   for (const link of screen.querySelectorAll('nav a[href="/"]')) link.href = back.href

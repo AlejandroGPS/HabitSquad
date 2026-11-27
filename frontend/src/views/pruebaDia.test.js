@@ -203,7 +203,10 @@ describe('pantalla «Tu prueba de hoy»', () => {
     expect(camera(view).disabled).toBe(false)
     expect(gallery(view).disabled).toBe(false)
     expect(send(view).disabled).toBe(true)
-    expect(link(view, 'Volver al panel').getAttribute('href')).toBe('/escuadrones/panel?id=7')
+    expect(link(view, '← Volver al panel').getAttribute('href')).toBe('/escuadrones/panel?id=7')
+    const headerBack = view.querySelector('a[aria-label="Volver al panel"]')
+    expect(headerBack.textContent).toBe('← Panel')
+    expect(headerBack.className).not.toContain('glass')
   })
 
   it('muestra el hábito personalizado', async () => {
@@ -308,7 +311,7 @@ describe('pantalla «Tu prueba de hoy»', () => {
     expect(preview(view).getAttribute('src')).toBe(proof.foto_url)
     expect(send(view).textContent).toBe('Prueba enviada')
     expect(send(view).disabled).toBe(true)
-    const backToPanel = [...view.querySelectorAll('a')].find((item) => item.textContent === 'Volver al panel' && !item.hidden)
+    const backToPanel = [...view.querySelectorAll('a')].find((item) => item.textContent === '← Volver al panel' && !item.hidden)
     expect(backToPanel.getAttribute('href')).toBe('/escuadrones/panel?id=7')
   })
 

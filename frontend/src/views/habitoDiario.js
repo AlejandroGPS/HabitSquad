@@ -2,6 +2,7 @@ import { ApiError, getDailyHabit, getSquad, saveDailyHabit } from '../api.js'
 import { appLayout } from '../components/appLayout.js'
 import { element } from '../components/dom.js'
 import { icon } from '../components/icons.js'
+import { panelBackLink } from '../components/navigation.js'
 import mascotUrl from '../assets/mascota.webp'
 
 const HABIT_MAX_LENGTH = 60
@@ -95,11 +96,7 @@ export function habitoDiarioScreen({ navigate, api = { getSquad, getDailyHabit, 
   retry.hidden = true
   const save = element('button', 'flex min-h-[3.25rem] w-full items-center justify-center rounded-full bg-accent px-6 text-[1.0625rem] font-extrabold text-white disabled:opacity-50', 'Guardar hábito')
   save.type = 'submit'
-  const back = element('a', 'glass grid h-11 w-11 shrink-0 place-items-center rounded-full text-ink')
-  back.href = '/'
-  back.dataset.link = ''
-  back.setAttribute('aria-label', 'Volver al panel')
-  back.append(icon('back'))
+  const back = panelBackLink({ href: '/', label: 'Panel', ariaLabel: 'Volver al panel' })
   const chooseSquad = element('a', 'inline-flex min-h-11 items-center font-bold text-accent', 'Ir a Mis escuadrones')
   chooseSquad.href = '/'
   chooseSquad.dataset.link = ''
@@ -208,7 +205,7 @@ export function habitoDiarioScreen({ navigate, api = { getSquad, getDailyHabit, 
   })
   sync()
   void loadHabit()
-  const page = appLayout({ active: 'habito', kicker: squadName, title: 'Tu hábito diario', leading: back, body, detail: true })
+  const page = appLayout({ active: 'habito', kicker: squadName, title: 'Tu hábito diario', back, body, detail: true })
   if (validSquadId) {
     for (const link of page.querySelectorAll('a[href="/habito"]')) {
       link.href = `/habito?escuadron=${squadId}`
