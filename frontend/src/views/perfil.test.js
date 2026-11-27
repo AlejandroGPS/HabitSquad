@@ -50,7 +50,49 @@ describe('perfil conectado', () => {
     document.body.replaceChildren(root)
     await vi.waitFor(() => expect(root.textContent).toContain('Cumplido hoy'))
     expect(root.textContent).toContain('ana@example.com')
+    expect(root.textContent).toContain('Hoy')
+    expect(root.textContent).toContain('Leer')
+    expect(root.textContent).not.toContain('días de racha')
     expect(root.querySelector('a[href="/perfil/editar"]')).not.toBeNull()
+    expect(root.querySelector('a[href="/escuadrones/panel?id=7"]')).not.toBeNull()
+  })
+  it('junta la mejor racha, el hábito de hoy y la semana sin tapar el resto', async () => {
+    const semana = [23, 24, 25, 26, 27, 28, 29].map((dia, indice) => ({
+      fecha: `2026-11-${dia}`,
+      estado: indice < 4 ? 'cumplido' : null,
+    }))
+    api.listSquads.mockResolvedValue([{ id: 7, nombre: 'Los Inquebrantables' }, { id: 8, nombre: 'Mañanas' }])
+    api.getSquad.mockImplementation(async (id) => id === 7 ? {
+      id: 7,
+      nombre: 'Los Inquebrantables',
+      racha: 12,
+      miembros: [{ es_usuario: true, habito: { opcion: 'leer' }, prueba_hoy: null, semana }],
+    } : {
+      id: 8,
+      nombre: 'Mañanas',
+      racha: 5,
+      miembros: [{ es_usuario: true, habito: { opcion: 'gimnasio' }, prueba_hoy: { estado: 'pendiente' } }],
+    })
+    const root = perfilScreen({ api, ahora: new Date('2026-11-27T12:00:00') })
+    document.body.replaceChildren(root)
+    await vi.waitFor(() => expect(root.textContent).toContain('12 días de racha · Los Inquebrantables'))
+    const hoy = [...root.querySelectorAll('section')].find((section) => section.querySelector('h2')?.textContent === 'Hoy')
+    expect(hoy.textContent).toContain('Leer')
+    expect(hoy.textContent).toContain('Sin prueba')
+    expect(hoy.querySelector('a').getAttribute('href')).toBe('/prueba?escuadron=7')
+    expect(hoy.querySelector('[aria-label="Esta semana"]').textContent).toContain('V27')
+    expect(root.textContent).toContain('Ir al gimnasio')
+    expect(root.textContent).toContain('Pendiente')
+    expect(root.textContent).toContain('Cambiar contraseña')
+  })
+  it('mantiene una racha ya conocida si el escuadrón no trae la suya', async () => {
+    api.listSquads.mockResolvedValue([{ id: 7, nombre: 'Lectores' }])
+    api.getSquad.mockResolvedValue({ id: 7, nombre: 'Lectores', miembros: [{ es_usuario: true, habito: null }] })
+    const root = perfilScreen({ api, racha: 4 })
+    document.body.replaceChildren(root)
+    await vi.waitFor(() => expect(root.textContent).toContain('Sin hábito'))
+    expect(root.textContent).toContain('4 días de racha')
+    expect(root.textContent).not.toContain('4 días de racha ·')
   })
   it('permite reintentar tras un 501 sin mostrar formularios vacíos', async () => {
     api.getProfile.mockRejectedValueOnce(new ApiError(501))
