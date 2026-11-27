@@ -18,7 +18,7 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
   const id = new URLSearchParams(window.location.search).get('id')
   const root = element('div')
   const body = element('div', 'mt-5 px-4 lg:px-0')
-  const back = element('a', 'inline-flex min-h-11 items-center font-bold text-accent', '← Mis escuadrones')
+  const back = element('a', 'inline-flex min-h-11 items-center font-bold text-accent', '← Buscar escuadrones')
   back.href = '/'
   back.dataset.link = ''
   const status = element('p', 'mt-3 font-semibold text-ink-muted')
@@ -29,7 +29,7 @@ export function panelSeleccionadoScreen({ navigate, api = { getSquad, getDailyHa
   retry.type = 'button'
   retry.hidden = true
   body.append(back, status, error, retry)
-  root.append(appLayout({ active: 'escuadron', kicker: 'Mis escuadrones', title: 'Panel del escuadrón', body }))
+  root.append(appLayout({ active: 'escuadron', kicker: 'Escuadrón', title: 'Panel del escuadrón', body }))
   let loading = false
   async function load() {
     if (loading) return

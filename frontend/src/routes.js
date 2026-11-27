@@ -93,6 +93,23 @@ function createSquadErrorMessage(error) {
   return 'No se ha podido crear el escuadrón. Comprueba tu conexión e inténtalo de nuevo.'
 }
 
+function menuView({ navigate } = {}) {
+  return menuScreen({
+    navigate,
+    onLogout: async () => {
+      await logout()
+      navigate('/login')
+    },
+    onJoin: async (codigo) => {
+      try {
+        return await joinSquad(codigo)
+      } catch (error) {
+        throw new Error(joinSquadErrorMessage(error), { cause: error })
+      }
+    },
+  })
+}
+
 function joinSquadErrorMessage(error) {
   if (!(error instanceof ApiError)) {
     return 'No se ha podido unir al escuadrón. Comprueba tu conexión e inténtalo de nuevo.'
@@ -129,12 +146,7 @@ export const routes = [
     path: '/',
     title: 'HabitSquad',
     view: ({ navigate } = {}) =>
-      hasSession()
-        ? menuScreen({ title: 'HabitSquad', onLogout: async () => {
-          await logout()
-          navigate('/login')
-        } })
-        : presentacionScreen({ navigate }),
+      hasSession() ? menuView({ navigate }) : presentacionScreen({ navigate }),
   },
   {
     path: '/escuadrones/prueba',
@@ -267,12 +279,9 @@ export const routes = [
   },
   {
     path: '/menu',
-    title: 'Menú principal',
+    title: 'Buscar escuadrones',
     private: true,
-    view: ({ navigate } = {}) => menuScreen({ onLogout: async () => {
-      await logout()
-      navigate('/login')
-    } }),
+    view: ({ navigate } = {}) => menuView({ navigate }),
   },
   {
     path: '/escuadrones/nuevo',

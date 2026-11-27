@@ -477,34 +477,131 @@
   }
 }
 
-/* Pantallas de selección y panel: tokens locales para conservar las otras vistas. */
+/* Buscar escuadrones. El estado final ya está pintado: la animación solo marca el inicio. */
 @layer components {
-  .squad-page {
-    color-scheme: light;
-    --squad-card: #fff;
-    --squad-text: #1d1d1f;
-    --squad-muted: #6e6e73;
-    --squad-soft: #f2f2f7;
-    --squad-purple: #5b32ea;
-    color: var(--squad-text);
-    background: radial-gradient(ellipse at 5% 5%, #ffdcc6 0, transparent 38%), radial-gradient(ellipse at 95% 90%, #d6c8ff 0, transparent 45%), #ece8f6;
+  .buscar-chips {
+    scrollbar-width: none;
   }
-  .squad-muted { color: var(--squad-muted); }
-  .squad-card { background: var(--squad-card); border-radius: 1.75rem; box-shadow: 0 12px 32px -22px #39237066; }
-  .squad-nav { background: rgb(255 255 255 / .55); border: 1px solid rgb(255 255 255 / .6); backdrop-filter: blur(18px); }
-  .squad-choice { background: var(--squad-soft); border: 2px solid transparent; }
-  .squad-choice:hover { border-color: var(--squad-purple); }
-  .squad-avatar, .squad-demo { background: #efeaff; color: #4c28cc; }
-  .squad-create { background: linear-gradient(135deg, #6a45f0, #4c28cc); }
-  .squad-streak { background: linear-gradient(135deg, #d4460c, #a83400); }
-  .squad-primary, .squad-white-button, .squad-logout { display: inline-flex; min-height: 52px; align-items: center; justify-content: center; border-radius: 999px; padding: 12px 24px; font-weight: 800; font-size: 17px; text-align: center; }
-  .squad-primary { background: var(--squad-purple); color: white; }
-  .squad-white-button { background: white; color: #4c28cc; }
-  .squad-logout { background: var(--squad-soft); color: #d70015; cursor: pointer; }
-  .squad-logout:disabled { opacity: .5; cursor: wait; }
-  .squad-page :is(a, button):focus-visible { outline: 3px solid var(--squad-purple); outline-offset: 4px; }
-  .squad-back { color: var(--squad-purple); }
-  @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-    .squad-nav { background: var(--squad-card); backdrop-filter: none; }
+
+  .buscar-chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .buscar-page {
+    color: #1d1d1f;
+    background:
+      radial-gradient(ellipse 46% 38% at 0% 0%, rgb(255 196 168 / 0.95), transparent 68%),
+      radial-gradient(ellipse 40% 34% at 100% 0%, rgb(198 216 255 / 0.8), transparent 66%),
+      radial-gradient(ellipse 52% 46% at 100% 100%, rgb(198 170 255 / 0.88), transparent 70%),
+      radial-gradient(ellipse 36% 32% at 0% 100%, rgb(176 224 156 / 0.55), transparent 68%),
+      linear-gradient(180deg, #f7f5ff 0%, #f3effc 100%);
+  }
+
+  .buscar-page input[type='search']::-webkit-search-decoration,
+  .buscar-page input[type='search']::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .buscar-page :is(a, button, input, select):focus-visible {
+    outline: 3px solid #5b32ea;
+    outline-offset: 3px;
+  }
+
+  .buscar-shimmer {
+    background: linear-gradient(100deg, #f0ecf8 18%, #fff 42%, #f0ecf8 68%);
+    background-size: 220% 100%;
+  }
+
+  .buscar-card {
+    box-shadow: 0 12px 30px -22px rgb(60 30 140 / 0.55);
+  }
+
+  .buscar-codigo {
+    background: linear-gradient(165deg, #7d5cff 0%, #5b32ea 48%, #4a22d4 100%);
+    box-shadow: 0 22px 44px -26px rgb(70 30 180 / 0.75);
+  }
+}
+
+@keyframes buscar-rise {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+  }
+}
+
+@keyframes buscar-side {
+  from {
+    opacity: 0;
+    translate: 16px 12px;
+  }
+}
+
+@keyframes buscar-pop {
+  0% {
+    scale: 0.92;
+  }
+  55% {
+    scale: 1.06;
+  }
+}
+
+@keyframes buscar-shimmer {
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -120% 0;
+  }
+}
+
+@keyframes buscar-tecla {
+  from {
+    translate: 0 0.4rem;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .buscar-in {
+    animation: buscar-rise 0.5s cubic-bezier(0.16, 0.84, 0.32, 1) both;
+  }
+
+  .buscar-rise {
+    animation: buscar-rise 0.48s cubic-bezier(0.16, 0.84, 0.32, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+
+  .buscar-side {
+    animation: buscar-side 0.55s cubic-bezier(0.16, 0.84, 0.32, 1) backwards;
+    animation-delay: calc(90ms + var(--i, 0) * 80ms);
+  }
+
+  .buscar-pop {
+    animation: buscar-pop 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+
+  .buscar-chip[aria-pressed='true'] {
+    animation: buscar-pop 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+
+  .buscar-shimmer {
+    animation: buscar-shimmer 1.25s ease-in-out infinite;
+  }
+
+  .buscar-tecla {
+    animation: buscar-tecla 0.16s ease-out;
+  }
+
+  @media (pointer: fine) {
+    .buscar-card {
+      transition:
+        translate 0.2s ease,
+        box-shadow 0.2s ease;
+    }
+
+    .buscar-card:hover {
+      translate: 0 -3px;
+      box-shadow: 0 18px 36px -20px rgb(60 30 140 / 0.4);
+    }
   }
 }

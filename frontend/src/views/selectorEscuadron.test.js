@@ -48,7 +48,7 @@ describe('selector recuperado conectado al backend', () => {
     })
   }
   async function selectSquad(squad) {
-    const selector = `a[aria-label="Abrir panel de ${squad.nombre}"]`
+    const selector = `a[aria-label="Unirme a ${squad.nombre}"]`
     await vi.waitFor(() => expect(root.querySelector(selector)).not.toBeNull())
     root.querySelector(selector).click()
     expect(window.location.pathname).toBe('/escuadrones/panel')
@@ -56,7 +56,7 @@ describe('selector recuperado conectado al backend', () => {
     await vi.waitFor(() => expect(root.querySelector('h1').textContent).toBe(squad.nombre))
   }
   function returnToSelector() {
-    const back = [...root.querySelectorAll('a')].find((link) => link.textContent === '← Mis escuadrones')
+    const back = [...root.querySelectorAll('a')].find((link) => link.textContent === '← Buscar escuadrones')
     expect(back).toBeDefined()
     back.click()
     expect(window.location.pathname).toBe('/')
@@ -95,8 +95,8 @@ describe('selector recuperado conectado al backend', () => {
       ? new Promise((resolve) => { finishFirst = resolve })
       : normalRequest(path, options))
     start()
-    await vi.waitFor(() => expect(root.querySelector('a[aria-label="Abrir panel de Lectores"]')).not.toBeNull())
-    root.querySelector('a[aria-label="Abrir panel de Lectores"]').click()
+    await vi.waitFor(() => expect(root.querySelector('a[aria-label="Unirme a Lectores"]')).not.toBeNull())
+    root.querySelector('a[aria-label="Unirme a Lectores"]').click()
     await vi.waitFor(() => expect(finishFirst).toBeTypeOf('function'))
     returnToSelector()
     await selectSquad(squads[1])
@@ -120,8 +120,8 @@ describe('selector recuperado conectado al backend', () => {
     start()
     await selectSquad(squads[0])
     returnToSelector()
-    await vi.waitFor(() => expect(root.querySelector('a[aria-label="Abrir panel de Deportistas"]')).not.toBeNull())
-    root.querySelector('a[aria-label="Abrir panel de Deportistas"]').click()
+    await vi.waitFor(() => expect(root.querySelector('a[aria-label="Unirme a Deportistas"]')).not.toBeNull())
+    root.querySelector('a[aria-label="Unirme a Deportistas"]').click()
     await vi.waitFor(() => expect(root.querySelector('[role="alert"]').textContent).toContain('no está disponible'))
     expect(root.textContent).not.toContain('Lectores')
     expect(root.textContent).not.toContain('ABC123')
@@ -134,10 +134,11 @@ describe('selector recuperado conectado al backend', () => {
   it('el inicio muestra el selector vacío con acceso a crear, unirse y cerrar sesión', async () => {
     start()
     await vi.waitFor(() => expect(root.textContent).toContain('Todavía no perteneces'))
-    expect(root.querySelector('#squad-list-title').textContent).toBe('Mis escuadrones')
+    expect(root.querySelector('h1').textContent).toBe('Buscar escuadrones')
+    expect(root.textContent).not.toContain('Mis escuadrones')
     expect(root.textContent).not.toContain('Los Inquebrantables')
     expect(root.querySelector('a[href="/escuadrones/nuevo"]')).not.toBeNull()
-    expect(root.querySelector('a[href="/escuadrones/unirse"]')).not.toBeNull()
+    expect(root.textContent).toContain('¿Tienes un código?')
     expect(root.textContent).toContain('Cerrar sesión')
     expect(fetchMock).toHaveBeenCalledWith('/api/escuadrones/', expect.any(Object))
     root.querySelector('a[href="/escuadrones/nuevo"]').click()
@@ -147,11 +148,12 @@ describe('selector recuperado conectado al backend', () => {
   it('muestra los escuadrones de la API sin inventar grupos ni rachas', async () => {
     fetchMock.mockResolvedValueOnce(response(200, squads))
     start()
-    await vi.waitFor(() => expect(root.querySelectorAll('a[aria-label^="Abrir panel"]')).toHaveLength(2))
+    await vi.waitFor(() => expect(root.querySelectorAll('a[aria-label^="Unirme a"]')).toHaveLength(2))
     expect(root.textContent).toContain('Lectores')
-    expect(root.textContent).toContain('2 de 5 miembros')
+    expect(root.textContent).toContain('2/5')
+    expect(root.textContent).toContain('3 plazas libres')
     expect(root.textContent).not.toContain('días de racha')
-    expect(root.querySelector('a[aria-label="Abrir panel de Deportistas"]').getAttribute('href')).toBe('/escuadrones/panel?id=9')
+    expect(root.querySelector('a[aria-label="Unirme a Deportistas"]').getAttribute('href')).toBe('/escuadrones/panel?id=9')
   })
   it('abre el panel real seleccionado y conserva su contexto al elegir y guardar un hábito', async () => {
     fetchMock.mockImplementation(async (path, options) => {
@@ -163,8 +165,8 @@ describe('selector recuperado conectado al backend', () => {
       throw new Error(`Petición inesperada: ${path}`)
     })
     start()
-    await vi.waitFor(() => expect(root.querySelector('a[aria-label="Abrir panel de Deportistas"]')).not.toBeNull())
-    root.querySelector('a[aria-label="Abrir panel de Deportistas"]').click()
+    await vi.waitFor(() => expect(root.querySelector('a[aria-label="Unirme a Deportistas"]')).not.toBeNull())
+    root.querySelector('a[aria-label="Unirme a Deportistas"]').click()
     await vi.waitFor(() => expect(root.querySelector('h1').textContent).toBe('Deportistas'))
     expect(root.textContent).toContain('DEF456')
     ;[...root.querySelectorAll('button')].find((button) => button.textContent === 'Elegir mi hábito').click()
@@ -183,9 +185,9 @@ describe('selector recuperado conectado al backend', () => {
     fetchMock.mockRejectedValueOnce(new TypeError('offline')).mockResolvedValueOnce(response(200, squads))
     start()
     await vi.waitFor(() => expect(root.querySelector('[role="alert"]').textContent).toContain('No se han podido cargar'))
-    expect(root.querySelectorAll('a[aria-label^="Abrir panel"]')).toHaveLength(0)
+    expect(root.querySelectorAll('a[aria-label^="Unirme a"]')).toHaveLength(0)
     ;[...root.querySelectorAll('button')].find((button) => button.textContent === 'Reintentar').click()
-    await vi.waitFor(() => expect(root.querySelectorAll('a[aria-label^="Abrir panel"]')).toHaveLength(2))
+    await vi.waitFor(() => expect(root.querySelectorAll('a[aria-label^="Unirme a"]')).toHaveLength(2))
   })
   it('protege el selector /menu y el panel sin sesión', () => {
     clearSession()

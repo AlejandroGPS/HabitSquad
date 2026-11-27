@@ -97,7 +97,7 @@ describe('sesión', () => {
     const home = routes.find((route) => route.path === '/')
 
     expect(guard(home)).toBeNull()
-    expect(home.view().querySelector('h1').textContent).toBe('HabitSquad')
+    expect(home.view().querySelector('h1').textContent).toBe('Buscar escuadrones')
   })
 
   it('con sesión, /login y /registro llevan al inicio', () => {
