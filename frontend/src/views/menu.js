@@ -6,28 +6,7 @@ import { habitText } from './habitoDiario.js'
 const CAPACITY = 5
 const CODE_LENGTH = 6
 const TONES = ['#5b32ea', '#ff7a1a', '#1cb0f6', '#3dcc4a', '#ce82ff', '#ff4b4b']
-const CATEGORY_TONE = {
-  lectura: '#5b32ea',
-  deporte: '#ef6a00',
-  meditacion: '#0b92d0',
-  alimentacion: '#2ea043',
-  estudio: '#e09000',
-}
 const FACES = ['#8b6cff', '#ff9a4a', '#4eb8f0', '#67c23a', '#f48fb1', '#ffd15c']
-
-const CATEGORIES = [
-  { id: 'lectura', label: 'Lectura', test: /le(er|ctura)|libro/i, chip: 'bg-[#efeaff] text-[#5b32ea]' },
-  { id: 'deporte', label: 'Deporte', test: /corr|camin|gimnas|deport|paso|entren/i, chip: 'bg-[#fff1e6] text-[#e35d00]' },
-  { id: 'meditacion', label: 'Meditación', test: /medit/i, chip: 'bg-[#e7f6ff] text-[#0878c9]' },
-  { id: 'alimentacion', label: 'Alimentación', test: /az[uú]c|comida|aliment|dieta/i, chip: 'bg-[#e9f8e4] text-[#248a3d]' },
-  { id: 'estudio', label: 'Estudio', test: /estud/i, chip: 'bg-[#fff4d6] text-[#b86e00]' },
-]
-
-const FILTERS = [
-  { id: 'todos', label: 'Todos' },
-  { id: 'plazas', label: 'Con plazas libres' },
-  ...CATEGORIES.map(({ id, label }) => ({ id, label })),
-]
 
 function fold(value) {
   return String(value ?? '')
@@ -57,29 +36,11 @@ function habitsOf(squad) {
   return habits
 }
 
-function categoryOf(habit) {
-  return CATEGORIES.find((category) => category.test.test(habit)) ?? null
-}
-
-function categoriesOf(squad) {
-  const seen = new Set()
-  const categories = []
-  for (const habit of habitsOf(squad)) {
-    const category = categoryOf(habit)
-    if (!category || seen.has(category.id)) continue
-    seen.add(category.id)
-    categories.push(category)
-  }
-  return categories
-}
-
 function freeSpots(squad) {
   return Math.max(0, CAPACITY - membersOf(squad).length)
 }
 
 function toneFor(squad) {
-  const category = categoriesOf(squad)[0]
-  if (category) return CATEGORY_TONE[category.id]
   let hash = 0
   for (const char of String(squad.nombre ?? '')) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
   return TONES[hash % TONES.length]
@@ -128,7 +89,6 @@ function memberFaces(members) {
 function squadCard(squad, index) {
   const members = membersOf(squad)
   const habits = habitsOf(squad)
-  const categories = categoriesOf(squad)
   const free = freeSpots(squad)
   const full = free === 0
   const row = element('li', 'buscar-rise')
@@ -141,14 +101,7 @@ function squadCard(squad, index) {
   )
   avatar.style.background = toneFor(squad)
 
-  const title = element(
-    'div',
-    'flex min-w-0 flex-wrap items-center gap-2',
-    element('h3', 'min-w-0 truncate text-[1.05rem] font-black', squad.nombre),
-  )
-  for (const category of categories) {
-    title.append(element('span', `rounded-full px-2 py-0.5 text-[0.7rem] font-extrabold ${category.chip}`, category.label))
-  }
+  const title = element('h3', 'min-w-0 truncate text-[1.05rem] font-black', squad.nombre)
 
   const meta = element('div', 'mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8125rem] font-bold')
   if (typeof squad.racha === 'number' && squad.racha > 0) {
@@ -468,22 +421,6 @@ export function menuScreen({ onJoin, navigate, loadSquads = listSquads } = {}) {
   results.id = 'buscar-resultados'
   searchForm.append(searchLabel, icon('search', 'h-5 w-5 shrink-0 text-ink-muted'), searchInput, results)
 
-  const chips = element('div', 'buscar-chips mt-4 flex gap-2 overflow-x-auto pb-1')
-  chips.setAttribute('role', 'group')
-  chips.setAttribute('aria-label', 'Filtrar escuadrones')
-  const chipButtons = FILTERS.map((filter) => {
-    const chip = element(
-      'button',
-      'buscar-chip h-10 shrink-0 rounded-full px-4 text-[0.875rem] font-extrabold transition-[background-color,color,transform] duration-200 motion-safe:active:scale-95',
-      filter.label,
-    )
-    chip.type = 'button'
-    chip.dataset.filter = filter.id
-    chip.setAttribute('aria-pressed', String(filter.id === 'todos'))
-    chips.append(chip)
-    return chip
-  })
-
   const layout = element('div', 'mt-6 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_21rem]')
   const section = element('section', 'min-w-0')
   section.setAttribute('aria-labelledby', 'squad-list-title')
@@ -523,24 +460,18 @@ export function menuScreen({ onJoin, navigate, loadSquads = listSquads } = {}) {
     createCard(),
   )
   layout.append(section, aside)
-  wrap.append(intro, searchForm, chips, layout)
+  wrap.append(intro, searchForm, layout)
   main.append(wrap)
 
   let squads = []
   let loading = false
   let query = ''
-  let filter = 'todos'
   let order = 'racha'
 
   function visibleSquads() {
     const needle = fold(query.trim())
     return squads
-      .filter((squad) => {
-        if (needle && !fold(squad.nombre).includes(needle)) return false
-        if (filter === 'plazas' && freeSpots(squad) <= 0) return false
-        if (filter !== 'todos' && filter !== 'plazas' && !categoriesOf(squad).some((category) => category.id === filter)) return false
-        return true
-      })
+      .filter((squad) => !needle || fold(squad.nombre).includes(needle))
       .sort((a, b) => {
         if (order === 'nombre') return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
         if (order === 'plazas') {
@@ -578,28 +509,6 @@ export function menuScreen({ onJoin, navigate, loadSquads = listSquads } = {}) {
     status.textContent = listTitle.textContent
     visible.forEach((squad, index) => list.append(squadCard(squad, index)))
   }
-
-  function paintChips() {
-    for (const chip of chipButtons) {
-      const selected = chip.getAttribute('aria-pressed') === 'true'
-      chip.className = [
-        'buscar-chip h-10 shrink-0 rounded-full px-4 text-[0.875rem] font-extrabold transition-[background-color,color,transform] duration-200 motion-safe:active:scale-95',
-        selected ? 'bg-accent text-white shadow-[0_8px_16px_-10px_rgb(91_50_234/0.85)]' : 'bg-white/85 text-[#3c3c3c] shadow-sm hover:bg-white',
-      ].join(' ')
-    }
-  }
-
-  function selectFilter(id) {
-    filter = id
-    for (const chip of chipButtons) chip.setAttribute('aria-pressed', String(chip.dataset.filter === id))
-    paintChips()
-    render()
-  }
-
-  for (const chip of chipButtons) {
-    chip.addEventListener('click', () => selectFilter(chip.dataset.filter))
-  }
-  paintChips()
 
   searchInput.addEventListener('input', () => {
     query = searchInput.value

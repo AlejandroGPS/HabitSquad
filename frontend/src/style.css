@@ -479,14 +479,6 @@
 
 /* Buscar escuadrones. El estado final ya está pintado: la animación solo marca el inicio. */
 @layer components {
-  .buscar-chips {
-    scrollbar-width: none;
-  }
-
-  .buscar-chips::-webkit-scrollbar {
-    display: none;
-  }
-
   .buscar-page {
     color: #1d1d1f;
     background:
@@ -577,10 +569,6 @@
   }
 
   .buscar-pop {
-    animation: buscar-pop 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.2);
-  }
-
-  .buscar-chip[aria-pressed='true'] {
     animation: buscar-pop 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.2);
   }
 

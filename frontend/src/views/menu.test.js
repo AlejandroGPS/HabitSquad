@@ -12,10 +12,11 @@ describe('menuScreen', () => {
     expect(menu.textContent).toContain('¿Tienes un código?')
     expect(menu.textContent).not.toContain('Mis escuadrones')
     expect(menu.textContent).not.toContain('Cerrar sesión')
+    expect(menu.querySelector('[aria-label="Filtrar escuadrones"]')).toBeNull()
     expect(menu.querySelectorAll('a[aria-label^="Unirme a"]')).toHaveLength(0)
   })
 
-  it('filtra por nombre y por hábito, y deja fuera los escuadrones completos', async () => {
+  it('filtra por nombre y deja el escuadrón completo sin plaza', async () => {
     const menu = menuScreen({
       loadSquads: async () => [
         {
@@ -51,13 +52,8 @@ describe('menuScreen', () => {
 
     search.value = ''
     search.dispatchEvent(new Event('input'))
-    ;[...menu.querySelectorAll('button')].find((button) => button.textContent === 'Lectura').click()
-    expect(menu.textContent).toContain('Lectura')
-    expect(menu.textContent).not.toContain('Madrugadores')
-    ;[...menu.querySelectorAll('button')].find((button) => button.textContent === 'Con plazas libres').click()
-    expect(menu.textContent).toContain('Lectores nocturnos')
-    expect(menu.textContent).not.toContain('Madrugadores')
-    ;[...menu.querySelectorAll('button')].find((button) => button.textContent === 'Todos').click()
+    expect(menu.textContent).not.toContain('Lectura')
+    expect(menu.textContent).not.toContain('Con plazas libres')
     expect([...menu.querySelectorAll('h3')].map((title) => title.textContent)).toEqual([
       'Madrugadores',
       'Lectores nocturnos',
@@ -70,7 +66,7 @@ describe('menuScreen', () => {
     ])
   })
 
-  it('un escuadrón sale en el filtro de cada hábito de sus miembros', async () => {
+  it('lista el hábito de cada miembro y no le pone una categoría al escuadrón', async () => {
     const menu = menuScreen({
       loadSquads: async () => [
         {
@@ -85,15 +81,9 @@ describe('menuScreen', () => {
       ],
     })
     await vi.waitFor(() => expect(menu.textContent).toContain('Leer · Ir al gimnasio'))
-    expect(menu.textContent).toContain('Lectura')
-    expect(menu.textContent).toContain('Deporte')
-    const chip = (label) => [...menu.querySelectorAll('button')].find((button) => button.textContent === label)
-    chip('Lectura').click()
-    expect(menu.textContent).toContain('Mixto')
-    chip('Deporte').click()
-    expect(menu.textContent).toContain('Mixto')
-    chip('Meditación').click()
-    expect(menu.textContent).not.toContain('Mixto')
+    expect(menu.textContent).not.toContain('Lectura')
+    expect(menu.textContent).not.toContain('Deporte')
+    expect(menu.querySelector('[aria-label="Filtrar escuadrones"]')).toBeNull()
   })
 
   it('pide el código completo y abre el escuadrón al unirse', async () => {
