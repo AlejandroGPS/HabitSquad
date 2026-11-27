@@ -82,7 +82,11 @@ describe('validación de una prueba desde el escuadrón', () => {
     expect(document.body.textContent).toContain('Leer')
     expect(fetchMock).toHaveBeenCalledWith(proofPath, expect.objectContaining({ headers: expect.any(Headers) }))
 
-    document.querySelector('[aria-label="Volver al escuadrón"]').click()
+    const back = document.querySelector('[aria-label="Volver al escuadrón"]')
+    expect(back.textContent).toBe('← Panel')
+    expect(back.querySelector('svg')).toBeNull()
+    expect(back.className).not.toContain('glass')
+    back.click()
     expect(window.location.pathname + window.location.search).toBe('/escuadrones/panel?id=7')
   })
 

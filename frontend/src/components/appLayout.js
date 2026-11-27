@@ -69,18 +69,23 @@ function tabBar(active, items) {
   return nav
 }
 
-export function appLayout({ active, kicker, title, leading, trailing, sidebarFooter, body, detail = false, navItems = APP_NAV, sidebarNavItems = navItems, showSidebar = true }) {
+export function appLayout({ active, kicker, title, leading, back, trailing, sidebarFooter, body, detail = false, navItems = APP_NAV, sidebarNavItems = navItems, showSidebar = true }) {
   const header = element(
     'header',
-    'flex items-center gap-3 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-1 lg:px-0 lg:pt-8',
-    leading && element('span', detail || !showSidebar ? '' : 'lg:hidden', leading),
+    'flex flex-col gap-1 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-1 lg:px-0 lg:pt-8',
+    back,
     element(
       'div',
-      'min-w-0',
-      element('p', 'text-[0.9375rem] font-bold text-ink-muted', kicker),
-      element('h1', 'truncate text-[1.375rem] leading-tight font-black lg:text-[2rem]', title),
+      'flex min-w-0 items-center gap-3',
+      leading && element('span', detail || !showSidebar ? '' : 'lg:hidden', leading),
+      element(
+        'div',
+        'min-w-0',
+        element('p', 'text-[0.9375rem] font-bold text-ink-muted', kicker),
+        element('h1', 'truncate text-[1.375rem] leading-tight font-black lg:text-[2rem]', title),
+      ),
+      trailing && element('div', 'ms-auto flex items-center gap-2', trailing),
     ),
-    trailing && element('div', 'ms-auto flex items-center gap-2', trailing),
   )
 
   const content = element(
