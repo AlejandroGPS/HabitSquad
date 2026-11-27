@@ -70,6 +70,32 @@ describe('menuScreen', () => {
     ])
   })
 
+  it('un escuadrón sale en el filtro de cada hábito de sus miembros', async () => {
+    const menu = menuScreen({
+      loadSquads: async () => [
+        {
+          id: 3,
+          nombre: 'Mixto',
+          miembros: [
+            { usuario_id: 1, habito: { opcion: 'leer', texto_personalizado: '' } },
+            { usuario_id: 2, habito: { opcion: 'gimnasio', texto_personalizado: '' } },
+            { usuario_id: 3, habito: { opcion: 'leer', texto_personalizado: '' } },
+          ],
+        },
+      ],
+    })
+    await vi.waitFor(() => expect(menu.textContent).toContain('Leer · Ir al gimnasio'))
+    expect(menu.textContent).toContain('Lectura')
+    expect(menu.textContent).toContain('Deporte')
+    const chip = (label) => [...menu.querySelectorAll('button')].find((button) => button.textContent === label)
+    chip('Lectura').click()
+    expect(menu.textContent).toContain('Mixto')
+    chip('Deporte').click()
+    expect(menu.textContent).toContain('Mixto')
+    chip('Meditación').click()
+    expect(menu.textContent).not.toContain('Mixto')
+  })
+
   it('pide el código completo y abre el escuadrón al unirse', async () => {
     const onJoin = vi.fn().mockResolvedValue({ id: 4, nombre: 'Lectores nocturnos' })
     const navigate = vi.fn()

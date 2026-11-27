@@ -44,16 +44,33 @@ function membersOf(squad) {
   return Array.isArray(squad.miembros) ? squad.miembros : []
 }
 
-function habitOf(squad) {
+function habitsOf(squad) {
+  const seen = new Set()
+  const habits = []
   for (const member of membersOf(squad)) {
-    const text = habitText(member.habito)
-    if (text) return text
+    const text = String(habitText(member.habito) ?? '').trim()
+    const key = fold(text)
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    habits.push(text)
   }
-  return ''
+  return habits
 }
 
 function categoryOf(habit) {
   return CATEGORIES.find((category) => category.test.test(habit)) ?? null
+}
+
+function categoriesOf(squad) {
+  const seen = new Set()
+  const categories = []
+  for (const habit of habitsOf(squad)) {
+    const category = categoryOf(habit)
+    if (!category || seen.has(category.id)) continue
+    seen.add(category.id)
+    categories.push(category)
+  }
+  return categories
 }
 
 function freeSpots(squad) {
@@ -61,7 +78,7 @@ function freeSpots(squad) {
 }
 
 function toneFor(squad) {
-  const category = categoryOf(habitOf(squad))
+  const category = categoriesOf(squad)[0]
   if (category) return CATEGORY_TONE[category.id]
   let hash = 0
   for (const char of String(squad.nombre ?? '')) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
@@ -110,8 +127,8 @@ function memberFaces(members) {
 
 function squadCard(squad, index) {
   const members = membersOf(squad)
-  const habit = habitOf(squad)
-  const category = categoryOf(habit)
+  const habits = habitsOf(squad)
+  const categories = categoriesOf(squad)
   const free = freeSpots(squad)
   const full = free === 0
   const row = element('li', 'buscar-rise')
@@ -129,7 +146,7 @@ function squadCard(squad, index) {
     'flex min-w-0 flex-wrap items-center gap-2',
     element('h3', 'min-w-0 truncate text-[1.05rem] font-black', squad.nombre),
   )
-  if (category) {
+  for (const category of categories) {
     title.append(element('span', `rounded-full px-2 py-0.5 text-[0.7rem] font-extrabold ${category.chip}`, category.label))
   }
 
@@ -168,7 +185,7 @@ function squadCard(squad, index) {
       'div',
       'min-w-0 flex-1 basis-[calc(100%-4.25rem)] sm:basis-0',
       title,
-      element('p', 'mt-0.5 truncate text-[0.875rem] font-semibold text-ink-muted', habit || 'Sin hábito definido todavía'),
+      element('p', 'mt-0.5 truncate text-[0.875rem] font-semibold text-ink-muted', habits.join(' · ') || 'Sin hábito definido todavía'),
       meta,
     ),
     action,
@@ -521,7 +538,7 @@ export function menuScreen({ onJoin, navigate, loadSquads = listSquads } = {}) {
       .filter((squad) => {
         if (needle && !fold(squad.nombre).includes(needle)) return false
         if (filter === 'plazas' && freeSpots(squad) <= 0) return false
-        if (filter !== 'todos' && filter !== 'plazas' && categoryOf(habitOf(squad))?.id !== filter) return false
+        if (filter !== 'todos' && filter !== 'plazas' && !categoriesOf(squad).some((category) => category.id === filter)) return false
         return true
       })
       .sort((a, b) => {
