@@ -4,7 +4,6 @@ import {
   confirmEmailVerification,
   confirmPasswordReset,
   login,
-  logout,
   register,
   requestEmailVerification,
 } from './api.js'
@@ -17,7 +16,6 @@ vi.mock('./api.js', async (importOriginal) => {
     ...actual,
     login: vi.fn(),
     register: vi.fn(),
-    logout: vi.fn(),
     requestPasswordReset: vi.fn(),
     confirmEmailVerification: vi.fn(),
     confirmPasswordReset: vi.fn(),
@@ -73,7 +71,6 @@ describe('sesión', () => {
     localStorage.clear()
     login.mockReset()
     register.mockReset()
-    logout.mockReset()
     confirmEmailVerification.mockReset()
     confirmPasswordReset.mockReset()
     requestEmailVerification.mockReset()
@@ -298,21 +295,5 @@ describe('sesión', () => {
     })
     expect(navigate).not.toHaveBeenCalled()
     expect(hasSession()).toBe(false)
-  })
-
-  it('cerrar sesión llama a logout y vuelve a /login', async () => {
-    saveSession({ access: 'access-token', refresh: 'refresh-token' })
-    logout.mockResolvedValue(undefined)
-    const { element, navigate } = mount('/')
-
-    const logoutButton = [...element.querySelectorAll('button')].find(
-      (button) => button.textContent === 'Cerrar sesión',
-    )
-    logoutButton.click()
-
-    await vi.waitFor(() => {
-      expect(logout).toHaveBeenCalledTimes(1)
-      expect(navigate).toHaveBeenCalledWith('/login')
-    })
   })
 })

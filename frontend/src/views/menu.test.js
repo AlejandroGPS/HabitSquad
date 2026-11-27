@@ -11,18 +11,8 @@ describe('menuScreen', () => {
     expect(menu.querySelector('a[href="/escuadrones/nuevo"]').textContent).toBe('Crear un escuadrón')
     expect(menu.textContent).toContain('¿Tienes un código?')
     expect(menu.textContent).not.toContain('Mis escuadrones')
+    expect(menu.textContent).not.toContain('Cerrar sesión')
     expect(menu.querySelectorAll('a[aria-label^="Unirme a"]')).toHaveLength(0)
-  })
-
-  it('muestra el error al cerrar sesión y permite reintentar', async () => {
-    const onLogout = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(undefined)
-    const menu = menuScreen({ onLogout, loadSquads: async () => [] })
-    const button = [...menu.querySelectorAll('button')].find((item) => item.textContent === 'Cerrar sesión')
-    button.click()
-    await vi.waitFor(() => expect(menu.textContent).toContain('No se ha podido cerrar la sesión'))
-    expect(button.disabled).toBe(false)
-    button.click()
-    await vi.waitFor(() => expect(onLogout).toHaveBeenCalledTimes(2))
   })
 
   it('filtra por nombre y por hábito, y deja fuera los escuadrones completos', async () => {
@@ -98,18 +88,5 @@ describe('menuScreen', () => {
     form.dispatchEvent(new Event('submit', { cancelable: true }))
     await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith('/escuadrones/panel?id=4'))
     expect(onJoin).toHaveBeenCalledWith('K7P2QX')
-  })
-
-  it('bloquea el cierre de sesión mientras se completa', async () => {
-    let finish
-    const onLogout = vi.fn(() => new Promise((resolve) => { finish = resolve }))
-    const menu = menuScreen({ onLogout, loadSquads: async () => [] })
-    const button = [...menu.querySelectorAll('button')].find((item) => item.textContent === 'Cerrar sesión')
-    button.click()
-    button.click()
-    expect(button.disabled).toBe(true)
-    expect(onLogout).toHaveBeenCalledTimes(1)
-    finish()
-    await vi.waitFor(() => expect(button.disabled).toBe(false))
   })
 })

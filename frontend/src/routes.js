@@ -5,7 +5,6 @@ import {
   createSquad,
   joinSquad,
   login,
-  logout,
   register,
   requestEmailVerification,
   requestPasswordReset,
@@ -96,10 +95,6 @@ function createSquadErrorMessage(error) {
 function menuView({ navigate } = {}) {
   return menuScreen({
     navigate,
-    onLogout: async () => {
-      await logout()
-      navigate('/login')
-    },
     onJoin: async (codigo) => {
       try {
         return await joinSquad(codigo)

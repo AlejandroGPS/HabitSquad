@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createRouter } from '../router.js'
 import { guard, notFound, routes } from '../routes.js'
 import { clearSession, saveSession } from '../session.js'
-import { menuScreen } from './menu.js'
 
 const squads = [
   { id: 7, nombre: 'Lectores', codigo_invitacion: 'ABC123', miembros: [{ usuario_id: 1, habito: null }] },
@@ -131,15 +130,15 @@ describe('selector recuperado conectado al backend', () => {
     await selectSquad(squads[0])
     expect(root.textContent).toContain('Leer 20 minutos')
   })
-  it('el inicio muestra el selector vacío con acceso a crear, unirse y cerrar sesión', async () => {
+  it('el inicio muestra el selector vacío con acceso a crear y unirse', async () => {
     start()
     await vi.waitFor(() => expect(root.textContent).toContain('Todavía no perteneces'))
     expect(root.querySelector('h1').textContent).toBe('Buscar escuadrones')
     expect(root.textContent).not.toContain('Mis escuadrones')
+    expect(root.textContent).not.toContain('Cerrar sesión')
     expect(root.textContent).not.toContain('Los Inquebrantables')
     expect(root.querySelector('a[href="/escuadrones/nuevo"]')).not.toBeNull()
     expect(root.textContent).toContain('¿Tienes un código?')
-    expect(root.textContent).toContain('Cerrar sesión')
     expect(fetchMock).toHaveBeenCalledWith('/api/escuadrones/', expect.any(Object))
     root.querySelector('a[href="/escuadrones/nuevo"]').click()
     expect(window.location.pathname).toBe('/escuadrones/nuevo')
@@ -193,18 +192,5 @@ describe('selector recuperado conectado al backend', () => {
     clearSession()
     expect(guard(routes.find((route) => route.path === '/menu'))).toBe('/login')
     expect(guard(routes.find((route) => route.path === '/escuadrones/panel'))).toBe('/login')
-  })
-  it('mantiene el botón de cierre bloqueado durante el cierre de sesión', async () => {
-    let finish
-    const onLogout = vi.fn(() => new Promise((resolve) => { finish = resolve }))
-    const view = menuScreen({ onLogout })
-    root.append(view)
-    const button = [...view.querySelectorAll('button')].find((item) => item.textContent === 'Cerrar sesión')
-    button.click()
-    button.click()
-    expect(onLogout).toHaveBeenCalledTimes(1)
-    expect(button.disabled).toBe(true)
-    finish()
-    await vi.waitFor(() => expect(button.disabled).toBe(false))
   })
 })

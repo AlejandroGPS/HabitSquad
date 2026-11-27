@@ -417,7 +417,7 @@ function createCard() {
   return card
 }
 
-export function menuScreen({ onLogout, onJoin, navigate, loadSquads = listSquads } = {}) {
+export function menuScreen({ onJoin, navigate, loadSquads = listSquads } = {}) {
   const main = element('main', 'buscar-page min-h-dvh overflow-x-clip font-rounded text-[#1d1d1f] antialiased')
   const wrap = element('div', 'mx-auto w-full max-w-6xl px-4 py-6 sm:px-8 sm:py-10')
 
@@ -499,33 +499,11 @@ export function menuScreen({ onLogout, onJoin, navigate, loadSquads = listSquads
   const list = element('ul', 'mt-3 flex flex-col gap-3')
   section.append(listHeader, status, listError, retry, list)
 
-  const logout = element(
-    'button',
-    'min-h-11 rounded-full px-4 text-sm font-extrabold text-ink-muted transition-colors hover:text-[#c93400] disabled:cursor-wait disabled:opacity-60',
-    'Cerrar sesión',
-  )
-  logout.type = 'button'
-  const logoutStatus = element('p', 'text-center text-sm font-semibold text-red-700')
-  logoutStatus.setAttribute('role', 'status')
-  logout.addEventListener('click', async () => {
-    if (logout.disabled) return
-    logout.disabled = true
-    logoutStatus.textContent = ''
-    try {
-      await onLogout?.()
-    } catch {
-      logoutStatus.textContent = 'No se ha podido cerrar la sesión. Inténtalo de nuevo.'
-    } finally {
-      logout.disabled = false
-    }
-  })
-
   const aside = element(
     'aside',
     'flex flex-col gap-4',
     codeCard({ onJoin, navigate }),
     createCard(),
-    element('div', 'flex flex-col items-center gap-1', logout, logoutStatus),
   )
   layout.append(section, aside)
   wrap.append(intro, searchForm, chips, layout)
